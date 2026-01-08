@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>High-Fidelity JATS Converter</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        h1 { color: #003366; }
+        .btn { background: #003366; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        #status { margin-top: 15px; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Cloud JATS Engine</h1>
+        <p>Convert DOCX to JATS XML & High-Fidelity PDF</p>
+        <input type="file" id="fileInput" accept=".docx">
+        <button class="btn" id="uploadBtn">Convert & Download ZIP</button>
+        <div id="status"></div>
+    </div>
+    <script>
+        document.getElementById('uploadBtn').onclick = async () => {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return alert("Select a file");
+            
+            const btn = document.getElementById('uploadBtn');
+            const status = document.getElementById('status');
+            btn.disabled = true;
+            status.innerText = "Processing on Google Cloud...";
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/convert', { method: 'POST', body: formData });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "jats_package.zip";
+                    a.click();
+                    status.innerText = "Complete!";
+                } else {
+                    status.innerText = "Error during conversion.";
+                }
+            } catch (e) {
+                status.innerText = "Network Error.";
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
