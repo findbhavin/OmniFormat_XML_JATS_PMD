@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install Pandoc and WeasyPrint system dependencies (Pango, Cairo, etc.)
+# Install system dependencies for High-Fidelity Rendering
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     fonts-liberation \
@@ -9,13 +9,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
     shared-mime-info \
+    libxml2-dev \
+    libxslt-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Install Python requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy all project files including XSDs
 COPY . .
 
-# Use Gunicorn for production-grade stability on Google Cloud
-CMD exec gunicorn --bind :8080 --workers 1 --threads 8 --timeout 0 app:app
+# Port binding for Cloud Run
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app

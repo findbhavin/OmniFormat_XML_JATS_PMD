@@ -1,56 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>High-Fidelity JATS Converter</title>
+    <title>JATS 1.3 High-Fidelity Converter</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 400px; text-align: center; }
-        h1 { color: #003366; }
-        .btn { background: #003366; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        #status { margin-top: 15px; font-size: 14px; color: #666; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #333; }
+        input[type="file"] { margin: 1rem 0; }
+        button { background: #007bff; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Cloud JATS Engine</h1>
-        <p>Convert DOCX to JATS XML & High-Fidelity PDF</p>
-        <input type="file" id="fileInput" accept=".docx">
-        <button class="btn" id="uploadBtn">Convert & Download ZIP</button>
-        <div id="status"></div>
+        <h1>Manuscript Converter</h1>
+        <p>Convert DOCX to JATS 1.3 XML & PDF</p>
+        <form action="/convert" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".docx" required><br>
+            <button type="submit">Upload and Convert</button>
+        </form>
     </div>
-    <script>
-        document.getElementById('uploadBtn').onclick = async () => {
-            const file = document.getElementById('fileInput').files[0];
-            if (!file) return alert("Select a file");
-            
-            const btn = document.getElementById('uploadBtn');
-            const status = document.getElementById('status');
-            btn.disabled = true;
-            status.innerText = "Processing on Google Cloud...";
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch('/convert', { method: 'POST', body: formData });
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "jats_package.zip";
-                    a.click();
-                    status.innerText = "Complete!";
-                } else {
-                    status.innerText = "Error during conversion.";
-                }
-            } catch (e) {
-                status.innerText = "Network Error.";
-            } finally {
-                btn.disabled = false;
-            }
-        };
-    </script>
 </body>
 </html>
