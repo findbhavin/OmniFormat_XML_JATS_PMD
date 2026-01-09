@@ -1,6 +1,7 @@
 import os
+import shutil
 import traceback
-from flask import Flask, request, render_template, send_file, jsonify
+from flask import Flask, request, render_template, send_file
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
@@ -15,11 +16,8 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert():
-    if 'file' not in request.files:
-        return "No file part", 400
+    if 'file' not in request.files: return "No file uploaded", 400
     file = request.files['file']
-    if file.filename == '':
-        return "No selected file", 400
 
     docx_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(docx_path)
@@ -28,20 +26,16 @@ def convert():
         converter = HighFidelityConverter(docx_path)
         output_dir = converter.run_pipeline()
 
-        # Zip the results
-        import shutil
-        zip_path = os.path.join(UPLOAD_FOLDER, "jats_package")
-        if os.path.exists(zip_path + ".zip"):
-            os.remove(zip_path + ".zip")
+        # Package everything: XML, HTML, PDF, and Media folder
+        zip_name = "manuscript_package"
+        zip_path = os.path.join(UPLOAD_FOLDER, zip_name)
         shutil.make_archive(zip_path, 'zip', output_dir)
 
         return send_file(zip_path + ".zip", as_attachment=True)
-
     except Exception as e:
-        # THIS IS THE KEY: It prints the full error stack to the logs
-        error_details = traceback.format_exc()
-        print(f"!!! CONVERSION ERROR !!!\n{error_details}")
-        return f"Conversion failed: {str(e)}", 500
+        error_log = traceback.format_exc()
+        print(error_log)
+        return f"Conversion Error: {str(e)}", 500
 
 
 if __name__ == '__main__':
