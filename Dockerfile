@@ -1,7 +1,5 @@
 FROM python:3.10-slim
 
-# Install system dependencies for High-Fidelity Rendering
-# Updated for Debian Trixie/Bookworm compatibility
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     fonts-liberation \
@@ -19,13 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Install Python requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy all project files
 COPY . .
 
-# Port binding for Cloud Run
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
