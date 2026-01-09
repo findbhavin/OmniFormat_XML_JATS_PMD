@@ -108,20 +108,27 @@ class HighFidelityConverter:
         logger.info("Step 3: Validating JATS 1.3 Compliance...")
         self.validate_xsd()
 
-        # Step 4: High-Fidelity Rendering (HTML for intermediate)
-        logger.info("Step 4: Rendering High-Fidelity PDF...")
-        subprocess.run([
-            "pandoc", self.xml_path, 
-            "-s", 
-            "--self-contained", 
-            "-t", "html", 
-            "-o", self.html_path
-        ], check=True)
+        def run_pipeline(self):
+            # ... Steps 1-3 (DOCX to JATS, AI Repair, Validation) ...
 
-        # Step 5: PDF Generation (WeasyPrint v60+ Syntax)
-        from weasyprint import HTML
-        # Using keywords 'filename' and 'target' to avoid __init__ errors
-        HTML(filename=self.html_path).write_pdf(target=self.pdf_path)
-        
+            # Step 4: Rendering High-Fidelity PDF (Intermediate HTML)
+            # FIX: We now explicitly set input format '-f jats' and output title
+            logger.info("Step 4: Rendering High-Fidelity PDF...")
+            subprocess.run([
+                "pandoc",
+                "-f", "jats",  # Explicitly set input format
+                self.xml_path,
+                "--embed-resources",  # Modern replacement for --self-contained
+                "--standalone",
+                "--metadata", "title=Research Manuscript",
+                "-t", "html",
+                "-o", self.html_path
+            ], check=True)
+
+            # Step 5: PDF Generation (WeasyPrint)
+            from weasyprint import HTML
+            # Ensure we point directly to the HTML file we just created
+            HTML(filename=self.html_path).write_pdf(target=self.pdf_path)
+
         logger.info("Pipeline Complete. Files ready in output directory.")
         return self.output_dir
