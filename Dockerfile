@@ -1,11 +1,13 @@
 FROM python:3.10-slim
 
 # Install system dependencies for High-Fidelity Rendering
-# Note: corrected libgdk-pixbuf name for newer Debian versions
+# Updated for Debian Trixie/Bookworm compatibility
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     fonts-liberation \
     libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
     libcairo2 \
     libgdk-pixbuf-2.0-0 \
     libgdk-pixbuf-xlib-2.0-0 \
@@ -13,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     shared-mime-info \
     libxml2-dev \
     libxslt-dev \
+    libgirepository-1.0-1 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -21,7 +24,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all project files including XSDs
+# Copy all project files
 COPY . .
 
 # Port binding for Cloud Run
