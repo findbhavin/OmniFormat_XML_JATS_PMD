@@ -3,7 +3,7 @@ gunicorn==22.0.0
 lxml==5.1.0
 weasyprint==61.2
 pydyf==0.9.0
-google-cloud-aiplatform>=1.40.0
-vertexai>=0.8.0
-pypandoc==1.13.2
-python-multipart==0.0.9
+google-cloud-aiplatform==1.40.0
+vertexai==0.8.0
+requests==2.31.0
+pypandoc==1.16.2  # Latest stable version
