@@ -1,47 +1,73 @@
 import os
 import shutil
-import traceback
 import logging
+import traceback
 from flask import Flask, request, render_template, send_file
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("OmniJAX_Server")
+
+# Cloud Run writable paths
 UPLOAD_FOLDER = '/tmp/uploads'
 OUTPUT_ZIP_DIR = '/tmp/packages'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_ZIP_DIR, exist_ok=True)
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("OmniJAX_Server")
-
 
 @app.route('/')
 def index():
+    # Flask looks for this in the 'templates' folder
     return render_template('index.html')
 
 
 @app.route('/convert', methods=['POST'])
 def convert():
-    if 'file' not in request.files: return "No file uploaded", 400
-    file = request.files['file']
+    if 'file' not in request.files:
+        return "No file uploaded", 400
 
+    file = request.files['file']
+    if file.filename == '':
+        return "No file selected", 400
+
+    # Save uploaded file
     docx_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(docx_path)
+    logger.info(f"Received: {file.filename}")
 
     try:
+        # Run the full pipeline
         converter = HighFidelityConverter(docx_path)
         output_folder = converter.run_pipeline()
 
-        # Zip all assets
-        zip_path = os.path.join(OUTPUT_ZIP_DIR, f"Package_{file.filename.split('.')[0]}")
-        shutil.make_archive(zip_path, 'zip', output_folder)
+        # Package XML, PDFs, and Media folder into ZIP
+        base_name = file.filename.rsplit('.', 1)[0]
+        zip_filename = f"JATS_Package_{base_name}"
+        zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
 
-        return send_file(zip_path + ".zip", as_attachment=True)
+        # Clean existing zip
+        if os.path.exists(zip_full_path + ".zip"):
+            os.remove(zip_full_path + ".zip")
+
+        shutil.make_archive(zip_full_path, 'zip', output_folder)
+
+        return send_file(
+            zip_full_path + ".zip",
+            as_attachment=True,
+            download_name=f"{zip_filename}.zip",
+            mimetype='application/zip'
+        )
+
     except Exception as e:
+        # Log full traceback for debugging 500 errors
         logger.error(traceback.format_exc())
         return f"Conversion failed: {str(e)}", 500
+
     finally:
-        # CRITICAL: If you delete this, your server will eventually run out of disk space
+        # CRITICAL: Clean up uploaded DOCX to save disk space
         if os.path.exists(docx_path):
             os.remove(docx_path)
 

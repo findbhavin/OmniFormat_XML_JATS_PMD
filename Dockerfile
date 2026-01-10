@@ -1,6 +1,7 @@
 FROM python:3.10-slim
 
-# Install system dependencies and manually install Pandoc 3.1.1
+# Install system dependencies and manually download Pandoc 3.1.1
+# This specific version is REQUIRED for the --table-captions=top flag
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     ca-certificates \
@@ -21,5 +22,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-# Set timeout to 0 (unlimited) for Gunicorn to allow dual-PDF rendering
+# Unlimited timeout (0) is CRITICAL for generating two PDFs in one request
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
