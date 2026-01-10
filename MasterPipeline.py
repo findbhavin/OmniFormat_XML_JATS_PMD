@@ -6,7 +6,6 @@ import traceback
 from lxml import etree
 import json
 import re
-import tempfile
 
 # Configure detailed logging for Google Cloud Run
 logging.basicConfig(level=logging.INFO)
@@ -18,24 +17,22 @@ class HighFidelityConverter:
         self.docx_path = docx_path
         self.project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "doctojatsxmlandpdf")
 
-        # Working directory (/tmp is the only writable area in Cloud Run)
+        # Define all directory paths FIRST
         self.output_dir = "/tmp/output_files"
+        self.media_dir = os.path.join(self.output_dir, "media")
+
+        # Prepare environment (creates directories)
         self._prepare_environment()
 
-        # Define Output Paths
+        # Define file paths AFTER directories exist
         self.xml_path = os.path.join(self.output_dir, "article.xml")
         self.html_path = os.path.join(self.output_dir, "article.html")
         self.pdf_path = os.path.join(self.output_dir, "published_article.pdf")
-
-        # Requirement (2): Direct PDF Path
         self.direct_pdf_path = os.path.join(self.output_dir, "direct_from_word.pdf")
 
         # Configuration Paths
         self.xsd_path = "JATS-journalpublishing-oasis-article1-3-mathml2.xsd"
         self.css_path = "templates/style.css"
-
-        # Media directory
-        self.media_dir = os.path.join(self.output_dir, "media")
 
     def _prepare_environment(self):
         """Cleans and recreates the output directory."""
@@ -162,10 +159,6 @@ class HighFidelityConverter:
     def _fix_with_rules(self, xml_content):
         """Rule-based XML repair as fallback."""
         try:
-            # Parse the XML
-            parser = etree.XMLParser(remove_blank_text=True)
-            root = etree.fromstring(xml_content.encode('utf-8'), parser)
-
             # Fix common header truncations
             xml_str = xml_content
             header_fixes = {
@@ -205,8 +198,6 @@ class HighFidelityConverter:
         except Exception as e:
             logger.warning(f"⚠️ Rule-based repair failed: {e}")
             return xml_content
-
-    # ... [Keep all other methods the same as in previous version] ...
 
     def _run_pandoc_command(self, args, step_name):
         """
