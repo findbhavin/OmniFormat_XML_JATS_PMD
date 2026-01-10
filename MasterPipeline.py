@@ -107,10 +107,19 @@ class HighFidelityConverter:
             "-o", self.html_path
         ], check=True)
 
-        # 5. High-Fidelity PDF Generation (via WeasyPrint)
-        logger.info("Rendering PDF from JATS source...")
+        # 5. HTML to High-Fidelity PDF
+        logger.info("Rendering PDF via WeasyPrint...")
         from weasyprint import HTML
-        # Passing base_url allows WeasyPrint to find extracted images
-        HTML(filename=self.html_path, base_url=self.output_dir).write_pdf(target=self.pdf_path)
+        
+        # We explicitly initialize the HTML object
+        html_doc = HTML(filename=self.html_path, base_url=self.output_dir)
+        
+        # We use write_pdf with limited arguments to avoid the pydyf init conflict
+        html_doc.write_pdf(
+            target=self.pdf_path,
+            presentational_hints=True,
+            optimize_images=True
+        )
 
+        
         return self.output_dir
