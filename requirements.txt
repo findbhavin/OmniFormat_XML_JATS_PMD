@@ -1,6 +1,7 @@
-flask==3.0.03
+flask==3.0.3
 gunicorn==22.0.0
 lxml==5.1.0
 weasyprint==61.2
+pydyf==0.9.0
 google-cloud-aiplatform>=1.40.0
 vertexai
