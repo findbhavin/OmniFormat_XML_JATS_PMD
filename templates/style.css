@@ -1,36 +1,229 @@
+/* OmniJAX Professional JATS-to-PDF Stylesheet */
+/* Compliant with PMC/NLM requirements */
+
 /* Requirement 1: Force table captions to the top */
-caption, table-wrap-heading {
+table caption,
+table-wrap-heading,
+.table-caption,
+caption {
     caption-side: top !important;
     text-align: left;
     font-weight: bold;
-    margin-bottom: 10pt;
+    margin-bottom: 12pt;
+    padding-bottom: 6pt;
+    border-bottom: 1px solid #ccc;
     display: table-caption;
+    font-family: "Liberation Serif", "Times New Roman", serif;
+    font-size: 11pt;
 }
 
-/* Requirement 4: Maintain superscripts and subscripts */
-sup, .superscript {
-    vertical-align: super;
-    font-size: 0.75em;
-    line-height: 0;
-}
-sub, .subscript {
-    vertical-align: sub;
-    font-size: 0.75em;
-    line-height: 0;
-}
-
-/* Professional PDF Layout */
-body {
-    font-family: "Liberation Serif", serif;
-    padding: 1in;
-    line-height: 1.6;
-}
+/* Table styling for JATS compliance */
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15pt;
+    margin-bottom: 20pt;
+    page-break-inside: avoid;
 }
+
 th, td {
-    border: 1px solid black;
-    padding: 8px;
+    border: 1px solid #333;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+thead th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Requirement 4: Maintain superscripts and subscripts */
+sup, .superscript,
+xref[ref-type="bibr"] {
+    vertical-align: super;
+    font-size: 0.7em;
+    line-height: 0;
+    text-decoration: none;
+}
+
+sub, .subscript {
+    vertical-align: sub;
+    font-size: 0.7em;
+    line-height: 0;
+}
+
+/* MathML styling */
+math {
+    font-family: "Times New Roman", Symbol, serif;
+}
+
+math[mode="display"] {
+    display: block;
+    margin: 15pt auto;
+    text-align: center;
+}
+
+/* Professional PDF Layout */
+body {
+    font-family: "Liberation Serif", "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    margin: 1in;
+    color: #000;
+    background: white;
+}
+
+/* Headers */
+h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    color: #000;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6pt;
+}
+
+h2 {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-top: 20pt;
+    margin-bottom: 10pt;
+    color: #333;
+}
+
+h3 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin-top: 16pt;
+    margin-bottom: 8pt;
+    color: #555;
+}
+
+/* Paragraphs and spacing */
+p {
+    margin-bottom: 12pt;
+    text-align: justify;
+    hyphens: auto;
+}
+
+/* Abstract styling */
+abstract {
+    display: block;
+    margin: 20pt 0;
+    padding: 15pt;
+    background-color: #f9f9f9;
+    border-left: 4px solid #1a73e8;
+    font-style: normal;
+}
+
+abstract p {
+    margin-bottom: 8pt;
+}
+
+/* References */
+.ref-list {
+    margin-top: 30pt;
+    padding-top: 15pt;
+    border-top: 1px solid #ccc;
+}
+
+.ref {
+    margin-bottom: 10pt;
+    padding-left: 20pt;
+    text-indent: -20pt;
+    page-break-inside: avoid;
+}
+
+/* Figures */
+fig {
+    display: block;
+    margin: 20pt auto;
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+fig caption {
+    margin-top: 8pt;
+    font-size: 10pt;
+    font-style: italic;
+    text-align: center;
+    caption-side: bottom;
+}
+
+.graphic {
+    max-width: 100%;
+    height: auto;
+    margin: 10pt auto;
+}
+
+/* Metadata styling */
+.article-meta {
+    margin-bottom: 30pt;
+    padding-bottom: 15pt;
+    border-bottom: 2px solid #000;
+}
+
+.article-title {
+    font-size: 20pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15pt;
+}
+
+.contrib-group {
+    margin: 15pt 0;
+    text-align: center;
+}
+
+.aff {
+    font-size: 10pt;
+    color: #666;
+    margin: 5pt 0;
+}
+
+/* Page breaks for printing */
+@media print {
+    body {
+        margin: 0.75in;
+    }
+
+    h1, h2, h3, h4 {
+        page-break-after: avoid;
+    }
+
+    table, figure {
+        page-break-inside: avoid;
+    }
+
+    .ref-list {
+        page-break-before: always;
+    }
+}
+
+/* Links */
+a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+a[href^="http"]:after {
+    content: " ↗";
+    font-size: 0.8em;
+}
+
+/* Code and preformatted text */
+code, pre {
+    font-family: "Courier New", monospace;
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+pre {
+    padding: 10pt;
+    overflow-x: auto;
+    border: 1px solid #ddd;
+    margin: 10pt 0;
 }

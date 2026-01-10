@@ -1,26 +1,41 @@
-FROM python:3.10-slim
+# Use Python 3.11 slim image
+FROM python:3.11-slim
 
-# Install system dependencies and manually download Pandoc 3.1.1
-# This specific version is REQUIRED for the --table-captions=top flag
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    ca-certificates \
-    fonts-liberation \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pandoc \
     libpango-1.0-0 \
+    libharfbuzz0b \
     libpangoft2-1.0-0 \
-    libpangocairo-1.0-0 \
     libcairo2 \
-    libgdk-pixbuf-2.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
     shared-mime-info \
-    && wget https://github.com/jgm/pandoc/releases/download/3.1.1/pandoc-3.1.1-1-amd64.deb \
-    && dpkg -i pandoc-3.1.1-1-amd64.deb \
-    && rm pandoc-3.1.1-1-amd64.deb \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
+
+# Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy all application files
 COPY . .
 
-# Unlimited timeout (0) is CRITICAL for generating two PDFs in one request
+# Create necessary directories
+RUN mkdir -p templates standard-modules
+
+# Verify JATS schemas exist
+RUN ls -la *.xsd && echo "JATS schemas verified"
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"
+
+# Run the application
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
