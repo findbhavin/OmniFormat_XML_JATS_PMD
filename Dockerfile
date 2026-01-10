@@ -8,12 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpangocairo-1.0-0 \
     libcairo2 \
     libgdk-pixbuf-2.0-0 \
-    libgdk-pixbuf-xlib-2.0-0 \
-    libffi-dev \
     shared-mime-info \
-    libxml2-dev \
-    libxslt-dev \
-    libgirepository-1.0-1 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -21,4 +16,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
+# Increased timeout to handle the dual-PDF generation (Step 5 & 6)
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app

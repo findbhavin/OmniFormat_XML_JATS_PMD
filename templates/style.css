@@ -1,0 +1,41 @@
+/* requirement (1): Fix table caption positioning to the top */
+caption, table-wrap-heading {
+    caption-side: top !important;
+    text-align: left;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: table-caption;
+}
+
+/* requirement (4): Maintenance of high-fidelity formatting */
+sup, .superscript {
+    vertical-align: super;
+    font-size: 0.75em;
+    line-height: 0;
+}
+
+sub, .subscript {
+    vertical-align: sub;
+    font-size: 0.75em;
+    line-height: 0;
+}
+
+/* Academic PDF styling */
+body {
+    font-family: "Liberation Serif", serif;
+    padding: 1in;
+    line-height: 1.6;
+    color: #000;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: left;
+}
