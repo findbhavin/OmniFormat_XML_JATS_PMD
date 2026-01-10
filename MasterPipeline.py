@@ -6,6 +6,7 @@ import traceback
 from lxml import etree
 import json
 import re
+import html
 
 # Configure detailed logging for Google Cloud Run
 logging.basicConfig(level=logging.INFO)
@@ -94,40 +95,32 @@ class HighFidelityConverter:
             prompt = f"""
             You are an expert JATS XML validator. Fix the following issues to ensure PMC Style Checker compliance:
 
+            IMPORTANT: Your document contains medical research content with:
+            1. Special characters: ₹ (Indian Rupee), ±, ≥, ≤, <, >
+            2. DOI: 10.55489/njcm.170120266013
+            3. Authors with ^1\*^ notation
+            4. Tables with merged cells
+            5. Figures with width/height attributes
+
             CRITICAL FIXES REQUIRED:
-            1. HEADER REPAIR: Fix truncated headers (e.g., 'NTRODUCTION' → 'INTRODUCTION', 'ATERIALS' → 'MATERIALS')
+            1. HEADER REPAIR: Fix any truncated headers
+            2. AUTHOR CONVERSION: Convert ^1\*^ to proper <contrib contrib-type="author"> with <xref ref-type="aff">
+            3. SPECIAL CHARACTERS: Encode < as &lt;, > as &gt;, & as &amp;, ₹ as &#x20B9;
+            4. DOI: Ensure <article-id pub-id-type="doi">10.55489/njcm.170120266013</article-id>
+            5. TABLES: Ensure <table-wrap position="top"> for all tables
+            6. FIGURES: Convert media/image1.png to <graphic xlink:href="media/image1.png">
 
-            2. JATS 1.3 STRUCTURE VALIDATION:
-               - Ensure root element: <article dtd-version="1.3" article-type="research-article">
-               - Required structure: <front> → <article-meta> → <title-group>, <contrib-group>, <aff>, <abstract>
-               - Body sections: <body> → <sec> with proper id attributes
-               - Back matter: <back> → <ref-list>, <ack>
-
-            3. PMC/NLM METADATA REQUIREMENTS:
-               - Add if missing: <article-id pub-id-type="pmc">PMCXXXXXX</article-id>
-               - <article-categories> with <subj-group subj-group-type="heading">
-               - <contrib-group> with <contrib contrib-type="author">
-               - Each author must have: <name>, <xref ref-type="aff">
-               - <permissions> with <copyright-statement>, <copyright-year>, <license>
-               - <abstract> must exist
-
-            4. CITATION & REFERENCE COMPLIANCE:
-               - <ref id="R1">, <ref id="R2">, etc.
-               - Use <mixed-citation> format for references
-
-            5. ACCESSIBILITY (PMC REQUIRED):
-               - All <fig> must have: <caption> and <alt-text>
-               - Tables: <table-wrap> with position="top" attribute
-
-            6. TABLE CAPTION POSITION:
-               - Ensure ALL tables have: <table-wrap position="top">
-               - Caption must be BEFORE table content
+            JATS 1.3 STRUCTURE VALIDATION:
+            - Ensure root element: <article dtd-version="1.3" article-type="research-article">
+            - Required structure: <front> → <article-meta> → <title-group>, <contrib-group>, <aff>, <abstract>
+            - Body sections: <body> → <sec> with proper id attributes
+            - Back matter: <back> → <ref-list>, <ack>
 
             IMPORTANT: Preserve all scientific content, data, measurements, formulas.
             Return ONLY valid JATS 1.3 XML, no explanations.
 
             XML to fix:
-            {xml_content[:6000]}
+            {xml_content[:8000]}
             """
 
             response = model.generate_content(prompt)
@@ -159,8 +152,15 @@ class HighFidelityConverter:
     def _fix_with_rules(self, xml_content):
         """Rule-based XML repair as fallback."""
         try:
+            # Parse the XML if possible, otherwise work with string
+            try:
+                parser = etree.XMLParser(remove_blank_text=True, recover=True)
+                root = etree.fromstring(xml_content.encode('utf-8'), parser)
+                xml_str = etree.tostring(root, encoding='unicode', pretty_print=True)
+            except:
+                xml_str = xml_content
+
             # Fix common header truncations
-            xml_str = xml_content
             header_fixes = {
                 'NTRODUCTION': 'INTRODUCTION',
                 'ETHODS': 'METHODS',
@@ -186,11 +186,21 @@ class HighFidelityConverter:
 
             # Ensure table captions are at top
             xml_str = xml_str.replace('<table-wrap>', '<table-wrap position="top">')
+            xml_str = xml_str.replace('<table-wrap >', '<table-wrap position="top">')
 
             # Add missing JATS namespace if needed
             if 'xmlns="http://jats.nlm.nih.gov"' not in xml_str:
                 # Find article tag and add namespace
                 xml_str = xml_str.replace('<article>', '<article xmlns="http://jats.nlm.nih.gov">')
+
+            # Fix special characters
+            xml_str = xml_str.replace('&', '&amp;')
+            xml_str = xml_str.replace('<', '&lt;')
+            xml_str = xml_str.replace('>', '&gt;')
+            xml_str = xml_str.replace('₹', '&#x20B9;')
+            xml_str = xml_str.replace('±', '&#xB1;')
+            xml_str = xml_str.replace('≥', '&#x2265;')
+            xml_str = xml_str.replace('≤', '&#x2264;')
 
             logger.info("✅ Rule-based repair applied")
             return xml_str
@@ -375,6 +385,7 @@ class HighFidelityConverter:
         # STEP 1: DOCX to JATS XML
         logger.info("Step 1: Converting DOCX to JATS XML...")
         try:
+            # Use valid pandoc options for JATS
             self._run_pandoc_command([
                 self.docx_path,
                 "-t", "jats",
@@ -382,9 +393,15 @@ class HighFidelityConverter:
                 "--extract-media=" + self.output_dir,
                 "--standalone",
                 "--mathml",
-                "--table-captions=top",
+                # Valid pandoc options
+                "--wrap=preserve",
+                "--top-level-division=section",
                 "--metadata", "link-citations=true"
             ], "DOCX to JATS XML")
+
+            # Post-process XML for JATS compliance
+            self._post_process_xml()
+
         except Exception as e:
             logger.error(f"Failed to convert DOCX to JATS XML: {e}")
             raise
@@ -543,6 +560,36 @@ class HighFidelityConverter:
         logger.info("=" * 60)
 
         return self.output_dir
+
+    def _post_process_xml(self):
+        """Post-process the XML to fix common JATS issues."""
+        try:
+            if not os.path.exists(self.xml_path):
+                return
+
+            with open(self.xml_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Ensure table-wrap has position="top" attribute
+            content = content.replace('<table-wrap>', '<table-wrap position="top">')
+            content = content.replace('<table-wrap >', '<table-wrap position="top">')
+
+            # Fix common XML issues
+            content = content.replace('&', '&amp;')
+
+            # Ensure JATS namespace
+            if 'xmlns="http://jats.nlm.nih.gov"' not in content:
+                content = content.replace('<article>', '<article xmlns="http://jats.nlm.nih.gov">')
+
+            # Ensure proper article type
+            content = content.replace('<article ', '<article dtd-version="1.3" article-type="research-article" ')
+
+            with open(self.xml_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            logger.info("✅ XML post-processing completed")
+        except Exception as e:
+            logger.warning(f"XML post-processing failed: {e}")
 
     def _create_fallback_pdf(self, pdf_path, message):
         """Create a simple fallback PDF when WeasyPrint fails."""
