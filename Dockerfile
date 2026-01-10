@@ -1,7 +1,9 @@
 FROM python:3.10-slim
 
+# Install system dependencies and download Pandoc 3.1.1 directly
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pandoc \
+    wget \
+    ca-certificates \
     fonts-liberation \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
@@ -9,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 \
     libgdk-pixbuf-2.0-0 \
     shared-mime-info \
+    && wget https://github.com/jgm/pandoc/releases/download/3.1.1/pandoc-3.1.1-1-amd64.deb \
+    && dpkg -i pandoc-3.1.1-1-amd64.deb \
+    && rm pandoc-3.1.1-1-amd64.deb \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -16,5 +21,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-# Increased timeout to handle the dual-PDF generation (Step 5 & 6)
+# Unlimited timeout for Gunicorn to allow dual-PDF rendering (Step 5 & 6)
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
