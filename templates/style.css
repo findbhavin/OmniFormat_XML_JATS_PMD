@@ -1,4 +1,4 @@
-/* REQUIREMENT 1: Table caption positioning (Top) */
+/* Requirement 1: Table Caption Positioning (Top) */
 caption, table-wrap-heading {
     caption-side: top !important;
     text-align: left;
@@ -7,33 +7,18 @@ caption, table-wrap-heading {
     display: table-caption;
 }
 
-/* REQUIREMENT 4: Scientific formatting maintenance */
+/* Requirement 4: Maintaining Super/Subscripts */
 sup, .superscript {
     vertical-align: super;
     font-size: 0.75em;
     line-height: 0;
 }
-
 sub, .subscript {
     vertical-align: sub;
     font-size: 0.75em;
     line-height: 0;
 }
 
-/* Layout for academic PDF output */
-body {
-    font-family: "Liberation Serif", serif;
-    padding: 1in;
-    line-height: 1.6;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-
-th, td {
-    border: 1px solid black;
-    padding: 8px;
-}
+body { font-family: "Liberation Serif", serif; padding: 1in; line-height: 1.6; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; border: 1px solid black; }
+th, td { border: 1px solid black; padding: 8px; }

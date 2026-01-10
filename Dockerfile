@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install system dependencies and download Pandoc 3.1.1 directly
+# Install system dependencies and manually install Pandoc 3.1.1
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     ca-certificates \
@@ -21,5 +21,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-# Unlimited timeout for Gunicorn to allow dual-PDF rendering (Step 5 & 6)
+# Set timeout to 0 (unlimited) for Gunicorn to allow dual-PDF rendering
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
