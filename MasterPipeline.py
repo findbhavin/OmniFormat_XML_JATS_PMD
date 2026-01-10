@@ -376,35 +376,7 @@ class HighFidelityConverter:
         from datetime import datetime
         return datetime.now().isoformat()
 
-    def run_pipeline(self):
-        """Executes the full conversion pipeline."""
-        logger.info("=" * 60)
-        logger.info("OmniJAX Pipeline Starting")
-        logger.info("=" * 60)
 
-        # STEP 1: DOCX to JATS XML
-        logger.info("Step 1: Converting DOCX to JATS XML...")
-        try:
-            # Use valid pandoc options for JATS
-            self._run_pandoc_command([
-                self.docx_path,
-                "-t", "jats",
-                "-o", self.xml_path,
-                "--extract-media=" + self.output_dir,
-                "--standalone",
-                "--mathml",
-                # Valid pandoc options
-                "--wrap=preserve",
-                "--top-level-division=section",
-                "--metadata", "link-citations=true"
-            ], "DOCX to JATS XML")
-
-            # Post-process XML for JATS compliance
-            self._post_process_xml()
-
-        except Exception as e:
-            logger.error(f"Failed to convert DOCX to JATS XML: {e}")
-            raise
 
         # Verify XML was created
         if not os.path.exists(self.xml_path):
@@ -418,6 +390,37 @@ class HighFidelityConverter:
         try:
             with open(self.xml_path, 'r', encoding='utf-8') as f:
                 raw_xml = f.read()
+
+            def run_pipeline(self):
+                """Executes the full conversion pipeline."""
+                logger.info("=" * 60)
+                logger.info("OmniJAX Pipeline Starting")
+                logger.info("=" * 60)
+
+                # STEP 1: DOCX to JATS XML
+                logger.info("Step 1: Converting DOCX to JATS XML...")
+                try:
+                    # Use valid pandoc options for JATS with system pandoc
+                    self._run_pandoc_command([
+                        self.docx_path,
+                        "-t", "jats",
+                        "-o", self.xml_path,
+                        "--extract-media=" + self.output_dir,
+                        "--standalone",
+                        "--mathml",
+                        # System pandoc compatible options
+                        "--wrap=none",
+                        "--top-level-division=section",
+                        "--metadata", "link-citations=true"
+                    ], "DOCX to JATS XML")
+
+                    # Post-process XML for JATS compliance
+                    self._post_process_xml()
+
+                except Exception as e:
+                    logger.error(f"Failed to convert DOCX to JATS XML: {e}")
+                    raise
+
 
             # Only process if we have content
             if raw_xml and len(raw_xml) > 100:
