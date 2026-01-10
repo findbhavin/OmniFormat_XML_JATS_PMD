@@ -3,7 +3,8 @@ gunicorn==22.0.0
 lxml==5.1.0
 weasyprint==61.2
 pydyf==0.9.0
-google-cloud-aiplatform==1.40.0
+# CHANGE THIS LINE: Update to match vertexai's requirement
+google-cloud-aiplatform==1.71.1
 vertexai==1.71.1
 requests==2.31.0
 reportlab==4.1.0
