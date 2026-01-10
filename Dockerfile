@@ -21,5 +21,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-# Step 6 and PDF rendering require a memory-stable environment
+# Set timeout to 0 (unlimited) for Gunicorn to allow dual-PDF rendering
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
