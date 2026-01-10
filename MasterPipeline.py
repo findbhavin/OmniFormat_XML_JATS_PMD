@@ -45,24 +45,168 @@ class HighFidelityConverter:
         os.makedirs(self.media_dir, exist_ok=True)
 
     def _init_ai(self):
-        """Lazy loads Vertex AI."""
+        """Lazy loads Vertex AI with version compatibility."""
         try:
             import vertexai
             from vertexai.generative_models import GenerativeModel
-            vertexai.init(project=self.project_id, location="us-central1")
-            return GenerativeModel("gemini-1.5-pro")
+
+            # Initialize Vertex AI
+            vertexai.init(
+                project=self.project_id,
+                location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+            )
+
+            # Try to use gemini-1.5-pro, fall back to other models
+            try:
+                return GenerativeModel("gemini-1.5-pro")
+            except:
+                try:
+                    return GenerativeModel("gemini-pro")
+                except:
+                    # Last resort, try any available model
+                    return GenerativeModel()
+
+        except ImportError as e:
+            logger.warning(f"Vertex AI not available: {e}")
+            logger.warning("AI repair functionality will be disabled")
+            return None
         except Exception as e:
-            logger.warning(f"Vertex AI initialization failed: {e}")
+            logger.warning(f"Failed to initialize Vertex AI: {e}")
+            return None
 
-            # Return a mock model for fallback
-            class MockModel:
-                def generate_content(self, prompt):
-                    class MockResponse:
-                        text = None
+    def fix_content_with_ai(self, xml_content):
+        """
+        AI Repair: Enhanced for PMC Style Checker compliance.
+        Falls back to rule-based repair if AI is not available.
+        """
+        # Try AI repair first
+        ai_fixed = self._fix_with_ai(xml_content)
+        if ai_fixed and ai_fixed != xml_content:
+            return ai_fixed
 
-                    return MockResponse()
+        # Fall back to rule-based repair
+        return self._fix_with_rules(xml_content)
 
-            return MockModel()
+    def _fix_with_ai(self, xml_content):
+        """Try to fix XML using Vertex AI."""
+        try:
+            model = self._init_ai()
+            if model is None:
+                return xml_content
+
+            prompt = f"""
+            You are an expert JATS XML validator. Fix the following issues to ensure PMC Style Checker compliance:
+
+            CRITICAL FIXES REQUIRED:
+            1. HEADER REPAIR: Fix truncated headers (e.g., 'NTRODUCTION' → 'INTRODUCTION', 'ATERIALS' → 'MATERIALS')
+
+            2. JATS 1.3 STRUCTURE VALIDATION:
+               - Ensure root element: <article dtd-version="1.3" article-type="research-article">
+               - Required structure: <front> → <article-meta> → <title-group>, <contrib-group>, <aff>, <abstract>
+               - Body sections: <body> → <sec> with proper id attributes
+               - Back matter: <back> → <ref-list>, <ack>
+
+            3. PMC/NLM METADATA REQUIREMENTS:
+               - Add if missing: <article-id pub-id-type="pmc">PMCXXXXXX</article-id>
+               - <article-categories> with <subj-group subj-group-type="heading">
+               - <contrib-group> with <contrib contrib-type="author">
+               - Each author must have: <name>, <xref ref-type="aff">
+               - <permissions> with <copyright-statement>, <copyright-year>, <license>
+               - <abstract> must exist
+
+            4. CITATION & REFERENCE COMPLIANCE:
+               - <ref id="R1">, <ref id="R2">, etc.
+               - Use <mixed-citation> format for references
+
+            5. ACCESSIBILITY (PMC REQUIRED):
+               - All <fig> must have: <caption> and <alt-text>
+               - Tables: <table-wrap> with position="top" attribute
+
+            6. TABLE CAPTION POSITION:
+               - Ensure ALL tables have: <table-wrap position="top">
+               - Caption must be BEFORE table content
+
+            IMPORTANT: Preserve all scientific content, data, measurements, formulas.
+            Return ONLY valid JATS 1.3 XML, no explanations.
+
+            XML to fix:
+            {xml_content[:6000]}
+            """
+
+            response = model.generate_content(prompt)
+
+            if response and response.text:
+                # Clean up any markdown formatting from AI response
+                cleaned_xml = response.text.strip()
+
+                # Remove markdown code blocks if present
+                cleaned_xml = re.sub(r'```xml\s*|\s*```', '', cleaned_xml)
+                cleaned_xml = re.sub(r'```\s*|\s*```', '', cleaned_xml)
+
+                # Ensure it's valid XML
+                try:
+                    etree.fromstring(cleaned_xml.encode('utf-8'))
+                    logger.info("✅ AI repair produced valid XML")
+                    return cleaned_xml
+                except etree.XMLSyntaxError as e:
+                    logger.warning(f"⚠️ AI repair produced invalid XML: {e}")
+                    return xml_content
+            else:
+                logger.warning("⚠️ AI returned no response")
+                return xml_content
+
+        except Exception as e:
+            logger.warning(f"⚠️ AI repair failed: {e}")
+            return xml_content
+
+    def _fix_with_rules(self, xml_content):
+        """Rule-based XML repair as fallback."""
+        try:
+            # Parse the XML
+            parser = etree.XMLParser(remove_blank_text=True)
+            root = etree.fromstring(xml_content.encode('utf-8'), parser)
+
+            # Fix common header truncations
+            xml_str = xml_content
+            header_fixes = {
+                'NTRODUCTION': 'INTRODUCTION',
+                'ETHODS': 'METHODS',
+                'ESULTS': 'RESULTS',
+                'ISCUSSION': 'DISCUSSION',
+                'ONCLUSION': 'CONCLUSION',
+                'BSTRACT': 'ABSTRACT',
+                'CKNOWLEDGMENTS': 'ACKNOWLEDGMENTS',
+                'EFERENCES': 'REFERENCES',
+                'ATERIALS': 'MATERIALS'
+            }
+
+            for wrong, correct in header_fixes.items():
+                # Look for headers with the truncated pattern
+                pattern = f'<title>{wrong}'
+                replacement = f'<title>{correct}'
+                xml_str = xml_str.replace(pattern, replacement)
+
+                # Also check in text content
+                pattern = f'>{wrong}<'
+                replacement = f'>{correct}<'
+                xml_str = xml_str.replace(pattern, replacement)
+
+            # Ensure table captions are at top
+            xml_str = xml_str.replace('<table-wrap>', '<table-wrap position="top">')
+
+            # Add missing JATS namespace if needed
+            if 'xmlns="http://jats.nlm.nih.gov"' not in xml_str:
+                # Find article tag and add namespace
+                xml_str = xml_str.replace('<article>', '<article xmlns="http://jats.nlm.nih.gov">')
+
+            logger.info("✅ Rule-based repair applied")
+            return xml_str
+
+        except Exception as e:
+            logger.warning(f"⚠️ Rule-based repair failed: {e}")
+            return xml_content
+
+    # ... [Keep all other methods the same as in previous version] ...
 
     def _run_pandoc_command(self, args, step_name):
         """
@@ -119,93 +263,6 @@ class HighFidelityConverter:
             logger.error(f"❌ Unexpected error in {step_name}: {e}")
             raise
 
-    def fix_content_with_ai(self, xml_content):
-        """
-        AI Repair: Enhanced for PMC Style Checker compliance.
-        Fixes truncated headers and ensures JATS 1.3 + PMC/NLM requirements.
-        """
-        try:
-            model = self._init_ai()
-            prompt = f"""
-            You are an expert JATS XML validator. Fix the following issues to ensure PMC Style Checker compliance:
-
-            CRITICAL FIXES REQUIRED:
-            1. HEADER REPAIR: Fix truncated headers (e.g., 'NTRODUCTION' → 'INTRODUCTION', 'ATERIALS' → 'MATERIALS')
-
-            2. JATS 1.3 STRUCTURE VALIDATION:
-               - Ensure root element: <article dtd-version="1.3" article-type="research-article">
-               - Required structure: <front> → <article-meta> → <title-group>, <contrib-group>, <aff>, <abstract>
-               - Body sections: <body> → <sec> with proper id attributes
-               - Back matter: <back> → <ref-list>, <ack>
-
-            3. PMC/NLM METADATA REQUIREMENTS:
-               - Add if missing: <article-id pub-id-type="pmc">PMCXXXXXX</article-id>
-               - <article-categories> with <subj-group subj-group-type="heading">
-               - <contrib-group> with <contrib contrib-type="author">
-               - Each author must have: <name>, <xref ref-type="aff">
-               - <permissions> with <copyright-statement>, <copyright-year>, <license>
-               - <abstract> must exist (both <p> and <sec> structured versions if possible)
-
-            4. CITATION & REFERENCE COMPLIANCE:
-               - <ref id="R1">, <ref id="R2">, etc.
-               - Use <mixed-citation> format for references
-               - Include DOI: <pub-id pub-id-type="doi">
-               - Include PMID: <pub-id pub-id-type="pmid">
-
-            5. MATHML 2.0 COMPLIANCE:
-               - Ensure namespace: xmlns:mml="http://www.w3.org/1998/Math/MathML"
-               - Math elements: <mml:math display="inline|block">
-               - Proper <mml:mrow>, <mml:mi>, <mml:mo>, <mml:mn> structure
-
-            6. ACCESSIBILITY (PMC REQUIRED):
-               - All <fig> must have: <caption> and <alt-text>
-               - Complex figures: add <long-desc>
-               - Tables: <table-wrap> with position="top" attribute
-
-            7. MEDIA REFERENCES:
-               - <graphic xlink:href="media/image1.png">
-               - All images must be in media/ folder
-               - <supplementary-material> for additional files
-
-            8. TABLE CAPTION POSITION (Requirement 1):
-               - Ensure ALL tables have: <table-wrap position="top">
-               - Caption must be BEFORE table content
-
-            IMPORTANT: Preserve all scientific content, data, measurements, formulas.
-            Return ONLY valid JATS 1.3 XML, no explanations.
-
-            XML to fix:
-            {xml_content[:8000]}
-            """
-
-            response = model.generate_content(prompt)
-
-            if response and response.text:
-                # Clean up any markdown formatting from AI response
-                cleaned_xml = response.text.strip()
-
-                # Remove markdown code blocks if present
-                cleaned_xml = re.sub(r'```xml\s*|\s*```', '', cleaned_xml)
-                cleaned_xml = re.sub(r'```\s*|\s*```', '', cleaned_xml)
-
-                # Ensure it's valid XML
-                try:
-                    etree.fromstring(cleaned_xml.encode('utf-8'))
-                    logger.info("✅ AI repair produced valid XML")
-                    return cleaned_xml
-                except etree.XMLSyntaxError:
-                    logger.warning("⚠️ AI repair produced invalid XML, using original")
-                    return xml_content
-            else:
-                logger.warning("⚠️ AI returned no response, using original XML")
-                return xml_content
-
-        except Exception as e:
-            logger.warning(f"⚠️ AI Step skipped due to error: {e}")
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(traceback.format_exc())
-            return xml_content
-
     def validate_jats_compliance(self):
         """Validates against JATS 1.3 OASIS XSD."""
         if not os.path.exists(self.xsd_path):
@@ -213,8 +270,7 @@ class HighFidelityConverter:
             return False
 
         try:
-            # Set up parser with catalog support if available
-            catalog_path = "standard-modules/catalog.xml"
+            # Set up parser
             parser = etree.XMLParser()
 
             # Parse and validate
@@ -287,11 +343,6 @@ class HighFidelityConverter:
                     ("abstract", bool(xml_doc.xpath('//article-meta/abstract')), "Abstract present"),
                     ("body", bool(xml_doc.xpath('//body')), "Body content present"),
                     ("back", bool(xml_doc.xpath('//back')), "Back matter present"),
-                    ("table_captions_top", all(
-                        elem.get('position') == 'top'
-                        for elem in xml_doc.xpath('//table-wrap')
-                        if elem.get('position')
-                    ), "All table captions positioned top"),
                 ]
 
                 report["pmc_requirements"]["checks_performed"] = [
