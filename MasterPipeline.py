@@ -27,6 +27,7 @@ class HighFidelityConverter:
 
         # Define file paths AFTER directories exist
         self.xml_path = os.path.join(self.output_dir, "article.xml")
+        self.xml_dtd_path = os.path.join(self.output_dir, "articledtd.xml")
         self.html_path = os.path.join(self.output_dir, "article.html")
         self.pdf_path = os.path.join(self.output_dir, "published_article.pdf")
         self.direct_pdf_path = os.path.join(self.output_dir, "direct_from_word.pdf")
@@ -962,6 +963,114 @@ class HighFidelityConverter:
             import traceback
             logger.warning(f"Traceback: {traceback.format_exc()}")
 
+    def _generate_articledtd_xml(self):
+        """
+        Generate articledtd.xml with DOCTYPE declaration for PMC Style Checker.
+        
+        This creates a separate XML file that includes the DOCTYPE declaration
+        required by PMC Style Checker, while keeping article.xml without DOCTYPE
+        for XSD validation purposes.
+        """
+        try:
+            # Import the add_doctype utility
+            import sys
+            tools_path = os.path.join(os.path.dirname(__file__), 'tools')
+            if tools_path not in sys.path:
+                sys.path.insert(0, tools_path)
+            
+            from add_doctype import add_doctype_declaration
+            
+            # Generate articledtd.xml with DOCTYPE
+            success = add_doctype_declaration(
+                self.xml_path,
+                self.xml_dtd_path,
+                self.jats_version
+            )
+            
+            if success:
+                logger.info(f"✅ Generated articledtd.xml with JATS {self.jats_version} DOCTYPE declaration")
+            else:
+                logger.warning("⚠️ Failed to generate articledtd.xml")
+                
+        except ImportError as e:
+            logger.warning(f"⚠️ Could not import add_doctype utility: {e}")
+            logger.warning("Attempting to generate articledtd.xml directly...")
+            self._generate_articledtd_xml_fallback()
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to generate articledtd.xml: {e}")
+            import traceback
+            logger.warning(f"Traceback: {traceback.format_exc()}")
+
+    def _generate_articledtd_xml_fallback(self):
+        """
+        Fallback method to generate articledtd.xml without importing add_doctype.
+        """
+        try:
+            # Import DOCTYPE declarations from add_doctype utility
+            import sys
+            tools_path = os.path.join(os.path.dirname(__file__), 'tools')
+            if tools_path not in sys.path:
+                sys.path.insert(0, tools_path)
+            
+            try:
+                from add_doctype import DOCTYPE_DECLARATIONS
+                doctype_declarations = DOCTYPE_DECLARATIONS
+            except ImportError:
+                # Final fallback: inline DOCTYPE declarations
+                doctype_declarations = {
+                    "1.4": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.4 20240930//EN" "https://jats.nlm.nih.gov/publishing/1.4/JATS-journalpublishing1-4.dtd">',
+                    "1.3": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN" "https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.dtd">',
+                    "1.2": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN" "https://jats.nlm.nih.gov/publishing/1.2/JATS-journalpublishing1-2.dtd">',
+                    "1.1": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1-1.dtd">',
+                    "1.0": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.0 20120330//EN" "https://jats.nlm.nih.gov/publishing/1.0/JATS-journalpublishing1.dtd">',
+                }
+            
+            # Get the appropriate DOCTYPE for the version
+            doctype = doctype_declarations.get(self.jats_version, doctype_declarations["1.3"])
+            
+            # Parse the existing XML
+            tree = etree.parse(self.xml_path)
+            
+            # Convert to string with XML declaration
+            xml_content = etree.tostring(
+                tree,
+                pretty_print=True,
+                xml_declaration=True,
+                encoding='utf-8'
+            ).decode('utf-8')
+            
+            # Split the XML declaration and content
+            lines = xml_content.split('\n')
+            xml_declaration_line = None
+            content_start_idx = 0
+            
+            for idx, line in enumerate(lines):
+                if line.strip().startswith('<?xml'):
+                    xml_declaration_line = line
+                    content_start_idx = idx + 1
+                    break
+            
+            # Construct output with DOCTYPE
+            output_lines = []
+            if xml_declaration_line:
+                output_lines.append(xml_declaration_line)
+            output_lines.append(doctype)
+            output_lines.extend(lines[content_start_idx:])
+            
+            output_content = '\n'.join(output_lines)
+            
+            # Write to articledtd.xml
+            with open(self.xml_dtd_path, 'w', encoding='utf-8') as f:
+                f.write(output_content)
+            
+            logger.info(f"✅ Generated articledtd.xml with JATS {self.jats_version} DOCTYPE declaration (fallback)")
+            
+        except Exception as e:
+            logger.error(f"Failed to generate articledtd.xml (fallback): {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+
+
     def _create_fallback_pdf(self, pdf_path, message):
         """Create a simple fallback PDF when WeasyPrint fails."""
         try:
@@ -1005,13 +1114,14 @@ class HighFidelityConverter:
 
                 f.write("GENERATED FILES:\n")
                 f.write("-" * 50 + "\n")
-                f.write("1. article.xml           - JATS 1.4 Publishing DTD XML\n")
-                f.write("2. published_article.pdf - PDF generated from JATS XML\n")
-                f.write("3. direct_from_word.pdf  - Direct DOCX→PDF conversion\n")
-                f.write("4. article.html          - HTML version for web viewing\n")
-                f.write("5. media/                - Extracted images and media files\n")
-                f.write("6. validation_report.json- Comprehensive validation report\n")
-                f.write("7. README.txt            - This file\n\n")
+                f.write("1. article.xml           - JATS {0} Publishing DTD XML (without DOCTYPE)\n".format(self.jats_version))
+                f.write("2. articledtd.xml        - JATS XML with DOCTYPE for PMC Style Checker\n")
+                f.write("3. published_article.pdf - PDF generated from JATS XML\n")
+                f.write("4. direct_from_word.pdf  - Direct DOCX→PDF conversion\n")
+                f.write("5. article.html          - HTML version for web viewing\n")
+                f.write("6. media/                - Extracted images and media files\n")
+                f.write("7. validation_report.json- Comprehensive validation report\n")
+                f.write("8. README.txt            - This file\n\n")
 
                 f.write("COMPLIANCE INFORMATION:\n")
                 f.write("-" * 50 + "\n")
@@ -1027,15 +1137,17 @@ class HighFidelityConverter:
 
                 f.write("PMC SUBMISSION CHECKLIST:\n")
                 f.write("-" * 50 + "\n")
-                f.write("1. ✓ Validate with PMC Style Checker:\n")
+                f.write("1. ✓ Use articledtd.xml for PMC Style Checker validation:\n")
                 f.write("   https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/\n")
-                f.write("2. ✓ Review validation_report.json for warnings\n")
-                f.write("3. ✓ Verify DOI and article metadata are complete\n")
-                f.write("4. ✓ Check author affiliations and ORCID IDs\n")
-                f.write("5. ✓ Ensure all figures have captions and alt text\n")
-                f.write("6. ✓ Verify references are properly formatted\n")
-                f.write("7. ✓ Review table formatting (captions, structure)\n")
-                f.write("8. ✓ Validate special characters and math notation\n\n")
+                f.write("   (articledtd.xml includes DOCTYPE declaration required by PMC)\n")
+                f.write("2. ✓ Use article.xml for XSD validation\n")
+                f.write("3. ✓ Review validation_report.json for warnings\n")
+                f.write("4. ✓ Verify DOI and article metadata are complete\n")
+                f.write("5. ✓ Check author affiliations and ORCID IDs\n")
+                f.write("6. ✓ Ensure all figures have captions and alt text\n")
+                f.write("7. ✓ Verify references are properly formatted\n")
+                f.write("8. ✓ Review table formatting (captions, structure)\n")
+                f.write("9. ✓ Validate special characters and math notation\n\n")
 
                 f.write("TECHNICAL DETAILS:\n")
                 f.write("-" * 50 + "\n")
@@ -1118,6 +1230,9 @@ class HighFidelityConverter:
             
             # Post-process XML for JATS compliance
             self._post_process_xml()
+            
+            # Generate articledtd.xml with DOCTYPE declaration for PMC Style Checker
+            self._generate_articledtd_xml()
             
         except Exception as e:
             logger.error(f"Failed to convert DOCX to JATS XML: {e}")
@@ -1270,6 +1385,8 @@ class HighFidelityConverter:
         logger.info(f"Output directory: {self.output_dir}")
         logger.info(f"Files generated:")
         logger.info(f"  - JATS XML: {os.path.getsize(self.xml_path):,} bytes")
+        if os.path.exists(self.xml_dtd_path):
+            logger.info(f"  - JATS XML with DOCTYPE: {os.path.getsize(self.xml_dtd_path):,} bytes")
         logger.info(f"  - HTML: {os.path.getsize(self.html_path):,} bytes")
         logger.info(f"  - JATS PDF: {os.path.getsize(self.pdf_path):,} bytes")
         logger.info(f"  - Direct PDF: {os.path.getsize(self.direct_pdf_path):,} bytes")

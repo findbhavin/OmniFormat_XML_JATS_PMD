@@ -70,7 +70,9 @@ Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM
 │   ├── xlink.xsd             # XLink schema
 │   └── xml.xsd               # XML namespace schema
 └── tools/
-    └── safe_render.py         # Validation and rendering tool
+    ├── safe_render.py         # Validation and rendering tool
+    ├── add_doctype.py         # DOCTYPE declaration utility for PMC validation
+    └── direct_pdf_converter.py # Direct PDF conversion utility
 ```
 
 ## JATS 1.4 and PMC Compliance Features
@@ -139,19 +141,20 @@ Figures include:
 
 Each conversion generates a complete package:
 
-1. **article.xml** - JATS 1.4 Publishing DTD XML with xsi:schemaLocation
-2. **published_article.pdf** - PDF from JATS XML
-3. **direct_from_word.pdf** - Direct DOCX conversion
-4. **article.html** - HTML version
-5. **media/** - All extracted images
-6. **validation_report.json** - Detailed validation report with:
+1. **article.xml** - JATS 1.4 Publishing DTD XML with xsi:schemaLocation (without DOCTYPE for XSD validation)
+2. **articledtd.xml** - JATS 1.4 Publishing DTD XML with DOCTYPE declaration (for PMC Style Checker validation)
+3. **published_article.pdf** - PDF from JATS XML
+4. **direct_from_word.pdf** - Direct DOCX conversion
+5. **article.html** - HTML version
+6. **media/** - All extracted images
+7. **validation_report.json** - Detailed validation report with:
    - JATS schema validation results
    - PMC compliance check results
    - PMC Style Checker results (if available)
    - Critical issues and warnings
    - Document structure analysis
    - PMC submission checklist
-7. **README.txt** - Package documentation
+8. **README.txt** - Package documentation
 
 ## Validation Report
 
@@ -265,9 +268,13 @@ curl http://localhost:8080/health
 1. Convert document using OmniJAX
 2. Review `validation_report.json`
 3. Fix any critical issues identified
-4. Validate using PMC Style Checker: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
-5. Review warnings and recommendations
-6. Submit to PMC
+4. **Use articledtd.xml for PMC Style Checker validation**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+   - articledtd.xml includes the DOCTYPE declaration required by PMC Style Checker
+   - Upload this file to avoid "Validation failed: no DTD found" errors
+5. **Use article.xml for XSD validation** and other schema-based validators
+   - article.xml is optimized for XSD validation (without DOCTYPE declaration)
+6. Review warnings and recommendations
+7. Submit to PMC
 
 ## Technical Requirements
 
@@ -465,7 +472,8 @@ To test the new async UI and PMC style check:
    - `article.xml` - Now includes xsi:schemaLocation for external validators
 
 5. **Validate with external PMC Style Checker:**
-   - Upload `article.xml` to https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+   - Upload `articledtd.xml` to https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+   - articledtd.xml includes DOCTYPE declaration required by PMC Style Checker
    - Should not see "DTD not found" errors
    - Should validate successfully
 
@@ -486,3 +494,28 @@ To test the new async UI and PMC style check:
 - Verify `xsi:schemaLocation` is in article.xml
 - Check that namespace declarations are present
 - Validate XML is well-formed: `xmllint --noout article.xml`
+
+## DOCTYPE Utility Script
+
+The `tools/add_doctype.py` utility script can be used to add DOCTYPE declarations to existing JATS XML files:
+
+```bash
+# Add DOCTYPE to article.xml and save as articledtd.xml (JATS 1.4)
+python tools/add_doctype.py article.xml
+
+# Specify custom output path
+python tools/add_doctype.py article.xml -o output/article_with_dtd.xml
+
+# Specify JATS version 1.3
+python tools/add_doctype.py article.xml -v 1.3
+
+# Full example with all options
+python tools/add_doctype.py input/article.xml --output output/articledtd.xml --version 1.4
+```
+
+**When to use:**
+- When you need to validate an existing XML file with PMC Style Checker
+- When you have article.xml without DOCTYPE and need to add it
+- When you need a specific JATS version DOCTYPE (supports 1.0-1.4)
+
+**Note:** The MasterPipeline automatically generates both article.xml (without DOCTYPE) and articledtd.xml (with DOCTYPE) during conversion, so you typically don't need to run this script manually.
