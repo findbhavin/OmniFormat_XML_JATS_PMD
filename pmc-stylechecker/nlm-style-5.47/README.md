@@ -1,43 +1,57 @@
-# NLM Style Checker 5.47 - Official PMC Bundle
+# PMC nlm-style-5.47 Bundle Directory
 
-This directory contains the official PMC Style Checker XSLT files (nlm-style-5.47).
+This directory is intended to contain the official PMC Style Checker XSLT bundle (version 5.47).
 
-## Installation
+## Download Instructions
 
-The files in this directory should be populated by running:
+To obtain the official bundle, run:
 
 ```bash
 ./tools/fetch_pmc_style.sh
 ```
 
-This will download and extract the official nlm-style-5.47.tar.gz bundle from:
-https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+Or manually download from:
+- **URL**: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+- **Official Site**: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
 
-## Expected Files
+## Expected Contents
 
-After running the fetch script, this directory should contain:
-- `nlm-stylechecker.xsl` - Main style checker XSLT
-- Additional supporting XSLT files as included in the official bundle
-- LICENSE or attribution files from the bundle
-
-## About
-
-The NLM Style Checker is an XSLT-based validation tool provided by the National Library of Medicine for checking JATS XML compliance with PMC submission requirements.
-
-- **Version**: 5.47
-- **Source**: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
-- **Official Documentation**: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-- **License**: Public domain (US Government work)
+After extraction, this directory should contain:
+- `nlm-stylechecker.xsl` - Main style checker XSLT (or similar versioned file)
+- Supporting XSLT files and dependencies
+- LICENSE file (Public Domain - US Government Work)
+- README or documentation files
 
 ## Integration
 
-The MasterPipeline.py automatically detects and uses these XSLT files during the JATS validation phase.
+The MasterPipeline.py will automatically detect and use XSLT files from this directory when performing PMC style checking during JATS XML conversion.
 
-## Manual Installation
+## Requirements
 
-If the automatic fetch script fails, you can manually:
+To use the style checker, you need `xsltproc` installed:
 
-1. Download: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
-2. Extract the archive
-3. Copy all .xsl files to this directory
-4. Preserve the directory structure from the archive where practical
+```bash
+# Ubuntu/Debian
+sudo apt-get install xsltproc
+
+# macOS
+brew install libxslt
+
+# Alpine Linux (Docker)
+apk add libxslt
+```
+
+## Manual Usage
+
+Once the bundle is downloaded, you can run the style checker manually:
+
+```bash
+xsltproc pmc-stylechecker/nlm-style-5.47/nlm-stylechecker.xsl output/article.xml > pmc_style_report.html 2> pmc_style_error.log
+```
+
+## Notes
+
+- The bundle is not included in the repository due to size considerations
+- The fetch script handles idempotent downloads
+- If download fails, manual extraction is straightforward
+- All files from the official bundle maintain their original structure and licensing

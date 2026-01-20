@@ -2,48 +2,85 @@
 
 This directory contains XSLT files for PMC (PubMed Central) style checking.
 
-## Official NLM Style Checker 5.47 Bundle
+## Official PMC nlm-style-5.47 Bundle
 
-As of this release, the repository now includes support for the official PMC Style Checker XSLT bundle (nlm-style-5.47).
+**As of this version**, the official PMC Style Checker XSLT bundle (nlm-style-5.47) has been integrated into this repository. 
 
-### Installation
+### Download and Setup
 
-To install the official nlm-style-5.47 bundle, run:
+To download and extract the official bundle:
 
 ```bash
 ./tools/fetch_pmc_style.sh
 ```
 
-This will download and extract files into `pmc-stylechecker/nlm-style-5.47/` from:
-- **Source URL**: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+This will:
+- Download the official bundle from: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+- Extract files to `pmc-stylechecker/nlm-style-5.47/`
+- Preserve the original directory structure and LICENSE attribution
+- Check idempotently (won't re-download if already present)
 
-### Manual Installation
+### Manual Download
 
-If the automatic script fails (e.g., network restrictions):
+If the script fails or you prefer manual download:
+1. Visit: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+2. Download and extract the archive
+3. Copy contents to `pmc-stylechecker/nlm-style-5.47/`
 
-1. Download the archive from the URL above
-2. Extract the tar.gz file
-3. Copy all `.xsl` files to `pmc-stylechecker/nlm-style-5.47/`
-4. Preserve the directory structure from the archive
-5. Keep any LICENSE or documentation files
+## Files in This Directory
 
-## Files
-
-- `nlm-style-5.47/` - Official NLM Style Checker 5.47 bundle (installed via fetch script)
 - `pmc_style_checker.xsl` - Simplified PMC style checker for basic compliance validation (fallback)
+- `nlm-style-5.47/` - Official PMC Style Checker XSLT bundle (downloaded via fetch_pmc_style.sh)
+- `README.md` - This file
 
-## About PMC Style Checker
+## Requirements
 
-The PMC Style Checker is an XSLT-based validation tool provided by the National Library of Medicine (NLM) that checks JATS XML files for compliance with PMC submission requirements.
+The style checker requires **xsltproc** (an XSLT 1.0 processor):
 
-- **Official Documentation**: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-- **Tagging Guidelines**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
-- **Version**: 5.47
-- **License**: Public domain (US Government work)
+```bash
+# Ubuntu/Debian
+sudo apt-get install xsltproc
+
+# macOS
+brew install libxslt
+
+# Alpine Linux (Docker)
+apk add libxslt
+```
+
+## XSLT Processor Compatibility
+
+- **XSLT 1.0**: The official PMC stylesheets are designed for XSLT 1.0 processors like `xsltproc`
+- **XSLT 2.0**: If you need XSLT 2.0 features, consider using **Saxon** processor:
+  ```bash
+  # Example with Saxon-HE (Java-based)
+  java -jar saxon-he.jar -s:article.xml -xsl:nlm-stylechecker.xsl -o:report.html
+  ```
+- **Recommendation**: Use `xsltproc` for best compatibility with official PMC stylesheets
+
+## Manual Usage
+
+Run the style checker manually on any JATS XML file:
+
+```bash
+# Using xsltproc (recommended)
+xsltproc pmc-stylechecker/nlm-style-5.47/nlm-stylechecker.xsl output/article.xml > pmc_style_report.html 2> pmc_style_error.log
+
+# Or use the simplified checker
+xsltproc pmc-stylechecker/pmc_style_checker.xsl output/article.xml > pmc_style_report.html
+```
 
 ## Purpose
 
-The style checker performs comprehensive PMC compliance checks including:
+The official PMC style checker performs comprehensive compliance checks including:
+- DTD version verification
+- Article structure validation
+- Metadata completeness checks
+- Reference formatting validation
+- Figure and table compliance
+- And many more PMC-specific requirements
+
+The simplified `pmc_style_checker.xsl` performs basic checks and is used as a fallback:
 - DTD version verification
 - Article type validation
 - DOI presence check
@@ -54,116 +91,49 @@ The style checker performs comprehensive PMC compliance checks including:
 - Author and affiliation formatting
 - And many more PMC-specific requirements
 
-## Usage
+## Automated Integration
 
-### Automatic Integration
+The style checker is automatically run during the JATS validation phase of the conversion pipeline:
 
-The style checker is automatically run during the JATS validation phase of the conversion pipeline. Results are included in the `validation_report.json` file.
+1. **XSLT File Selection**: MasterPipeline.py searches for XSLT files in this order:
+   - `nlm-style-5.47/nlm-stylechecker.xsl` (preferred - official)
+   - `nlm-style-5.47/*.xsl` (highest version number)
+   - Repo root: `nlm-style-5-0.xsl`, `nlm-style-3-0.xsl`, `nlm-stylechecker.xsl`
+   - `pmc_style_checker.xsl` (simplified fallback)
 
-### Manual Usage with xsltproc
+2. **Execution**: Uses `xsltproc` subprocess with captured stdout/stderr
 
-You can run the style checker manually on any JATS XML file:
+3. **Results**: Included in `validation_report.json` under the `pmc_stylechecker` key with:
+   - `xslt_stdout`: XSLT transformation output
+   - `xslt_stderr`: Any errors or warnings
+   - `returncode`: Exit code from xsltproc
+   - `xslt_used`: Which XSLT file was used
+   - `status`: Overall status (PASS/FAIL/ERROR)
 
-```bash
-# Using the official nlm-style-5.47 bundle
-xsltproc pmc-stylechecker/nlm-style-5.47/nlm-stylechecker.xsl article.xml > pmc_style_report.html
+4. **Defensive Behavior**: If xsltproc is not found or XSLT fails, conversion continues with a warning
 
-# Using the simplified checker (fallback)
-xsltproc pmc-stylechecker/pmc_style_checker.xsl article.xml > pmc_style_report.html
-```
+## Online PMC Style Checker
 
-### Requirements
+For interactive validation and the most up-to-date checks:
+- **URL**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+- **Documentation**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
 
-- **xsltproc**: Recommended for best compatibility (XSLT 1.0)
-  ```bash
-  # Ubuntu/Debian
-  sudo apt-get install xsltproc
-  
-  # macOS
-  brew install libxslt
-  
-  # Alpine Linux (Docker)
-  apk add libxslt
-  ```
+## Refreshing the Bundle
 
-- **Saxon**: Alternative for XSLT 2.0 features (if needed)
-  ```bash
-  # Download from https://www.saxonica.com/
-  java -jar saxon.jar -s:article.xml -xsl:nlm-stylechecker.xsl -o:report.html
-  ```
+To update to a newer version when PMC releases updates:
 
-## Integration Details
+1. Remove the old bundle:
+   ```bash
+   rm -rf pmc-stylechecker/nlm-style-5.47
+   ```
 
-The XSLT transformation is applied in `MasterPipeline.py`:
+2. Update the URL in `tools/fetch_pmc_style.sh` if needed
 
-- **Method**: `_run_pmc_stylechecker()`
-- **Search Order**:
-  1. `nlm-style-5.47/nlm-stylechecker.xsl` (official bundle - highest priority)
-  2. `nlm-style-5-0.xsl` (legacy official)
-  3. `nlm-style-3-0.xsl` (legacy official)
-  4. `nlm-stylechecker.xsl` (legacy official)
-  5. `pmc_style_checker.xsl` (simplified fallback)
-- **Processor**: Uses `xsltproc` if available, falls back to Python's `lxml`
-- **Defensive**: If xsltproc or XSLT file is missing, conversion continues with a warning
-- **Output**: HTML report saved to output directory, results parsed and included in validation_report.json
-- **Error Handling**: Captures stderr and includes it in the result dictionary
-
-## XSLT Compatibility Notes
-
-- **XSLT 1.0**: Fully supported by both xsltproc and lxml
-- **XSLT 2.0**: Requires Saxon processor
-- The official NLM Style Checker uses XSLT 1.0, so xsltproc is recommended
-- If you encounter compatibility issues, try using Saxon instead
-
-## Running Locally
-
-To test the style checker locally on your JATS XML:
-
-```bash
-# 1. Ensure you have xsltproc installed
-which xsltproc
-
-# 2. Install the official bundle (if not already done)
-./tools/fetch_pmc_style.sh
-
-# 3. Run the checker on your XML file
-xsltproc pmc-stylechecker/nlm-style-5.47/nlm-stylechecker.xsl your_article.xml > report.html
-
-# 4. Open the report in a browser
-open report.html  # macOS
-xdg-open report.html  # Linux
-```
-
-## Troubleshooting
-
-**Style check not running?**
-- Check if xsltproc is installed: `which xsltproc`
-- Check if XSLT file exists: `ls -l pmc-stylechecker/nlm-style-5.47/`
-- Check conversion logs for warnings
-- Run `./tools/fetch_pmc_style.sh` to install
-
-**Download failed?**
-- Manual download is available from the PMC website
-- Check network connectivity and proxy settings
-- Placeholder file provides installation instructions
-
-**Style check errors?**
-- Review the generated `pmc_style_report.html` in the output package
-- Check `validation_report.json` for error counts and details
-- Consult PMC tagging guidelines for specific requirements
-
-**xsltproc not found?**
-- The pipeline falls back to lxml if xsltproc is not available
-- For best results, install xsltproc (see Requirements section)
+3. Run the fetch script:
+   ```bash
+   ./tools/fetch_pmc_style.sh
+   ```
 
 ## Note
 
-This is the official implementation for comprehensive PMC compliance checking. For final PMC submission validation, always verify with the online PMC Style Checker tool at https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
-
-## References
-
-- PMC Style Checker Online: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-- PMC Tagging Guidelines: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
-- JATS Standard: https://jats.nlm.nih.gov/
-- NLM DTD Repository: https://dtd.nlm.nih.gov/
-
+For final PMC submission validation, always verify using the official online PMC Style Checker tool. This local integration is for development and preliminary checking.
