@@ -346,9 +346,12 @@ class HighFidelityConverter:
 
             # Perform additional PMC-specific checks
             pmc_passed = self._validate_pmc_requirements(doc)
+            
+            # Run PMC style checker if available
+            pmc_style_check = self._run_pmc_style_check()
 
             # Generate comprehensive validation report
-            self._generate_validation_report(doc, True, pmc_passed=pmc_passed)
+            self._generate_validation_report(doc, True, pmc_passed=pmc_passed, pmc_style_check=pmc_style_check)
             return True
 
         except etree.XMLSchemaError as e:
@@ -509,7 +512,74 @@ class HighFidelityConverter:
             logger.error(f"PMC validation check failed: {e}")
             return {"passed": False, "error": str(e)}
 
-    def _generate_validation_report(self, xml_doc, passed, error_msg=None, pmc_passed=None):
+    def _run_pmc_style_check(self):
+        """
+        Run PMC Style Checker XSLT if available.
+        Returns dict with style check results or None if not available.
+        """
+        try:
+            # Check if xsltproc is available
+            xsltproc_check = subprocess.run(
+                ['which', 'xsltproc'],
+                capture_output=True,
+                text=True
+            )
+            
+            if xsltproc_check.returncode != 0:
+                logger.warning("⚠️ xsltproc not found, skipping PMC style check")
+                return None
+            
+            # Check if PMC style check XSLT exists
+            pmc_style_xsl = "tools/pmc_style/nlm-stylechecker.xsl"
+            if not os.path.exists(pmc_style_xsl):
+                logger.warning(f"⚠️ PMC style checker not found at {pmc_style_xsl}, skipping")
+                logger.info("💡 Run tools/fetch_pmc_style.sh to download PMC style checker")
+                return None
+            
+            # Run style checker
+            logger.info("Running PMC Style Checker...")
+            output_html = os.path.join(self.output_dir, "pmc_style_report.html")
+            
+            result = subprocess.run(
+                ['xsltproc', pmc_style_xsl, self.xml_path],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode == 0 and result.stdout:
+                # Save HTML report
+                with open(output_html, 'w', encoding='utf-8') as f:
+                    f.write(result.stdout)
+                
+                logger.info(f"✅ PMC style check completed: {output_html}")
+                
+                # Parse results for summary
+                errors_count = result.stdout.count('<span class="error">')
+                warnings_count = result.stdout.count('<span class="warning">')
+                
+                return {
+                    "status": "completed",
+                    "report_file": "pmc_style_report.html",
+                    "errors_count": errors_count,
+                    "warnings_count": warnings_count,
+                    "summary": f"{errors_count} errors, {warnings_count} warnings"
+                }
+            else:
+                logger.warning(f"⚠️ PMC style check failed: {result.stderr[:200]}")
+                return {
+                    "status": "failed",
+                    "error": result.stderr[:200] if result.stderr else "Unknown error"
+                }
+                
+        except subprocess.TimeoutExpired:
+            logger.warning("⚠️ PMC style check timed out")
+            return {"status": "timeout", "error": "Style check timed out after 60 seconds"}
+        except Exception as e:
+            logger.warning(f"⚠️ PMC style check error: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def _generate_validation_report(self, xml_doc, passed, error_msg=None, pmc_passed=None, pmc_style_check=None):
         """Generate detailed validation report for PMC compliance."""
         report_path = os.path.join(self.output_dir, "validation_report.json")
 
@@ -537,6 +607,16 @@ class HighFidelityConverter:
             },
             "recommendations": []
         }
+        
+        # Add PMC style check results if available
+        if pmc_style_check:
+            report["pmc_style_check"] = pmc_style_check
+            if pmc_style_check.get("status") == "completed":
+                report["output_files"]["pmc_style_report"] = pmc_style_check.get("report_file")
+                if pmc_style_check.get("errors_count", 0) > 0:
+                    report["recommendations"].append(
+                        f"PMC style check found {pmc_style_check['errors_count']} errors. Review pmc_style_report.html"
+                    )
 
         # Add PMC compliance details
         if pmc_passed:
@@ -639,6 +719,21 @@ class HighFidelityConverter:
                         '<article',
                         '<article xmlns:mml="http://www.w3.org/1998/Math/MathML"'
                     )
+                
+                # Inject xsi:schemaLocation for external validator compatibility
+                # This points to the public JATS XSD so external validators can resolve the schema
+                if 'xmlns:xsi=' not in content:
+                    content = content.replace(
+                        '<article',
+                        '<article xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+                    )
+                if 'xsi:schemaLocation=' not in content:
+                    # Point to the official NLM JATS 1.3 Publishing DTD XSD (publicly accessible)
+                    # Using 1.3 as 1.4 XSD is not yet widely available
+                    content = content.replace(
+                        '<article',
+                        '<article xsi:schemaLocation="https://jats.nlm.nih.gov/publishing/1.3/ https://jats.nlm.nih.gov/publishing/1.3/xsd/JATS-journalpublishing1-3.xsd"'
+                    )
 
                 # Ensure DTD version 1.4 for PMC compliance
                 if 'dtd-version=' not in content:
@@ -665,7 +760,7 @@ class HighFidelityConverter:
             with open(self.xml_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
-            logger.info("✅ XML post-processing completed (JATS 1.4 + PMC compliance)")
+            logger.info("✅ XML post-processing completed (JATS 1.4 + PMC compliance + xsi:schemaLocation)")
         except Exception as e:
             logger.warning(f"XML post-processing failed: {e}")
 
