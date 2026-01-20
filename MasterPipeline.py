@@ -355,11 +355,6 @@ class HighFidelityConverter:
 
             # Generate comprehensive validation report
             self._generate_validation_report(doc, True, pmc_passed=pmc_passed, pmc_stylechecker=pmc_stylechecker_result)
-            # Run PMC Style Checker XSLT
-            pmc_style_check = self._run_pmc_stylechecker()
-
-            # Generate comprehensive validation report
-            self._generate_validation_report(doc, True, pmc_passed=pmc_passed, pmc_style_check=pmc_style_check)
             return True
 
         except etree.XMLSchemaError as e:
@@ -681,7 +676,7 @@ class HighFidelityConverter:
                 "reference": "https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/",
                 "style_checker": "https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/"
             },
-            "pmc_style_checker": pmc_style_check if pmc_style_check else {
+            "pmc_style_checker": pmc_stylechecker if pmc_stylechecker else {
                 "status": "not_run",
                 "message": "PMC Style Checker not available"
             },
@@ -738,8 +733,8 @@ class HighFidelityConverter:
                     )
         
         # Add recommendations from PMC Style Checker
-        if pmc_style_check and pmc_style_check.get("status") == "completed":
-            summary = pmc_style_check.get("summary", {})
+        if pmc_stylechecker and pmc_stylechecker.get("status") == "completed":
+            summary = pmc_stylechecker.get("summary", {})
             if summary.get("errors", 0) > 0:
                 report["recommendations"].append(
                     f"PMC Style Checker found {summary['errors']} error(s). Review and fix before submission."
