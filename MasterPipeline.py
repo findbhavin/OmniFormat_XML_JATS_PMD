@@ -220,23 +220,8 @@ class HighFidelityConverter:
                 replacement = f'>{correct}<'
                 xml_str = xml_str.replace(pattern, replacement)
             
-            # Ensure table captions are at top
-            xml_str = xml_str.replace('<table-wrap>', '<table-wrap position="top">')
-            xml_str = xml_str.replace('<table-wrap >', '<table-wrap position="top">')
-            
-            # Add missing JATS namespace if needed
-            if 'xmlns="http://jats.nlm.nih.gov"' not in xml_str:
-                # Find article tag and add namespace
-                xml_str = xml_str.replace('<article>', '<article xmlns="http://jats.nlm.nih.gov">')
-            
-            # Fix special characters
-            xml_str = xml_str.replace('&', '&amp;')
-            xml_str = xml_str.replace('<', '&lt;')
-            xml_str = xml_str.replace('>', '&gt;')
-            xml_str = xml_str.replace('₹', '&#x20B9;')
-            xml_str = xml_str.replace('±', '&#xB1;')
-            xml_str = xml_str.replace('≥', '&#x2265;')
-            xml_str = xml_str.replace('≤', '&#x2264;')
+            # Note: Special character encoding is handled by lxml parser above
+            # No need for manual string replacements that can cause double-encoding
             
             logger.info("✅ Rule-based repair applied")
             return xml_str
@@ -298,6 +283,42 @@ class HighFidelityConverter:
             
         except Exception as e:
             logger.error(f"❌ Unexpected error in {step_name}: {e}")
+            raise
+
+    def _validate_xml_wellformedness(self):
+        """
+        Validate XML well-formedness after pandoc conversion.
+        This catches malformed XML before post-processing applies string replacements.
+        """
+        try:
+            logger.info("Validating XML well-formedness...")
+            if not os.path.exists(self.xml_path):
+                raise FileNotFoundError(f"XML file not found: {self.xml_path}")
+            
+            # Try to parse the XML
+            parser = etree.XMLParser(remove_blank_text=True)
+            with open(self.xml_path, 'rb') as f:
+                doc = etree.parse(f, parser)
+            
+            # Check that root element exists
+            root = doc.getroot()
+            if root is None:
+                raise ValueError("XML has no root element")
+            
+            # Check that it's an article element (JATS requirement)
+            if root.tag not in ['article', '{http://jats.nlm.nih.gov}article']:
+                logger.warning(f"⚠️ Root element is '{root.tag}', expected 'article'")
+            
+            logger.info("✅ XML is well-formed")
+            return True
+            
+        except etree.XMLSyntaxError as e:
+            logger.error(f"❌ XML Syntax Error in pandoc output: {e}")
+            logger.error(f"   Line {e.lineno}, Column {e.offset}")
+            raise RuntimeError(f"Pandoc produced malformed XML: {e}")
+            
+        except Exception as e:
+            logger.error(f"❌ XML validation failed: {e}")
             raise
 
     def validate_jats_compliance(self):
@@ -798,6 +819,9 @@ class HighFidelityConverter:
                 "--top-level-division=section",
                 "--metadata", "link-citations=true"
             ], "DOCX to JATS XML")
+            
+            # Validate XML well-formedness before post-processing
+            self._validate_xml_wellformedness()
             
             # Post-process XML for JATS compliance
             self._post_process_xml()
