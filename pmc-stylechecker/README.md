@@ -1,32 +1,36 @@
 # PMC Style Checker Integration
 
-This directory contains the PMC Style Checker XSLT files for validating JATS XML compliance.
+This directory contains XSLT files for PMC (PubMed Central) style checking.
 
-## Installation
+## Files
 
-Due to network restrictions, the PMC Style Checker files need to be manually downloaded and extracted:
+- `pmc_style_checker.xsl` - Simplified PMC style checker for basic compliance validation
 
-1. Download the style checker package:
-   ```bash
-   wget https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
-   ```
+## Official PMC Style Checker
 
-2. Extract the files:
-   ```bash
-   tar -xzf nlm-style-5.47.tar.gz
-   mv nlm-style-5.47/* pmc-stylechecker/
-   ```
+For complete and official PMC validation, please use the online PMC Style Checker:
+- URL: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+- Download: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
 
-## Files Required
+## Purpose
 
-The main XSLT file is `nlm-style-3-0.xsl` or `nlm-style-5-0.xsl` which performs the validation checks.
+This simplified version performs basic PMC compliance checks including:
+- DTD version verification
+- Article type validation
+- DOI presence check
+- Article title verification
+- Abstract presence check
+- Table-wrap positioning validation
+- Figure and reference counting
 
 ## Usage
 
-The style checker is automatically integrated into the conversion pipeline when the XSLT files are present. Results are included in the `validation_report.json` file.
+The style checker is automatically run during the JATS validation phase of the conversion pipeline. Results are included in the `validation_report.json` file.
 
-## Reference
+## Integration
 
-- PMC Style Checker: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
-- PMC Tagging Guidelines: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/
-- Download Link: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+The XSLT transformation is applied to the generated JATS XML file using Python's lxml library with XSLT support.
+
+## Note
+
+This is a basic implementation for preliminary checks. For final PMC submission validation, always use the official PMC Style Checker tool.

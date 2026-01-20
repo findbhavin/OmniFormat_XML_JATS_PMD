@@ -355,11 +355,6 @@ class HighFidelityConverter:
 
             # Generate comprehensive validation report
             self._generate_validation_report(doc, True, pmc_passed=pmc_passed, pmc_stylechecker=pmc_stylechecker_result)
-            # Run PMC Style Checker XSLT
-            pmc_style_check = self._run_pmc_stylechecker()
-
-            # Generate comprehensive validation report
-            self._generate_validation_report(doc, True, pmc_passed=pmc_passed, pmc_style_check=pmc_style_check)
             return True
 
         except etree.XMLSchemaError as e:
@@ -385,89 +380,138 @@ class HighFidelityConverter:
 
     def _run_pmc_stylechecker(self):
         """
-        Run PMC Style Checker using XSLT transformation.
-        Returns the style check results as a dictionary.
+        Run PMC Style Checker XSLT transformation.
+        Looks for both official PMC style checker files and custom simplified checker.
+        Returns a dictionary with style checker results.
         """
         logger.info("Running PMC Style Checker...")
         
-        xsl_path = os.path.join("pmc_stylechecker", "pmc_style_checker.xsl")
+        # Look for style checker XSLT files in order of preference
+        pmc_dir = "pmc-stylechecker"
+        xslt_candidates = [
+            # Official PMC style checker files (preferred)
+            os.path.join(pmc_dir, "nlm-style-5-0.xsl"),
+            os.path.join(pmc_dir, "nlm-style-3-0.xsl"),
+            os.path.join(pmc_dir, "nlm-stylechecker.xsl"),
+            # Custom simplified checker
+            os.path.join(pmc_dir, "pmc_style_checker.xsl")
+        ]
         
-        if not os.path.exists(xsl_path):
-            logger.warning(f"PMC Style Checker XSLT not found at {xsl_path}")
+        xslt_path = None
+        for candidate_path in xslt_candidates:
+            if os.path.exists(candidate_path):
+                xslt_path = candidate_path
+                break
+        
+        if not xslt_path:
+            logger.warning("PMC Style Checker XSLT not found. Skipping style check.")
+            logger.info(f"To enable: Download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
             return {
-                "status": "skipped",
-                "message": "PMC Style Checker XSLT not available",
-                "note": "For full validation, use https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/"
+                "available": False,
+                "message": "PMC Style Checker XSLT files not installed",
+                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz"
             }
         
         try:
-            # Parse XML and XSLT
+            # Parse the XML and XSLT
             xml_doc = etree.parse(self.xml_path)
-            xslt_doc = etree.parse(xsl_path)
+            xslt_doc = etree.parse(xslt_path)
             transform = etree.XSLT(xslt_doc)
             
             # Apply transformation
             result = transform(xml_doc)
+            result_str = str(result)
             
-            # Parse the result XML
-            result_tree = etree.fromstring(str(result).encode('utf-8'))
-            
-            # Extract results into a dictionary
-            style_check_results = {
-                "status": "completed",
-                "timestamp": result_tree.find('.//timestamp').text if result_tree.find('.//timestamp') is not None else None,
-                "source": result_tree.find('.//source').text if result_tree.find('.//source') is not None else "PMC Style Checker",
-                "checks": [],
-                "summary": {}
-            }
-            
-            # Extract individual checks
-            for check in result_tree.findall('.//check'):
-                check_name = check.get('name', 'unknown')
-                check_status = check.find('.//status')
-                check_message = check.find('.//message')
+            # Try to parse as XML first (structured output from custom checker)
+            try:
+                result_tree = etree.fromstring(result_str.encode('utf-8'))
                 
-                check_result = {
-                    "name": check_name,
-                    "status": check_status.text if check_status is not None else "unknown",
-                    "message": check_message.text if check_message is not None else ""
+                # Extract results into a dictionary
+                style_check_results = {
+                    "available": True,
+                    "xslt_used": os.path.basename(xslt_path),
+                    "status": "completed",
+                    "timestamp": result_tree.find('.//timestamp').text if result_tree.find('.//timestamp') is not None else None,
+                    "source": result_tree.find('.//source').text if result_tree.find('.//source') is not None else "PMC Style Checker",
+                    "checks": [],
+                    "summary": {}
                 }
                 
-                # Add count if present
-                check_count = check.find('.//count')
-                if check_count is not None:
-                    check_result["count"] = int(check_count.text)
+                # Extract individual checks
+                for check in result_tree.findall('.//check'):
+                    check_name = check.get('name', 'unknown')
+                    check_status = check.find('.//status')
+                    check_message = check.find('.//message')
+                    
+                    check_result = {
+                        "name": check_name,
+                        "status": check_status.text if check_status is not None else "unknown",
+                        "message": check_message.text if check_message is not None else ""
+                    }
+                    
+                    # Add count if present
+                    check_count = check.find('.//count')
+                    if check_count is not None:
+                        check_result["count"] = int(check_count.text)
+                    
+                    style_check_results["checks"].append(check_result)
                 
-                style_check_results["checks"].append(check_result)
-            
-            # Extract summary
-            summary_elem = result_tree.find('.//summary')
-            if summary_elem is not None:
-                style_check_results["summary"] = {
-                    "total_checks": int(summary_elem.find('.//total-checks').text) if summary_elem.find('.//total-checks') is not None else 0,
-                    "errors": int(summary_elem.find('.//errors').text) if summary_elem.find('.//errors') is not None else 0,
-                    "warnings": int(summary_elem.find('.//warnings').text) if summary_elem.find('.//warnings') is not None else 0,
-                    "passed": int(summary_elem.find('.//passed').text) if summary_elem.find('.//passed') is not None else 0
+                # Extract summary
+                summary_elem = result_tree.find('.//summary')
+                if summary_elem is not None:
+                    style_check_results["summary"] = {
+                        "total_checks": int(summary_elem.find('.//total-checks').text) if summary_elem.find('.//total-checks') is not None else 0,
+                        "errors": int(summary_elem.find('.//errors').text) if summary_elem.find('.//errors') is not None else 0,
+                        "warnings": int(summary_elem.find('.//warnings').text) if summary_elem.find('.//warnings') is not None else 0,
+                        "passed": int(summary_elem.find('.//passed').text) if summary_elem.find('.//passed') is not None else 0
+                    }
+                    
+                    error_count = style_check_results["summary"].get("errors", 0)
+                    warning_count = style_check_results["summary"].get("warnings", 0)
+                else:
+                    # No summary, count from checks
+                    error_count = sum(1 for c in style_check_results["checks"] if c.get("status") == "error")
+                    warning_count = sum(1 for c in style_check_results["checks"] if c.get("status") == "warning")
+                    
+                logger.info(f"✅ PMC Style Checker completed: {error_count} errors, {warning_count} warnings")
+                return style_check_results
+                
+            except etree.XMLSyntaxError:
+                # Not XML, parse as text (official PMC checker output)
+                errors = []
+                warnings = []
+                
+                if result_str:
+                    lines = result_str.split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        
+                        if 'error' in line.lower() or 'ERROR' in line:
+                            errors.append(line)
+                        elif 'warning' in line.lower() or 'WARNING' in line:
+                            warnings.append(line)
+                
+                logger.info(f"✅ PMC Style Checker completed: {len(errors)} errors, {len(warnings)} warnings")
+                
+                return {
+                    "available": True,
+                    "xslt_used": os.path.basename(xslt_path),
+                    "errors": errors,
+                    "warnings": warnings,
+                    "error_count": len(errors),
+                    "warning_count": len(warnings),
+                    "status": "PASS" if len(errors) == 0 else "FAIL",
+                    "full_output": result_str[:2000] if result_str else ""  # Limit output size
                 }
             
-            logger.info(f"✅ PMC Style Checker completed: {style_check_results['summary'].get('errors', 0)} errors, "
-                       f"{style_check_results['summary'].get('warnings', 0)} warnings")
-            
-            return style_check_results
-            
-        except etree.XSLTApplyError as e:
-            logger.error(f"XSLT transformation error: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-                "message": "XSLT transformation failed"
-            }
         except Exception as e:
-            logger.error(f"PMC Style Checker failed: {e}")
+            logger.error(f"❌ PMC Style Checker failed: {e}")
             return {
-                "status": "error",
+                "available": True,
                 "error": str(e),
-                "message": "Style checker execution failed"
+                "status": "ERROR"
             }
 
     def _validate_pmc_requirements(self, xml_doc):
@@ -632,7 +676,7 @@ class HighFidelityConverter:
                 "reference": "https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/",
                 "style_checker": "https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/"
             },
-            "pmc_style_checker": pmc_style_check if pmc_style_check else {
+            "pmc_style_checker": pmc_stylechecker if pmc_stylechecker else {
                 "status": "not_run",
                 "message": "PMC Style Checker not available"
             },
@@ -689,8 +733,8 @@ class HighFidelityConverter:
                     )
         
         # Add recommendations from PMC Style Checker
-        if pmc_style_check and pmc_style_check.get("status") == "completed":
-            summary = pmc_style_check.get("summary", {})
+        if pmc_stylechecker and pmc_stylechecker.get("status") == "completed":
+            summary = pmc_stylechecker.get("summary", {})
             if summary.get("errors", 0) > 0:
                 report["recommendations"].append(
                     f"PMC Style Checker found {summary['errors']} error(s). Review and fix before submission."
@@ -748,85 +792,6 @@ class HighFidelityConverter:
         """Get current timestamp in ISO format."""
         from datetime import datetime
         return datetime.now().isoformat()
-    
-    def _run_pmc_stylechecker(self):
-        """
-        Run PMC Style Checker XSLT transformation if available.
-        Returns a dictionary with style checker results.
-        """
-        logger.info("Running PMC Style Checker...")
-        
-        # Look for style checker XSLT files
-        pmc_dir = "pmc-stylechecker"
-        xslt_files = [
-            "nlm-style-5-0.xsl",
-            "nlm-style-3-0.xsl",
-            "nlm-stylechecker.xsl"
-        ]
-        
-        xslt_path = None
-        for xslt_file in xslt_files:
-            candidate_path = os.path.join(pmc_dir, xslt_file)
-            if os.path.exists(candidate_path):
-                xslt_path = candidate_path
-                break
-        
-        if not xslt_path:
-            logger.warning("PMC Style Checker XSLT not found. Skipping style check.")
-            logger.info(f"To enable: Download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
-            return {
-                "available": False,
-                "message": "PMC Style Checker XSLT files not installed",
-                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz"
-            }
-        
-        try:
-            # Parse the XML and XSLT
-            xml_doc = etree.parse(self.xml_path)
-            xslt_doc = etree.parse(xslt_path)
-            transform = etree.XSLT(xslt_doc)
-            
-            # Apply transformation
-            result = transform(xml_doc)
-            result_str = str(result)
-            
-            # Parse the result to extract errors and warnings
-            errors = []
-            warnings = []
-            
-            # The PMC style checker typically outputs error/warning messages in the result
-            if result_str:
-                lines = result_str.split('\n')
-                for line in lines:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    
-                    if 'error' in line.lower() or 'ERROR' in line:
-                        errors.append(line)
-                    elif 'warning' in line.lower() or 'WARNING' in line:
-                        warnings.append(line)
-            
-            logger.info(f"✅ PMC Style Checker completed: {len(errors)} errors, {len(warnings)} warnings")
-            
-            return {
-                "available": True,
-                "xslt_used": os.path.basename(xslt_path),
-                "errors": errors,
-                "warnings": warnings,
-                "error_count": len(errors),
-                "warning_count": len(warnings),
-                "status": "PASS" if len(errors) == 0 else "FAIL",
-                "full_output": result_str[:2000] if result_str else ""  # Limit output size
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ PMC Style Checker failed: {e}")
-            return {
-                "available": True,
-                "error": str(e),
-                "status": "ERROR"
-            }
 
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
