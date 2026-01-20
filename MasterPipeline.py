@@ -862,6 +862,19 @@ class HighFidelityConverter:
         from datetime import datetime
         return datetime.now().isoformat()
 
+    def _namespace_exists(self, nsmap, prefix):
+        """Check if a namespace prefix already exists in the nsmap."""
+        if not nsmap:
+            return False
+        # Check if prefix exists directly
+        if prefix in nsmap:
+            return True
+        # Check if prefix exists in any key (case-insensitive)
+        for key in nsmap.keys():
+            if key and prefix.lower() in str(key).lower():
+                return True
+        return False
+
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
         try:
@@ -887,13 +900,13 @@ class HighFidelityConverter:
             nsmap = dict(root.nsmap) if root.nsmap else {}
             
             # Add required namespaces if not present
-            if 'xlink' not in nsmap and None not in [k for k in nsmap.keys() if k and 'xlink' in str(k).lower()]:
+            if not self._namespace_exists(nsmap, 'xlink'):
                 nsmap['xlink'] = 'http://www.w3.org/1999/xlink'
             
-            if 'mml' not in nsmap and None not in [k for k in nsmap.keys() if k and 'mml' in str(k).lower()]:
+            if not self._namespace_exists(nsmap, 'mml'):
                 nsmap['mml'] = 'http://www.w3.org/1998/Math/MathML'
             
-            if 'xsi' not in nsmap and None not in [k for k in nsmap.keys() if k and 'xsi' in str(k).lower()]:
+            if not self._namespace_exists(nsmap, 'xsi'):
                 nsmap['xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
             
             # If we need to add namespaces, we need to recreate the root element
@@ -923,11 +936,8 @@ class HighFidelityConverter:
                 )
                 root.set(schema_location_attr, schema_location)
             
-            # Ensure DTD version
-            if 'dtd-version' not in root.attrib:
-                root.set('dtd-version', self.jats_version)
-            else:
-                root.set('dtd-version', self.jats_version)
+            # Set DTD version
+            root.set('dtd-version', self.jats_version)
             
             # Ensure article-type
             if 'article-type' not in root.attrib:
@@ -941,7 +951,7 @@ class HighFidelityConverter:
                 encoding='utf-8'
             )
 
-            logger.info("✅ XML post-processing completed (JATS 1.4 + PMC compliance + xsi:schemaLocation)")
+            logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + xsi:schemaLocation)")
         except Exception as e:
             logger.warning(f"XML post-processing failed: {e}")
             # Log the traceback for debugging
