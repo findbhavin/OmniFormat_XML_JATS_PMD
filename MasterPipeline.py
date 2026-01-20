@@ -868,75 +868,85 @@ class HighFidelityConverter:
             if not os.path.exists(self.xml_path):
                 return
 
-            with open(self.xml_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-
+            # Parse XML using lxml to avoid string replacement issues
+            parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
+            tree = etree.parse(self.xml_path, parser)
+            root = tree.getroot()
+            
             # PMC Requirement: table-wrap position attribute
             # Position should be "float" or "anchor" (not "top")
-            content = content.replace('<table-wrap>', '<table-wrap position="float">')
-            content = content.replace('<table-wrap >', '<table-wrap position="float">')
-            content = content.replace('<table-wrap position="top">', '<table-wrap position="float">')
-
-            # Ensure proper JATS 1.4 root element with required namespaces
-            if '<article' in content:
-                # Check if proper namespaces are present
-                if 'xmlns:xlink=' not in content:
-                    content = content.replace(
-                        '<article',
-                        '<article xmlns:xlink="http://www.w3.org/1999/xlink"'
-                    )
-                if 'xmlns:mml=' not in content:
-                    content = content.replace(
-                        '<article',
-                        '<article xmlns:mml="http://www.w3.org/1998/Math/MathML"'
-                    )
+            for table_wrap in root.findall('.//table-wrap'):
+                position = table_wrap.get('position')
+                if position is None:
+                    table_wrap.set('position', 'float')
+                elif position == 'top':
+                    table_wrap.set('position', 'float')
+            
+            # Build the desired namespace map
+            # Keep existing namespaces and add missing ones
+            nsmap = dict(root.nsmap) if root.nsmap else {}
+            
+            # Add required namespaces if not present
+            if 'xlink' not in nsmap and None not in [k for k in nsmap.keys() if k and 'xlink' in str(k).lower()]:
+                nsmap['xlink'] = 'http://www.w3.org/1999/xlink'
+            
+            if 'mml' not in nsmap and None not in [k for k in nsmap.keys() if k and 'mml' in str(k).lower()]:
+                nsmap['mml'] = 'http://www.w3.org/1998/Math/MathML'
+            
+            if 'xsi' not in nsmap and None not in [k for k in nsmap.keys() if k and 'xsi' in str(k).lower()]:
+                nsmap['xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
+            
+            # If we need to add namespaces, we need to recreate the root element
+            if nsmap != root.nsmap:
+                # Create new root with updated nsmap
+                new_root = etree.Element(root.tag, nsmap=nsmap)
                 
-                # Add xsi namespace and schemaLocation for PMC Style Checker validation
-                if 'xmlns:xsi=' not in content:
-                    content = content.replace(
-                        '<article',
-                        '<article xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
-                    )
+                # Copy all attributes
+                for key, value in root.attrib.items():
+                    new_root.set(key, value)
                 
-                # Add schemaLocation pointing to official JATS schema
-                if 'xsi:schemaLocation=' not in content:
-                    schema_location = (
-                        'https://jats.nlm.nih.gov/publishing/1.3/ '
-                        'https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.xsd'
-                    )
-                    content = content.replace(
-                        '<article',
-                        f'<article xsi:schemaLocation="{schema_location}"'
-                    )
-
-                # Ensure DTD version 1.4 for PMC compliance
-                if 'dtd-version=' not in content:
-                    content = content.replace(
-                        '<article',
-                        f'<article dtd-version="{self.jats_version}"'
-                    )
-                else:
-                    # Update existing version
-                    import re
-                    content = re.sub(
-                        r'dtd-version="[^"]*"',
-                        f'dtd-version="{self.jats_version}"',
-                        content
-                    )
-
-                # Ensure article-type
-                if 'article-type=' not in content:
-                    content = content.replace(
-                        '<article',
-                        '<article article-type="research-article"'
-                    )
-
-            with open(self.xml_path, 'w', encoding='utf-8') as f:
-                f.write(content)
+                # Copy all children
+                for child in root:
+                    new_root.append(child)
+                
+                # Replace the root
+                root = new_root
+                tree._setroot(root)
+            
+            # Add xsi:schemaLocation attribute
+            xsi_ns = 'http://www.w3.org/2001/XMLSchema-instance'
+            schema_location_attr = f'{{{xsi_ns}}}schemaLocation'
+            if schema_location_attr not in root.attrib:
+                schema_location = (
+                    'https://jats.nlm.nih.gov/publishing/1.3/ '
+                    'https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.xsd'
+                )
+                root.set(schema_location_attr, schema_location)
+            
+            # Ensure DTD version
+            if 'dtd-version' not in root.attrib:
+                root.set('dtd-version', self.jats_version)
+            else:
+                root.set('dtd-version', self.jats_version)
+            
+            # Ensure article-type
+            if 'article-type' not in root.attrib:
+                root.set('article-type', 'research-article')
+            
+            # Write back the XML with proper formatting
+            tree.write(
+                self.xml_path,
+                pretty_print=True,
+                xml_declaration=True,
+                encoding='utf-8'
+            )
 
             logger.info("✅ XML post-processing completed (JATS 1.4 + PMC compliance + xsi:schemaLocation)")
         except Exception as e:
             logger.warning(f"XML post-processing failed: {e}")
+            # Log the traceback for debugging
+            import traceback
+            logger.warning(f"Traceback: {traceback.format_exc()}")
 
     def _create_fallback_pdf(self, pdf_path, message):
         """Create a simple fallback PDF when WeasyPrint fails."""
