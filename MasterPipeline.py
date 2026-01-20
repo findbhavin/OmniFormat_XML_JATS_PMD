@@ -57,15 +57,27 @@ class HighFidelityConverter:
                 location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
             )
             
-            # Try to use gemini-1.5-pro, fall back to other models
-            try:
-                return GenerativeModel("gemini-1.5-pro")
-            except:
+            # Try to use stable Gemini models in order of preference
+            # Using publisher model paths that work with Vertex AI
+            model_names = [
+                "gemini-1.5-flash-001",  # Stable Flash model
+                "gemini-1.0-pro",         # Stable Pro 1.0 model
+                "gemini-pro"              # Legacy fallback
+            ]
+            
+            for model_name in model_names:
                 try:
-                    return GenerativeModel("gemini-pro")
-                except:
-                    # Last resort, try any available model
-                    return GenerativeModel()
+                    logger.info(f"Attempting to initialize AI model: {model_name}")
+                    model = GenerativeModel(model_name)
+                    logger.info(f"✅ Successfully initialized AI model: {model_name}")
+                    return model
+                except Exception as model_error:
+                    logger.warning(f"Failed to initialize {model_name}: {model_error}")
+                    continue
+            
+            # If all models fail, return None to disable AI repair
+            logger.warning("All AI models failed to initialize. AI repair will be disabled.")
+            return None
                     
         except ImportError as e:
             logger.warning(f"Vertex AI not available: {e}")
@@ -896,28 +908,104 @@ class HighFidelityConverter:
                 elif position == 'top':
                     table_wrap.set('position', 'float')
             
+            # Fix empty tbody elements - remove them as they violate DTD
+            for tbody in root.findall('.//tbody'):
+                # Check if tbody is empty or has no tr children
+                if len(tbody) == 0 or not tbody.findall('.//tr'):
+                    parent = tbody.getparent()
+                    if parent is not None:
+                        logger.info(f"Removing empty tbody element")
+                        parent.remove(tbody)
+            
+            # Fix article-meta content order - ensure required elements exist before permissions
+            front = root.find('.//front')
+            if front is not None:
+                article_meta = front.find('.//article-meta')
+                if article_meta is not None:
+                    # Check if we have permissions but missing required elements
+                    permissions = article_meta.find('.//permissions')
+                    title_group = article_meta.find('.//title-group')
+                    
+                    if permissions is not None and title_group is None:
+                        # Add minimal required title-group before permissions
+                        logger.info("Adding minimal title-group to article-meta")
+                        title_group = etree.Element('title-group')
+                        article_title = etree.SubElement(title_group, 'article-title')
+                        article_title.text = "Article Title"
+                        
+                        # Insert title-group before permissions
+                        perm_index = list(article_meta).index(permissions)
+                        article_meta.insert(perm_index, title_group)
+            
+            # Fix missing reference IDs - add id attributes to ref elements
+            back = root.find('.//back')
+            if back is not None:
+                ref_list = back.find('.//ref-list')
+                if ref_list is not None:
+                    refs = ref_list.findall('.//ref')
+                    for i, ref in enumerate(refs, 1):
+                        if 'id' not in ref.attrib:
+                            # Generate a simple ref ID
+                            ref.set('id', f'ref{i}')
+                            logger.info(f"Added id='ref{i}' to reference element")
+            
+            # Collect all xref rid values that reference missing IDs
+            xrefs = root.findall('.//xref')
+            referenced_ids = set()
+            for xref in xrefs:
+                rid = xref.get('rid')
+                if rid:
+                    referenced_ids.add(rid)
+            
+            # Fix xref references to match available ref IDs
+            if back is not None:
+                ref_list = back.find('.//ref-list')
+                if ref_list is not None:
+                    refs = ref_list.findall('.//ref')
+                    
+                    # Create a mapping of reference index to ID
+                    for i, ref in enumerate(refs, 1):
+                        ref_id = ref.get('id', f'ref{i}')
+                        
+                        # Find xrefs that might reference this ref by number
+                        for xref in xrefs:
+                            rid = xref.get('rid')
+                            alt = xref.get('alt')
+                            
+                            # If alt attribute matches the reference number, update rid
+                            if alt and alt.isdigit() and int(alt) == i and rid in referenced_ids:
+                                # Check if the rid doesn't exist in refs
+                                existing_ref = ref_list.find(f".//ref[@id='{rid}']")
+                                if existing_ref is None:
+                                    logger.info(f"Updating xref rid from '{rid}' to '{ref_id}' based on alt='{alt}'")
+                                    xref.set('rid', ref_id)
+            
             # Build the desired namespace map
             # Keep existing namespaces and add missing ones
             nsmap = dict(root.nsmap) if root.nsmap else {}
             
-            # Add required namespaces if not present
+            # Add required namespaces if not present (but not xsi for DTD validation)
             if not self._namespace_exists(nsmap, 'xlink'):
                 nsmap['xlink'] = 'http://www.w3.org/1999/xlink'
             
             if not self._namespace_exists(nsmap, 'mml'):
                 nsmap['mml'] = 'http://www.w3.org/1998/Math/MathML'
             
-            if not self._namespace_exists(nsmap, 'xsi'):
-                nsmap['xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
+            # NOTE: Don't add xsi namespace or schemaLocation for DTD validation
+            # The DTD doesn't support xsi:schemaLocation attribute
+            # if not self._namespace_exists(nsmap, 'xsi'):
+            #     nsmap['xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
             
             # If we need to add namespaces, we need to recreate the root element
             if nsmap != root.nsmap:
                 # Create new root with updated nsmap
                 new_root = etree.Element(root.tag, nsmap=nsmap)
                 
-                # Copy all attributes
+                # Copy all attributes (except xsi:schemaLocation for DTD validation)
                 for key, value in root.attrib.items():
-                    new_root.set(key, value)
+                    # Skip xsi:schemaLocation as it's not supported by DTD
+                    if 'schemaLocation' not in key:
+                        new_root.set(key, value)
                 
                 # Copy all children
                 for child in root:
@@ -927,15 +1015,12 @@ class HighFidelityConverter:
                 root = new_root
                 tree._setroot(root)
             
-            # Add xsi:schemaLocation attribute
+            # Remove any xsi:schemaLocation attribute if it exists (DTD doesn't support it)
             xsi_ns = 'http://www.w3.org/2001/XMLSchema-instance'
             schema_location_attr = f'{{{xsi_ns}}}schemaLocation'
-            if schema_location_attr not in root.attrib:
-                schema_location = (
-                    'https://jats.nlm.nih.gov/publishing/1.3/ '
-                    'https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.xsd'
-                )
-                root.set(schema_location_attr, schema_location)
+            if schema_location_attr in root.attrib:
+                del root.attrib[schema_location_attr]
+                logger.info("Removed xsi:schemaLocation attribute for DTD validation compliance")
             
             # Set DTD version
             root.set('dtd-version', self.jats_version)
@@ -956,10 +1041,64 @@ class HighFidelityConverter:
                 encoding='utf-8'
             )
 
-            logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + xsi:schemaLocation)")
+            logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + DTD validation fixes)")
         except Exception as e:
             logger.warning(f"XML post-processing failed: {e}")
             # Log the traceback for debugging
+            import traceback
+            logger.warning(f"Traceback: {traceback.format_exc()}")
+
+    def _post_process_html(self):
+        """
+        Post-process the HTML to fix anchor references for WeasyPrint.
+        Adds ID attributes to reference list items based on xref rid attributes in XML.
+        """
+        try:
+            if not os.path.exists(self.html_path) or not os.path.exists(self.xml_path):
+                return
+            
+            # Parse the XML to get xref references
+            parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
+            xml_tree = etree.parse(self.xml_path, parser)
+            xml_root = xml_tree.getroot()
+            
+            # Collect all xref rid values and their alt (reference number) attributes
+            xref_mapping = {}  # Maps alt number to rid
+            for xref in xml_root.findall('.//xref'):
+                rid = xref.get('rid')
+                alt = xref.get('alt')
+                if rid and alt and alt.isdigit():
+                    xref_mapping[int(alt)] = rid
+            
+            # Read the HTML file
+            with open(self.html_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            
+            # Parse HTML using lxml
+            from lxml import html as lxml_html
+            html_doc = lxml_html.fromstring(html_content)
+            
+            # Find all <ol> lists (reference lists) and add IDs to their <li> items
+            for ol in html_doc.findall('.//ol'):
+                li_items = ol.findall('.//li')
+                for i, li in enumerate(li_items, 1):
+                    # Check if this li needs an ID based on xref mapping
+                    if i in xref_mapping:
+                        ref_id = xref_mapping[i]
+                        li.set('id', ref_id)
+                        logger.info(f"Added id='{ref_id}' to reference list item {i}")
+            
+            # Serialize back to HTML
+            html_content = lxml_html.tostring(html_doc, encoding='unicode', method='html')
+            
+            # Write back the HTML
+            with open(self.html_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            logger.info("✅ HTML post-processing completed (added anchor IDs for references)")
+            
+        except Exception as e:
+            logger.warning(f"HTML post-processing failed: {e}")
             import traceback
             logger.warning(f"Traceback: {traceback.format_exc()}")
 
@@ -1289,6 +1428,9 @@ class HighFidelityConverter:
                 logger.info(f"HTML created: {html_size:,} bytes")
             else:
                 raise FileNotFoundError(f"HTML not created at {self.html_path}")
+            
+            # Post-process HTML to fix anchor references
+            self._post_process_html()
                 
         except Exception as e:
             logger.error(f"Failed to generate HTML: {e}")
