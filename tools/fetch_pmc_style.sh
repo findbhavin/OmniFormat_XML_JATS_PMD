@@ -9,202 +9,159 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PMC_STYLE_DIR="$SCRIPT_DIR/pmc_style"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PMC_STYLE_DIR="$REPO_ROOT/pmc-stylechecker/nlm-style-5.47"
 TEMP_DIR="/tmp/pmc_style_download"
+BUNDLE_URL="https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz"
+BUNDLE_FILE="nlm-style-5.47.tar.gz"
 
 echo "==================================================================="
-echo "PMC Style Checker XSLT Bundle Downloader"
+echo "PMC Style Checker XSLT Bundle Downloader (nlm-style-5.47)"
 echo "==================================================================="
 echo ""
 
-# Check if curl is available
-if ! command -v curl &> /dev/null; then
-    echo "❌ Error: curl is not installed"
-    echo "   Please install curl and try again"
+# Check if tar is available
+if ! command -v tar &> /dev/null; then
+    echo "❌ Error: tar is not installed"
+    echo "   Please install tar and try again"
     exit 1
 fi
 
-# Check if unzip is available (if needed)
-if ! command -v unzip &> /dev/null; then
-    echo "⚠️  Warning: unzip is not installed"
-    echo "   You may need to manually extract the downloaded files"
+# Check if curl or wget is available
+DOWNLOADER=""
+if command -v curl &> /dev/null; then
+    DOWNLOADER="curl"
+elif command -v wget &> /dev/null; then
+    DOWNLOADER="wget"
+else
+    echo "❌ Error: Neither curl nor wget is installed"
+    echo "   Please install curl or wget and try again"
+    exit 1
+fi
+
+# Check if already downloaded
+if [ -d "$PMC_STYLE_DIR" ] && [ -f "$PMC_STYLE_DIR/nlm-stylechecker.xsl" ]; then
+    echo "✅ nlm-style-5.47 bundle already exists at $PMC_STYLE_DIR"
+    echo ""
+    echo "Files in bundle:"
+    find "$PMC_STYLE_DIR" -type f | head -20
+    echo ""
+    echo "To re-download, remove the directory first:"
+    echo "   rm -rf $PMC_STYLE_DIR"
+    exit 0
 fi
 
 # Create directories
 mkdir -p "$PMC_STYLE_DIR"
 mkdir -p "$TEMP_DIR"
 
-echo "📥 Downloading PMC Style Checker (nlm-style-5.47)..."
+echo "📥 Downloading PMC Style Checker bundle from PMC..."
+echo "   Source: $BUNDLE_URL"
 echo ""
 
-# PMC Style Checker is available from:
-# https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-# The XSLT is part of the nlm-stylechecker package
-
-# Download the style checker XSLT
-STYLE_XSL_URL="https://dtd.nlm.nih.gov/tools/nlm-stylechecker/nlm-stylechecker.xsl"
-
-echo "Downloading nlm-stylechecker.xsl..."
-if curl -L -o "$PMC_STYLE_DIR/nlm-stylechecker.xsl" "$STYLE_XSL_URL" 2>/dev/null; then
-    echo "✅ Downloaded nlm-stylechecker.xsl"
+# Download the bundle
+cd "$TEMP_DIR"
+if [ "$DOWNLOADER" = "curl" ]; then
+    echo "Using curl to download..."
+    if curl -L -o "$BUNDLE_FILE" "$BUNDLE_URL"; then
+        echo "✅ Downloaded $BUNDLE_FILE"
+    else
+        echo "❌ Failed to download bundle"
+        echo ""
+        echo "Manual download instructions:"
+        echo "1. Visit: $BUNDLE_URL"
+        echo "2. Save to: $TEMP_DIR/$BUNDLE_FILE"
+        echo "3. Run this script again"
+        exit 1
+    fi
 else
-    echo "⚠️  Failed to download from primary URL"
-    echo "   Creating placeholder file with instructions..."
-    
-    cat > "$PMC_STYLE_DIR/nlm-stylechecker.xsl" << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  PMC Style Checker XSLT Placeholder
-  
-  To use the PMC Style Checker:
-  
-  1. Download the official nlm-stylechecker from:
-     https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-     
-  2. Extract the nlm-stylechecker.xsl file
-  
-  3. Place it in this directory: tools/pmc_style/
-  
-  4. The conversion pipeline will automatically use it
-  
-  Note: The style checker requires xsltproc to be installed.
--->
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-  <xsl:output method="html" encoding="UTF-8" indent="yes"/>
-  
-  <xsl:template match="/">
-    <html>
-      <head>
-        <title>PMC Style Checker Not Available</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-          .message { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-          h1 { color: #d93025; }
-          code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
-        </style>
-      </head>
-      <body>
-        <div class="message">
-          <h1>⚠️ PMC Style Checker Not Available</h1>
-          <p>The PMC Style Checker XSLT is not properly installed.</p>
-          <h2>To install:</h2>
-          <ol>
-            <li>Visit <a href="https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/">PMC Style Checker</a></li>
-            <li>Download the nlm-stylechecker XSLT files</li>
-            <li>Place <code>nlm-stylechecker.xsl</code> in <code>tools/pmc_style/</code></li>
-            <li>Run your conversion again</li>
-          </ol>
-          <p><strong>Note:</strong> The style checker requires <code>xsltproc</code> to be installed.</p>
-        </div>
-      </body>
-    </html>
-  </xsl:template>
-</xsl:stylesheet>
-EOF
-    echo "📝 Created placeholder file with installation instructions"
+    echo "Using wget to download..."
+    if wget -O "$BUNDLE_FILE" "$BUNDLE_URL"; then
+        echo "✅ Downloaded $BUNDLE_FILE"
+    else
+        echo "❌ Failed to download bundle"
+        echo ""
+        echo "Manual download instructions:"
+        echo "1. Visit: $BUNDLE_URL"
+        echo "2. Save to: $TEMP_DIR/$BUNDLE_FILE"
+        echo "3. Run this script again"
+        exit 1
+    fi
 fi
 
-# Create README
-cat > "$PMC_STYLE_DIR/README.md" << 'EOF'
-# PMC Style Checker Integration
-
-This directory contains the PMC Style Checker XSLT bundle for validating JATS XML files.
-
-## About PMC Style Checker
-
-The PMC Style Checker is an XSLT-based tool provided by the National Library of Medicine (NLM) to validate JATS XML files against PMC submission requirements.
-
-- **Official Site**: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-- **Version**: nlm-style-5.47 (or later)
-- **License**: Public domain (US Government work)
-
-## Usage
-
-The style checker is automatically integrated into the OmniJAX conversion pipeline. When a DOCX file is converted:
-
-1. JATS XML is generated
-2. XSD validation is performed
-3. PMC style checker runs (if available)
-4. Results are included in `validation_report.json`
-5. HTML report is generated as `pmc_style_report.html`
-
-## Requirements
-
-- **xsltproc**: The XSLT processor must be installed
-  ```bash
-  # Ubuntu/Debian
-  sudo apt-get install xsltproc
-  
-  # macOS
-  brew install libxslt
-  
-  # Alpine Linux (Docker)
-  apk add libxslt
-  ```
-
-## Files
-
-- `nlm-stylechecker.xsl` - Main XSLT stylesheet for PMC style checking
-- `README.md` - This file
-
-## Manual Download
-
-If the automatic download fails:
-
-1. Visit https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-2. Download the nlm-stylechecker package
-3. Extract `nlm-stylechecker.xsl`
-4. Place it in this directory
-
-## Running Style Check Manually
-
-You can run the style checker manually on any JATS XML file:
-
-```bash
-xsltproc tools/pmc_style/nlm-stylechecker.xsl article.xml > style_report.html
-```
-
-## Integration Details
-
-The style checker is called in `MasterPipeline.py`:
-
-- Method: `_run_pmc_style_check()`
-- Defensive: If xsltproc or XSLT file is missing, conversion continues with a warning
-- Output: HTML report saved to output directory
-- Results: Parsed and included in validation_report.json
-
-## Troubleshooting
-
-**Style check not running?**
-- Check if xsltproc is installed: `which xsltproc`
-- Check if XSLT file exists: `ls -l tools/pmc_style/nlm-stylechecker.xsl`
-- Check conversion logs for warnings
-
-**Download failed?**
-- Manual download from PMC website is always available
-- Placeholder file is created with instructions
-
-**Style check errors?**
-- Review the generated `pmc_style_report.html` in the output package
-- Check `validation_report.json` for error counts and details
-
-## References
-
-- PMC Tagging Guidelines: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/
-- PMC Style Checker: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-- JATS Standard: https://jats.nlm.nih.gov/
-EOF
+# Optional: Verify file size (basic sanity check)
+FILE_SIZE=$(stat -f%z "$BUNDLE_FILE" 2>/dev/null || stat -c%s "$BUNDLE_FILE" 2>/dev/null)
+if [ "$FILE_SIZE" -lt 10000 ]; then
+    echo "⚠️  Warning: Downloaded file seems too small ($FILE_SIZE bytes)"
+    echo "   The download may have failed or the URL may be incorrect"
+fi
 
 echo ""
+echo "📦 Extracting bundle to $PMC_STYLE_DIR..."
+tar -xzf "$BUNDLE_FILE"
+
+# Find the extracted directory (may be nlm-style-5.47 or similar)
+EXTRACTED_DIR=$(find . -maxdepth 1 -type d -name "nlm-style*" | head -1)
+if [ -z "$EXTRACTED_DIR" ]; then
+    echo "⚠️  Warning: Could not find extracted directory"
+    echo "   Attempting to extract directly to target..."
+    tar -xzf "$BUNDLE_FILE" -C "$PMC_STYLE_DIR"
+else
+    echo "Found extracted directory: $EXTRACTED_DIR"
+    # Move contents preserving directory structure
+    cp -r "$EXTRACTED_DIR"/* "$PMC_STYLE_DIR/" || cp -r "$EXTRACTED_DIR"/. "$PMC_STYLE_DIR/"
+fi
+
+echo "✅ Extraction complete!"
+echo ""
+
+# List extracted files
+echo "📄 Extracted files:"
+find "$PMC_STYLE_DIR" -type f | head -20
+FILE_COUNT=$(find "$PMC_STYLE_DIR" -type f | wc -l)
+echo ""
+echo "Total files: $FILE_COUNT"
+
+# Verify key files exist
+echo ""
+echo "🔍 Verifying key files..."
+if [ -f "$PMC_STYLE_DIR/nlm-stylechecker.xsl" ]; then
+    echo "✅ nlm-stylechecker.xsl found"
+elif [ -f "$PMC_STYLE_DIR/nlm-style-5-0.xsl" ]; then
+    echo "✅ nlm-style-5-0.xsl found"
+else
+    echo "⚠️  Warning: No known XSLT files found in expected locations"
+    echo "   Please verify the bundle contents manually"
+fi
+
+# Check for LICENSE/README
+if [ -f "$PMC_STYLE_DIR/LICENSE" ] || [ -f "$PMC_STYLE_DIR/LICENSE.txt" ]; then
+    echo "✅ LICENSE file found"
+fi
+if [ -f "$PMC_STYLE_DIR/README" ] || [ -f "$PMC_STYLE_DIR/README.md" ] || [ -f "$PMC_STYLE_DIR/README.txt" ]; then
+    echo "✅ README file found"
+fi
+
+# Cleanup
+cd "$REPO_ROOT"
+rm -rf "$TEMP_DIR"
+
+echo ""
+echo "==================================================================="
 echo "✅ PMC Style Checker setup complete!"
 echo ""
 echo "📁 Installation directory: $PMC_STYLE_DIR"
-echo "📄 Files:"
-ls -lh "$PMC_STYLE_DIR"
 echo ""
-echo "==================================================================="
 echo "Next steps:"
-echo "1. Ensure xsltproc is installed: which xsltproc"
-echo "2. Run a conversion and check for pmc_style_report.html"
-echo "3. Review validation_report.json for style check results"
+echo "1. Ensure xsltproc is installed:"
+echo "      which xsltproc"
+echo "   Or install:"
+echo "      apt-get install xsltproc (Ubuntu/Debian)"
+echo "      brew install libxslt (macOS)"
+echo "      apk add libxslt (Alpine)"
+echo ""
+echo "2. Test manually:"
+echo "      xsltproc $PMC_STYLE_DIR/nlm-stylechecker.xsl output/article.xml > pmc_report.html"
+echo ""
+echo "3. Run a conversion and check validation_report.json for pmc_stylechecker results"
 echo "==================================================================="

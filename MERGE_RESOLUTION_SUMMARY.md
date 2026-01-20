@@ -140,6 +140,41 @@ Before merging to main:
 - `PMC_COMPLIANCE_CHECKLIST.md` - PMC submission checklist
 - `pmc-stylechecker/README.md` - PMC style checker installation guide
 
+## Recent Updates
+
+### Official PMC nlm-style-5.47 XSLT Bundle Integration
+
+**Date:** January 2026  
+**Branch:** add-pmc-style-nlm-5.47
+
+Added support for the official PMC Style Checker XSLT bundle (version 5.47):
+
+1. **Bundle Download Script** (`tools/fetch_pmc_style.sh`)
+   - Idempotent download and extraction of nlm-style-5.47.tar.gz
+   - Supports both curl and wget
+   - Extracts to `pmc-stylechecker/nlm-style-5.47/`
+   - Preserves LICENSE and attribution from official bundle
+
+2. **MasterPipeline.py Enhancements**
+   - Fixed kwarg mismatch: `pmc_style_check` → `pmc_stylechecker` in exception handlers
+   - Added backward-compatible alias support in `_generate_validation_report`
+   - Updated XSLT file search order to prefer `nlm-style-5.47/` directory
+   - Integrated `xsltproc` subprocess execution (documented in repo)
+   - Returns `xslt_stdout`, `xslt_stderr`, `returncode` in result dictionary
+   - Graceful fallback when xsltproc not found (sets `available=False`)
+
+3. **Documentation Updates**
+   - Updated `pmc-stylechecker/README.md` with nlm-style-5.47 details
+   - Added manual xsltproc usage examples
+   - XSLT 1.0 vs 2.0 compatibility notes
+   - Saxon processor recommendations for XSLT 2.0 needs
+
+**How to Refresh Bundle:**
+```bash
+rm -rf pmc-stylechecker/nlm-style-5.47
+./tools/fetch_pmc_style.sh
+```
+
 ## Conclusion
 
 All merge conflicts have been successfully resolved. The application now:
@@ -149,5 +184,6 @@ All merge conflicts have been successfully resolved. The application now:
 - ✅ Compiles without syntax errors
 - ✅ Starts successfully
 - ✅ Is 215 lines smaller and more maintainable
+- ✅ Integrates official PMC Style Checker XSLT bundle
 
 The codebase is now ready for production deployment.
