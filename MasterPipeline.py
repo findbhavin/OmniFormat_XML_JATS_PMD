@@ -1006,14 +1006,24 @@ class HighFidelityConverter:
         Fallback method to generate articledtd.xml without importing add_doctype.
         """
         try:
-            # DOCTYPE declarations inline
-            doctype_declarations = {
-                "1.4": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.4 20240930//EN" "https://jats.nlm.nih.gov/publishing/1.4/JATS-journalpublishing1-4.dtd">',
-                "1.3": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN" "https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.dtd">',
-                "1.2": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN" "https://jats.nlm.nih.gov/publishing/1.2/JATS-journalpublishing1-2.dtd">',
-                "1.1": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1-1.dtd">',
-                "1.0": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.0 20120330//EN" "https://jats.nlm.nih.gov/publishing/1.0/JATS-journalpublishing1.dtd">',
-            }
+            # Import DOCTYPE declarations from add_doctype utility
+            import sys
+            tools_path = os.path.join(os.path.dirname(__file__), 'tools')
+            if tools_path not in sys.path:
+                sys.path.insert(0, tools_path)
+            
+            try:
+                from add_doctype import DOCTYPE_DECLARATIONS
+                doctype_declarations = DOCTYPE_DECLARATIONS
+            except ImportError:
+                # Final fallback: inline DOCTYPE declarations
+                doctype_declarations = {
+                    "1.4": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.4 20240930//EN" "https://jats.nlm.nih.gov/publishing/1.4/JATS-journalpublishing1-4.dtd">',
+                    "1.3": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN" "https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.dtd">',
+                    "1.2": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN" "https://jats.nlm.nih.gov/publishing/1.2/JATS-journalpublishing1-2.dtd">',
+                    "1.1": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1-1.dtd">',
+                    "1.0": '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.0 20120330//EN" "https://jats.nlm.nih.gov/publishing/1.0/JATS-journalpublishing1.dtd">',
+                }
             
             # Get the appropriate DOCTYPE for the version
             doctype = doctype_declarations.get(self.jats_version, doctype_declarations["1.3"])
@@ -1104,7 +1114,7 @@ class HighFidelityConverter:
 
                 f.write("GENERATED FILES:\n")
                 f.write("-" * 50 + "\n")
-                f.write("1. article.xml           - JATS 1.4 Publishing DTD XML (without DOCTYPE)\n")
+                f.write("1. article.xml           - JATS {0} Publishing DTD XML (without DOCTYPE)\n".format(self.jats_version))
                 f.write("2. articledtd.xml        - JATS XML with DOCTYPE for PMC Style Checker\n")
                 f.write("3. published_article.pdf - PDF generated from JATS XML\n")
                 f.write("4. direct_from_word.pdf  - Direct DOCX→PDF conversion\n")

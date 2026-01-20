@@ -155,13 +155,6 @@ Each conversion generates a complete package:
    - Document structure analysis
    - PMC submission checklist
 8. **README.txt** - Package documentation
-   - JATS schema validation results
-   - PMC compliance check results
-   - PMC Style Checker results (if available)
-   - Critical issues and warnings
-   - Document structure analysis
-   - PMC submission checklist
-7. **README.txt** - Package documentation
 
 ## Validation Report
 
