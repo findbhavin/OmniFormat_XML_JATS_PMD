@@ -326,8 +326,8 @@ class HighFidelityConverter:
         if not os.path.exists(self.xsd_path):
             logger.error(f"❌ XSD file not found: {self.xsd_path}")
             # Still try to run PMC Style Checker even if XSD is missing
-            pmc_style_check = self._run_pmc_stylechecker()
-            self._generate_validation_report(None, False, "XSD file not found", pmc_style_check=pmc_style_check)
+            pmc_stylechecker = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, "XSD file not found", pmc_stylechecker=pmc_stylechecker)
             return False
 
         try:
@@ -360,22 +360,22 @@ class HighFidelityConverter:
         except etree.XMLSchemaError as e:
             logger.error(f"❌ JATS Validation Failed: {e}")
             # Still try to run PMC Style Checker even if schema validation fails
-            pmc_style_check = self._run_pmc_stylechecker()
-            self._generate_validation_report(None, False, str(e), pmc_style_check=pmc_style_check)
+            pmc_stylechecker = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, str(e), pmc_stylechecker=pmc_stylechecker)
             return False
 
         except etree.XMLSyntaxError as e:
             logger.error(f"❌ XML Syntax Error: {e}")
             # Try to run PMC Style Checker if XML can be parsed
-            pmc_style_check = self._run_pmc_stylechecker()
-            self._generate_validation_report(None, False, f"XML Syntax Error: {e}", pmc_style_check=pmc_style_check)
+            pmc_stylechecker = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, f"XML Syntax Error: {e}", pmc_stylechecker=pmc_stylechecker)
             return False
 
         except Exception as e:
             logger.error(f"❌ Validation Error: {e}")
             # Try to run PMC Style Checker
-            pmc_style_check = self._run_pmc_stylechecker()
-            self._generate_validation_report(None, False, str(e), pmc_style_check=pmc_style_check)
+            pmc_stylechecker = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, str(e), pmc_stylechecker=pmc_stylechecker)
             return False
 
     def _run_pmc_stylechecker(self):
@@ -388,12 +388,18 @@ class HighFidelityConverter:
         
         # Look for style checker XSLT files in order of preference
         pmc_dir = "pmc-stylechecker"
+        nlm_style_dir = os.path.join(pmc_dir, "nlm-style-5.47")
+        
         xslt_candidates = [
-            # Official PMC style checker files (preferred)
+            # Official PMC nlm-style-5.47 bundle (highest priority)
+            os.path.join(nlm_style_dir, "nlm-stylechecker.xsl"),
+            os.path.join(nlm_style_dir, "nlm-style-5-0.xsl"),
+            os.path.join(nlm_style_dir, "nlm-style-3-0.xsl"),
+            # Legacy official PMC style checker files
             os.path.join(pmc_dir, "nlm-style-5-0.xsl"),
             os.path.join(pmc_dir, "nlm-style-3-0.xsl"),
             os.path.join(pmc_dir, "nlm-stylechecker.xsl"),
-            # Custom simplified checker
+            # Custom simplified checker (fallback)
             os.path.join(pmc_dir, "pmc_style_checker.xsl")
         ]
         
@@ -401,15 +407,33 @@ class HighFidelityConverter:
         for candidate_path in xslt_candidates:
             if os.path.exists(candidate_path):
                 xslt_path = candidate_path
+                logger.info(f"Using PMC Style Checker: {xslt_path}")
                 break
+        
+        # If no specific candidate found, search nlm-style-5.47 directory for any .xsl file
+        if not xslt_path and os.path.exists(nlm_style_dir):
+            try:
+                xsl_files = [f for f in os.listdir(nlm_style_dir) if f.endswith('.xsl')]
+                if xsl_files:
+                    # Prefer nlm-stylechecker.xsl or highest version
+                    if 'nlm-stylechecker.xsl' in xsl_files:
+                        xslt_path = os.path.join(nlm_style_dir, 'nlm-stylechecker.xsl')
+                    else:
+                        # Sort by name to get highest version (e.g., nlm-style-5-0.xsl)
+                        xsl_files.sort(reverse=True)
+                        xslt_path = os.path.join(nlm_style_dir, xsl_files[0])
+                    logger.info(f"Found PMC Style Checker in bundle: {xslt_path}")
+            except Exception as e:
+                logger.warning(f"Error searching nlm-style-5.47 directory: {e}")
         
         if not xslt_path:
             logger.warning("PMC Style Checker XSLT not found. Skipping style check.")
-            logger.info(f"To enable: Download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
+            logger.info(f"To enable: Run tools/fetch_pmc_style.sh or download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
             return {
                 "available": False,
                 "message": "PMC Style Checker XSLT files not installed",
-                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz"
+                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz",
+                "installation_script": "tools/fetch_pmc_style.sh"
             }
         
         try:
@@ -417,6 +441,9 @@ class HighFidelityConverter:
             xml_doc = etree.parse(self.xml_path)
             xslt_doc = etree.parse(xslt_path)
             transform = etree.XSLT(xslt_doc)
+            
+            # Capture any XSLT errors
+            xslt_error_log = transform.error_log if hasattr(transform, 'error_log') else None
             
             # Apply transformation
             result = transform(xml_doc)
@@ -508,11 +535,20 @@ class HighFidelityConverter:
             
         except Exception as e:
             logger.error(f"❌ PMC Style Checker failed: {e}")
-            return {
-                "available": True,
+            # Capture detailed error information
+            error_details = {
+                "available": False,
                 "error": str(e),
-                "status": "ERROR"
+                "error_type": type(e).__name__,
+                "status": "ERROR",
+                "xslt_used": os.path.basename(xslt_path) if xslt_path else None
             }
+            
+            # Include traceback in debug mode
+            if logger.isEnabledFor(logging.DEBUG):
+                error_details["traceback"] = traceback.format_exc()
+            
+            return error_details
 
     def _validate_pmc_requirements(self, xml_doc):
         """
