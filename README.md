@@ -14,28 +14,37 @@ Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM
    - Validates against official NLM XSD schemas
    - Full PMC/NLM Style Checker compatibility
    - Proper namespace declarations (XLink, MathML)
+   - xsi:schemaLocation injection for external validators
    - MathML 2.0/3.0 support
 
 2. **PMC-Specific Validation**
    - Automated PMC requirements checking
+   - Integrated PMC Style Checker XSLT validation
    - DOI and metadata validation
    - Author affiliation structure verification
    - Table positioning (float/anchor)
    - Figure and caption compliance
    - Reference formatting validation
 
-3. **Dual PDF Generation**
+3. **Asynchronous Conversion with Progress Tracking**
+   - Real-time progress updates during conversion
+   - Non-blocking file uploads
+   - Status polling via REST API
+   - Separate download endpoint for completed conversions
+   - Modern drag-and-drop UI with progress bar
+
+4. **Dual PDF Generation**
    - PDF from JATS XML (semantic, PMC-ready)
    - Direct DOCX→PDF (format preserving)
 
-4. **AI-Powered Content Repair**
+5. **AI-Powered Content Repair**
    - Fixes truncated headers
    - Ensures PMC metadata requirements
    - Validates accessibility compliance
    - Proper author formatting with affiliations
    - Special character encoding
 
-5. **Automatic Features**
+6. **Automatic Features**
    - Table captions with proper positioning
    - Media extraction to `/media` folder
    - Superscript/subscript preservation
@@ -47,12 +56,14 @@ Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM
 ```
 .
 ├── MasterPipeline.py           # Main conversion pipeline with JATS 1.4 compliance
-├── app.py                      # Flask web application
+├── app.py                      # Flask web application with async endpoints
 ├── Dockerfile                  # Container configuration
 ├── requirements.txt            # Python dependencies
 ├── JATS-journalpublishing-*.xsd # JATS schema files
+├── pmc-stylechecker/           # PMC Style Checker XSLT files
+│   └── README.md              # Installation instructions
 ├── templates/
-│   ├── index.html             # Upload interface
+│   ├── index.html             # Modern async upload interface
 │   └── style.css              # PMC-compliant PDF styling
 ├── standard-modules/          # JATS XSD modules
 │   ├── mathml2/              # MathML 2.0 schema
@@ -128,7 +139,7 @@ Figures include:
 
 Each conversion generates a complete package:
 
-1. **article.xml** - JATS 1.4 Publishing DTD XML
+1. **article.xml** - JATS 1.4 Publishing DTD XML with xsi:schemaLocation
 2. **published_article.pdf** - PDF from JATS XML
 3. **direct_from_word.pdf** - Direct DOCX conversion
 4. **article.html** - HTML version
@@ -136,6 +147,7 @@ Each conversion generates a complete package:
 6. **validation_report.json** - Detailed validation report with:
    - JATS schema validation results
    - PMC compliance check results
+   - PMC Style Checker results (if available)
    - Critical issues and warnings
    - Document structure analysis
    - PMC submission checklist
@@ -162,6 +174,15 @@ The validation report includes:
       "warnings_count": 0
     }
   },
+  "pmc_stylechecker": {
+    "available": true,
+    "status": "PASS/FAIL",
+    "xslt_used": "nlm-style-5-0.xsl",
+    "error_count": 0,
+    "warning_count": 0,
+    "errors": [],
+    "warnings": []
+  },
   "document_structure": {
     "dtd_version": "1.4",
     "article_type": "research-article",
@@ -180,11 +201,64 @@ The validation report includes:
 
 ## Usage
 
-1. Upload DOCX file through web interface
-2. System converts to JATS 1.4 XML
-3. AI-powered repair fixes common issues
-4. PMC compliance validation runs automatically
-5. Download complete package
+### Web Interface
+
+1. **Upload File**
+   - Navigate to the web interface
+   - Click or drag-and-drop a DOCX file (max 50 MB)
+   - Click "Convert & Download Package"
+
+2. **Monitor Progress**
+   - Real-time progress bar shows conversion status
+   - Progress updates from 0% to 100%
+   - Status messages indicate current step
+
+3. **Download Results**
+   - Once conversion completes (100%), click "Download Package"
+   - Receive complete ZIP package with all outputs
+
+### API Endpoints
+
+#### POST /convert
+Start asynchronous conversion
+```bash
+curl -X POST -F "file=@document.docx" http://localhost:8080/convert
+```
+Returns:
+```json
+{
+  "conversion_id": "20260120_103000_abcd1234",
+  "status": "queued",
+  "message": "Conversion started"
+}
+```
+
+#### GET /status/<conversion_id>
+Check conversion status
+```bash
+curl http://localhost:8080/status/20260120_103000_abcd1234
+```
+Returns:
+```json
+{
+  "status": "processing",
+  "progress": 40,
+  "message": "Validating JATS XML",
+  "filename": "document.docx"
+}
+```
+
+#### GET /download/<conversion_id>
+Download completed conversion
+```bash
+curl -O http://localhost:8080/download/20260120_103000_abcd1234
+```
+
+#### GET /health
+Health check endpoint
+```bash
+curl http://localhost:8080/health
+```
 
 ## PMC Submission Workflow
 

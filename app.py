@@ -4,11 +4,20 @@ import logging
 import traceback
 import subprocess
 import threading
+import time
 from datetime import datetime
-from flask import Flask, request, render_template, send_file, jsonify, abort
+from flask import Flask, request, render_template, send_file, jsonify, abort, url_for
+from werkzeug.utils import secure_filename
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
+
+# Global dictionary to track conversion jobs
+conversion_jobs = {}
+# In-memory conversion tracking (for single-instance testing)
+# For production: use Redis or a task queue
+conversion_status = {}
+conversion_status_lock = threading.Lock()
 
 # Configure Logging
 logging.basicConfig(
@@ -26,29 +35,67 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB limit
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_ZIP_DIR, exist_ok=True)
 
-# In-memory progress store (for single-instance deployments)
-# NOTE: For multi-instance deployments, use Redis or a job queue system
+# In-memory progress store (single-process only)
 conversion_progress = {}
 
+def set_progress(conv_id, percent=None, stage=None, message=None, state=None, download_url=None):
+    entry = conversion_progress.setdefault(conv_id, {
+        "percent": 0,
+        "stage": "queued",
+        "message": "",
+        "state": "queued",
+        "download_url": None,
+        "started_at": datetime.utcnow().isoformat()
+    })
+    if percent is not None:
+        entry["percent"] = int(percent)
+    if stage is not None:
+        entry["stage"] = stage
+    if message is not None:
+        entry["message"] = message
+    if state is not None:
+        entry["state"] = state
+    if download_url is not None:
+        entry["download_url"] = download_url
 
-def cleanup_old_progress_entries():
-    """Clean up old progress entries to prevent memory leaks."""
+
+def background_conversion_runner(conversion_id, docx_path, safe_filename):
     try:
-        now = datetime.now()
-        to_delete = []
-        for conversion_id, progress in conversion_progress.items():
-            # Remove entries older than 1 hour
-            if "start_time" in progress:
-                age = (now - progress["start_time"]).total_seconds()
-                if age > 3600:  # 1 hour
-                    to_delete.append(conversion_id)
-        
-        for conversion_id in to_delete:
-            del conversion_progress[conversion_id]
-            logger.debug(f"Cleaned up old progress entry: {conversion_id}")
-            
+        set_progress(conversion_id, percent=5, stage="saved", message="File saved", state="running")
+
+        logger.info(f"[{conversion_id}] Background conversion started for {docx_path}")
+
+        converter = HighFidelityConverter(docx_path)
+        set_progress(conversion_id, percent=15, stage="initializing", message="Preparing conversion environment")
+
+        output_folder = converter.run_pipeline()
+
+        set_progress(conversion_id, percent=70, stage="packaging", message="Packaging outputs into ZIP")
+
+        base_name = os.path.splitext(safe_filename)[0]
+        zip_filename = f"OmniJAX_{base_name}"
+        zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
+
+        if os.path.exists(zip_full_path + ".zip"):
+            try:
+                os.remove(zip_full_path + ".zip")
+            except Exception:
+                pass
+
+        shutil.make_archive(zip_full_path, 'zip', output_folder)
+        zip_file_path = zip_full_path + ".zip"
+
+        download_url = url_for('download_zip', filename=os.path.basename(zip_file_path), _external=False)
+
+        set_progress(conversion_id, percent=100, stage="completed", message="Conversion completed", state="completed", download_url=download_url)
+
+        cleanup_file(docx_path, conversion_id, "uploaded DOCX")
+        cleanup_old_files(UPLOAD_FOLDER, hours=1, conversion_id=conversion_id)
+        cleanup_old_files(OUTPUT_ZIP_DIR, hours=1, conversion_id=conversion_id)
+
     except Exception as e:
-        logger.warning(f"Progress cleanup error: {e}")
+        logger.exception(f"[{conversion_id}] Background conversion failed: {e}")
+        set_progress(conversion_id, percent=0, stage="failed", message=str(e), state="failed")
 
 
 # Health check endpoint for Cloud Run
@@ -141,26 +188,127 @@ def index():
         """, 500
 
 
-def run_conversion_background(conversion_id, docx_path, safe_filename, original_filename):
-    """Run conversion in background thread with progress tracking."""
+@app.route('/status/<conversion_id>', methods=['GET'])
+def get_status(conversion_id):
+    """Get the status of a conversion job."""
+    if conversion_id not in conversion_jobs:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id,
+            "status": "not_found"
+        }), 404
+    
+    job_info = conversion_jobs[conversion_id]
+    
+    # Return job status
+    response = {
+        "conversion_id": conversion_id,
+        "status": job_info["status"],
+        "progress": job_info.get("progress", 0),
+        "message": job_info.get("message", ""),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    
+    # If completed, add download URL
+    if job_info["status"] == "completed":
+        response["download_url"] = f"/download/{conversion_id}"
+        response["zip_filename"] = job_info.get("zip_filename", "")
+        response["processing_time"] = job_info.get("processing_time", 0)
+    
+    # If failed, add error details
+    if job_info["status"] == "failed":
+        response["error"] = job_info.get("error", "Unknown error")
+    
+    return jsonify(response), 200
+
+
+@app.route('/download/<conversion_id>', methods=['GET'])
+def download(conversion_id):
+    """Download the converted package."""
+    if conversion_id not in conversion_jobs:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id
+        }), 404
+    
+    job_info = conversion_jobs[conversion_id]
+    
+    if job_info["status"] != "completed":
+        return jsonify({
+            "error": "Conversion not completed",
+            "conversion_id": conversion_id,
+            "status": job_info["status"]
+        }), 400
+    
+    zip_file_path = job_info.get("zip_file_path")
+    
+    if not zip_file_path or not os.path.exists(zip_file_path):
+        return jsonify({
+            "error": "Output file not found",
+            "conversion_id": conversion_id
+        }), 404
+    
     try:
-        # Update progress: starting
-        conversion_progress[conversion_id]["status"] = "processing"
-        conversion_progress[conversion_id]["message"] = "Starting conversion pipeline..."
-        conversion_progress[conversion_id]["progress"] = 10
+        response = send_file(
+            zip_file_path,
+            as_attachment=True,
+            download_name=job_info.get("zip_filename", "OmniJAX_output.zip"),
+            mimetype='application/zip'
+        )
         
+        response.headers['X-Conversion-ID'] = conversion_id
+        response.headers['X-Processing-Time'] = f"{job_info.get('processing_time', 0):.2f}s"
+        
+        return response
+    except Exception as e:
+        logger.error(f"[{conversion_id}] Download failed: {e}")
+        return jsonify({
+            "error": "Failed to send file",
+            "conversion_id": conversion_id,
+            "details": str(e)
+        }), 500
+
+
+def run_conversion_async(conversion_id, docx_path, safe_filename):
+    """Run conversion in background thread."""
+    start_time = datetime.now()
+    
+    try:
+        # Update status: starting
+        conversion_jobs[conversion_id]["status"] = "processing"
+        conversion_jobs[conversion_id]["progress"] = 10
+        conversion_jobs[conversion_id]["message"] = "Initializing conversion pipeline..."
+def process_conversion_async(conversion_id, docx_path, safe_filename, original_filename):
+    """Background worker to process conversion asynchronously."""
+    start_time = datetime.now()
+    
+    try:
+        # Update status to processing
+        with conversion_status_lock:
+            conversion_status[conversion_id]['state'] = 'processing'
+            conversion_status[conversion_id]['message'] = 'Converting document...'
         logger.info(f"[{conversion_id}] Starting conversion pipeline...")
+        
+        # Run the full pipeline
         converter = HighFidelityConverter(docx_path)
+        
+        # Update progress during conversion
+        conversion_jobs[conversion_id]["progress"] = 30
+        conversion_jobs[conversion_id]["message"] = "Converting DOCX to JATS XML..."
+        
         output_folder = converter.run_pipeline()
         
         # Update progress: packaging
-        conversion_progress[conversion_id]["progress"] = 80
-        conversion_progress[conversion_id]["message"] = "Packaging output files..."
+        conversion_jobs[conversion_id]["progress"] = 80
+        conversion_jobs[conversion_id]["message"] = "Packaging output files..."
+        
+        output_folder = converter.run_pipeline()
 
         # Package all outputs into ZIP
         base_name = os.path.splitext(safe_filename)[0]
         zip_filename = f"OmniJAX_{base_name}"
         zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
+        
 
         # Clean existing zip if exists
         if os.path.exists(zip_full_path + ".zip"):
@@ -168,28 +316,45 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
                 os.remove(zip_full_path + ".zip")
             except:
                 pass
+        
 
         # Create ZIP archive
         shutil.make_archive(zip_full_path, 'zip', output_folder)
         zip_file_path = zip_full_path + ".zip"
         zip_size = os.path.getsize(zip_file_path)
         zip_size_mb = zip_size / (1024 * 1024)
+        
+        logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
+        
+        # Calculate processing time
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
+        # Update status: completed
+        conversion_jobs[conversion_id]["status"] = "completed"
+        conversion_jobs[conversion_id]["progress"] = 100
+        conversion_jobs[conversion_id]["message"] = "Conversion completed successfully!"
+        conversion_jobs[conversion_id]["zip_file_path"] = zip_file_path
+        conversion_jobs[conversion_id]["zip_filename"] = f"{zip_filename}.zip"
+        conversion_jobs[conversion_id]["processing_time"] = processing_time
+        conversion_jobs[conversion_id]["file_size_mb"] = zip_size_mb
+        
+        logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
+        
 
         logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
 
         # Calculate processing time
-        processing_time = (datetime.now() - conversion_progress[conversion_id]["start_time"]).total_seconds()
-
-        # Update progress: completed
-        conversion_progress[conversion_id]["status"] = "completed"
-        conversion_progress[conversion_id]["message"] = "Conversion completed successfully!"
-        conversion_progress[conversion_id]["progress"] = 100
-        conversion_progress[conversion_id]["download_filename"] = f"OmniJAX_{original_filename.rsplit('.', 1)[0]}.zip"
-        conversion_progress[conversion_id]["download_path"] = zip_file_path
-        conversion_progress[conversion_id]["file_size_mb"] = zip_size_mb
-        conversion_progress[conversion_id]["processing_time"] = processing_time
-
+        processing_time = (datetime.now() - start_time).total_seconds()
         logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
+
+        # Update status to completed
+        with conversion_status_lock:
+            conversion_status[conversion_id]['state'] = 'completed'
+            conversion_status[conversion_id]['message'] = 'Conversion completed successfully'
+            conversion_status[conversion_id]['zip_path'] = zip_file_path
+            conversion_status[conversion_id]['download_name'] = f"OmniJAX_{original_filename.rsplit('.', 1)[0]}.zip"
+            conversion_status[conversion_id]['processing_time'] = processing_time
+            conversion_status[conversion_id]['file_size_mb'] = zip_size_mb
 
     except Exception as e:
         # Log full traceback for debugging
@@ -223,7 +388,7 @@ def convert():
         return jsonify({
             "error": "No file uploaded",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 400
 
@@ -234,7 +399,7 @@ def convert():
         return jsonify({
             "error": "No file selected",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 400
 
@@ -244,12 +409,13 @@ def convert():
         return jsonify({
             "error": "Only .docx files are supported",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 400
 
     # Save uploaded file with unique name
-    safe_filename = f"{conversion_id}_{file.filename.replace(' ', '_').replace('/', '_')}"
+    sanitized_filename = secure_filename(file.filename)
+    safe_filename = f"{conversion_id}_{sanitized_filename}"
     docx_path = os.path.join(UPLOAD_FOLDER, safe_filename)
 
     try:
@@ -265,7 +431,7 @@ def convert():
             return jsonify({
                 "error": f"File too large ({file_size_mb:.1f} MB). Maximum size is 50 MB.",
                 "conversion_id": conversion_id,
-                "status": "failed",
+                "state": "failed",
                 "timestamp": datetime.utcnow().isoformat()
             }), 400
 
@@ -304,7 +470,7 @@ def convert():
         return jsonify({
             "error": f"File save failed: {str(e)}",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 500
 
