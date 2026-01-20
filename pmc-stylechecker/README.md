@@ -87,7 +87,9 @@ The simplified `pmc_style_checker.xsl` performs basic checks and is used as a fa
 - Article title verification
 - Abstract presence check
 - Table-wrap positioning validation
-- Figure and reference counting
+- Figure and reference structure
+- Author and affiliation formatting
+- And many more PMC-specific requirements
 
 ## Automated Integration
 

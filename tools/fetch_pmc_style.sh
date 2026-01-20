@@ -19,6 +19,9 @@ echo "==================================================================="
 echo "PMC Style Checker XSLT Bundle Downloader (nlm-style-5.47)"
 echo "==================================================================="
 echo ""
+echo "Source: $ARCHIVE_URL"
+echo "Target: $NLM_547_DIR"
+echo ""
 
 # Check if tar is available
 if ! command -v tar &> /dev/null; then
@@ -52,7 +55,7 @@ if [ -d "$PMC_STYLE_DIR" ] && [ -f "$PMC_STYLE_DIR/nlm-stylechecker.xsl" ]; then
 fi
 
 # Create directories
-mkdir -p "$PMC_STYLE_DIR"
+mkdir -p "$NLM_547_DIR"
 mkdir -p "$TEMP_DIR"
 
 echo "📥 Downloading PMC Style Checker bundle from PMC..."
@@ -165,3 +168,6 @@ echo "      xsltproc $PMC_STYLE_DIR/nlm-stylechecker.xsl output/article.xml > pm
 echo ""
 echo "3. Run a conversion and check validation_report.json for pmc_stylechecker results"
 echo "==================================================================="
+echo ""
+echo "The MasterPipeline will automatically detect and use these files."
+echo ""
