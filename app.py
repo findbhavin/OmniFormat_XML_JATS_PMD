@@ -3,11 +3,16 @@ import shutil
 import logging
 import traceback
 import subprocess
+import threading
 from datetime import datetime
 from flask import Flask, request, render_template, send_file, jsonify, abort
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
+
+# In-memory conversion tracking (for single-instance testing)
+# For production: use Redis or a task queue
+conversion_status = {}
 
 # Configure Logging
 logging.basicConfig(
@@ -116,79 +121,17 @@ def index():
         """, 500
 
 
-@app.route('/convert', methods=['POST'])
-def convert():
-    """Handle file upload and conversion."""
+def process_conversion_async(conversion_id, docx_path, safe_filename, original_filename):
+    """Background worker to process conversion asynchronously."""
     start_time = datetime.now()
-    conversion_id = datetime.now().strftime("%Y%m%d_%H%M%S_") + os.urandom(4).hex()
-
-    logger.info(f"[{conversion_id}] Conversion request started")
-
-    if 'file' not in request.files:
-        logger.error(f"[{conversion_id}] No file uploaded")
-        return jsonify({
-            "error": "No file uploaded",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 400
-
-    file = request.files['file']
-
-    if file.filename == '':
-        logger.error(f"[{conversion_id}] No file selected")
-        return jsonify({
-            "error": "No file selected",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 400
-
-    # Validate file extension
-    if not file.filename.lower().endswith('.docx'):
-        logger.error(f"[{conversion_id}] Invalid file type: {file.filename}")
-        return jsonify({
-            "error": "Only .docx files are supported",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 400
-
-    # Save uploaded file with unique name
-    safe_filename = f"{conversion_id}_{file.filename.replace(' ', '_').replace('/', '_')}"
-    docx_path = os.path.join(UPLOAD_FOLDER, safe_filename)
-
+    
     try:
-        # Save file in chunks to handle large files
-        file.save(docx_path)
-        file_size = os.path.getsize(docx_path)
-        file_size_mb = file_size / (1024 * 1024)
-
-        # Check file size limit
-        if file_size > MAX_FILE_SIZE:
-            os.remove(docx_path)
-            logger.error(f"[{conversion_id}] File too large: {file_size_mb:.2f} MB")
-            return jsonify({
-                "error": f"File too large ({file_size_mb:.1f} MB). Maximum size is 50 MB.",
-                "conversion_id": conversion_id,
-                "status": "failed",
-                "timestamp": datetime.utcnow().isoformat()
-            }), 400
-
-        logger.info(f"[{conversion_id}] File saved: {file.filename} ({file_size_mb:.2f} MB)")
-
-    except Exception as e:
-        logger.error(f"[{conversion_id}] Failed to save file: {e}")
-        return jsonify({
-            "error": f"File save failed: {str(e)}",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-    try:
-        # Run the full pipeline
+        # Update status to processing
+        conversion_status[conversion_id]['state'] = 'processing'
+        conversion_status[conversion_id]['message'] = 'Converting document...'
         logger.info(f"[{conversion_id}] Starting conversion pipeline...")
+        
+        # Run the full pipeline
         converter = HighFidelityConverter(docx_path)
         output_folder = converter.run_pipeline()
 
@@ -214,72 +157,27 @@ def convert():
 
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds()
-
-        # Log successful conversion
         logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
 
-        # Prepare response
-        response = send_file(
-            zip_file_path,
-            as_attachment=True,
-            download_name=f"OmniJAX_{file.filename.rsplit('.', 1)[0]}.zip",
-            mimetype='application/zip'
-        )
-
-        # Add headers for monitoring
-        response.headers['X-Conversion-ID'] = conversion_id
-        response.headers['X-Processing-Time'] = f"{processing_time:.2f}s"
-        response.headers['X-File-Size'] = f"{zip_size_mb:.2f}MB"
-
-        return response
-
-    except subprocess.CalledProcessError as e:
-        logger.error(f"[{conversion_id}] Conversion process error: {e.stderr if hasattr(e, 'stderr') else str(e)}")
-        return jsonify({
-            "error": "Document conversion failed",
-            "details": e.stderr[:500] if hasattr(e, 'stderr') and e.stderr else str(e)[:500],
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-    except ImportError as e:
-        logger.error(f"[{conversion_id}] Import error: {e}")
-        return jsonify({
-            "error": "Required library not available",
-            "details": str(e),
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-    except MemoryError:
-        logger.error(f"[{conversion_id}] Out of memory error")
-        return jsonify({
-            "error": "Out of memory. File may be too large or complex.",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
+        # Update status to completed
+        conversion_status[conversion_id]['state'] = 'completed'
+        conversion_status[conversion_id]['message'] = 'Conversion completed successfully'
+        conversion_status[conversion_id]['zip_path'] = zip_file_path
+        conversion_status[conversion_id]['download_name'] = f"OmniJAX_{original_filename.rsplit('.', 1)[0]}.zip"
+        conversion_status[conversion_id]['processing_time'] = processing_time
+        conversion_status[conversion_id]['file_size_mb'] = zip_size_mb
 
     except Exception as e:
         # Log full traceback for debugging
         error_trace = traceback.format_exc()
         logger.error(f"[{conversion_id}] Conversion failed: {str(e)}\n{error_trace}")
 
-        # Return error response
-        error_response = {
-            "error": "Conversion failed due to an internal error",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }
-
-        # Include traceback in debug mode
+        # Update status to failed
+        conversion_status[conversion_id]['state'] = 'failed'
+        conversion_status[conversion_id]['message'] = f"Conversion failed: {str(e)[:200]}"
+        conversion_status[conversion_id]['error'] = str(e)[:500]
         if app.debug:
-            error_response["traceback"] = error_trace
-
-        return jsonify(error_response), 500
+            conversion_status[conversion_id]['traceback'] = error_trace
 
     finally:
         # Clean up uploaded DOCX
@@ -288,6 +186,143 @@ def convert():
         # Clean up old files to prevent disk space issues
         cleanup_old_files(UPLOAD_FOLDER, hours=1, conversion_id=conversion_id)
         cleanup_old_files(OUTPUT_ZIP_DIR, hours=1, conversion_id=conversion_id)
+
+
+@app.route('/convert', methods=['POST'])
+def convert():
+    """Handle file upload and start async conversion."""
+    conversion_id = datetime.now().strftime("%Y%m%d_%H%M%S_") + os.urandom(4).hex()
+
+    logger.info(f"[{conversion_id}] Conversion request started")
+
+    if 'file' not in request.files:
+        logger.error(f"[{conversion_id}] No file uploaded")
+        return jsonify({
+            "error": "No file uploaded",
+            "conversion_id": conversion_id,
+            "state": "failed",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        logger.error(f"[{conversion_id}] No file selected")
+        return jsonify({
+            "error": "No file selected",
+            "conversion_id": conversion_id,
+            "state": "failed",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 400
+
+    # Validate file extension
+    if not file.filename.lower().endswith('.docx'):
+        logger.error(f"[{conversion_id}] Invalid file type: {file.filename}")
+        return jsonify({
+            "error": "Only .docx files are supported",
+            "conversion_id": conversion_id,
+            "state": "failed",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 400
+
+    # Save uploaded file with unique name
+    safe_filename = f"{conversion_id}_{file.filename.replace(' ', '_').replace('/', '_')}"
+    docx_path = os.path.join(UPLOAD_FOLDER, safe_filename)
+
+    try:
+        # Save file in chunks to handle large files
+        file.save(docx_path)
+        file_size = os.path.getsize(docx_path)
+        file_size_mb = file_size / (1024 * 1024)
+
+        # Check file size limit
+        if file_size > MAX_FILE_SIZE:
+            os.remove(docx_path)
+            logger.error(f"[{conversion_id}] File too large: {file_size_mb:.2f} MB")
+            return jsonify({
+                "error": f"File too large ({file_size_mb:.1f} MB). Maximum size is 50 MB.",
+                "conversion_id": conversion_id,
+                "state": "failed",
+                "timestamp": datetime.utcnow().isoformat()
+            }), 400
+
+        logger.info(f"[{conversion_id}] File saved: {file.filename} ({file_size_mb:.2f} MB)")
+
+    except Exception as e:
+        logger.error(f"[{conversion_id}] Failed to save file: {e}")
+        return jsonify({
+            "error": f"File save failed: {str(e)}",
+            "conversion_id": conversion_id,
+            "state": "failed",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
+
+    # Initialize conversion status
+    conversion_status[conversion_id] = {
+        'state': 'pending',
+        'message': 'Conversion queued',
+        'filename': safe_filename,
+        'original_filename': file.filename,
+        'timestamp': datetime.utcnow().isoformat()
+    }
+
+    # Start conversion in background thread
+    thread = threading.Thread(
+        target=process_conversion_async,
+        args=(conversion_id, docx_path, safe_filename, file.filename)
+    )
+    thread.daemon = True
+    thread.start()
+
+    # Return 202 Accepted with conversion_id
+    return jsonify({
+        "conversion_id": conversion_id,
+        "state": "pending",
+        "message": "Conversion queued",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 202
+
+
+@app.route('/status/<conversion_id>', methods=['GET'])
+def get_status(conversion_id):
+    """Get conversion status or download ZIP if ready."""
+    if conversion_id not in conversion_status:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 404
+
+    status = conversion_status[conversion_id]
+    state = status['state']
+
+    # If completed, serve the ZIP file
+    if state == 'completed' and 'zip_path' in status:
+        zip_path = status['zip_path']
+        if os.path.exists(zip_path):
+            response = send_file(
+                zip_path,
+                as_attachment=True,
+                download_name=status.get('download_name', 'conversion.zip'),
+                mimetype='application/zip'
+            )
+            response.headers['X-Conversion-ID'] = conversion_id
+            response.headers['X-Processing-Time'] = f"{status.get('processing_time', 0):.2f}s"
+            response.headers['X-File-Size'] = f"{status.get('file_size_mb', 0):.2f}MB"
+            return response
+        else:
+            # File was deleted or doesn't exist
+            status['state'] = 'failed'
+            status['message'] = 'Output file not found'
+
+    # Return status as JSON
+    return jsonify({
+        "conversion_id": conversion_id,
+        "state": state,
+        "message": status.get('message', ''),
+        "timestamp": status.get('timestamp', datetime.utcnow().isoformat()),
+        "error": status.get('error') if state == 'failed' else None
+    }), 200
 
 
 def cleanup_file(file_path, conversion_id, file_type):
