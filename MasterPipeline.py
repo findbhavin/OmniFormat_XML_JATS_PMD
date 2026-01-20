@@ -722,6 +722,9 @@ class HighFidelityConverter:
                 
                 # Inject xsi:schemaLocation for external validator compatibility
                 # This points to the public JATS XSD so external validators can resolve the schema
+                # NOTE: Using JATS 1.3 XSD URL as it is publicly accessible and widely supported
+                # JATS 1.4 XSD is not yet widely available at a stable public URL
+                # The dtd-version attribute is set to 1.4 for forward compatibility
                 if 'xmlns:xsi=' not in content:
                     content = content.replace(
                         '<article',

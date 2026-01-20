@@ -10,14 +10,6 @@ The PMC Style Checker is an XSLT-based tool provided by the National Library of 
 - **Version**: nlm-style-5.47 (or later)
 - **License**: Public domain (US Government work)
 
-## Installation
-
-Run the fetch script to download the PMC Style Checker:
-
-```bash
-./tools/fetch_pmc_style.sh
-```
-
 ## Usage
 
 The style checker is automatically integrated into the OmniJAX conversion pipeline. When a DOCX file is converted:
@@ -44,7 +36,7 @@ The style checker is automatically integrated into the OmniJAX conversion pipeli
 
 ## Files
 
-- `nlm-stylechecker.xsl` - Main XSLT stylesheet for PMC style checking (downloaded by fetch script)
+- `nlm-stylechecker.xsl` - Main XSLT stylesheet for PMC style checking
 - `README.md` - This file
 
 ## Manual Download

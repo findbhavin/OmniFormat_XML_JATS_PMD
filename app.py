@@ -31,6 +31,26 @@ os.makedirs(OUTPUT_ZIP_DIR, exist_ok=True)
 conversion_progress = {}
 
 
+def cleanup_old_progress_entries():
+    """Clean up old progress entries to prevent memory leaks."""
+    try:
+        now = datetime.now()
+        to_delete = []
+        for conversion_id, progress in conversion_progress.items():
+            # Remove entries older than 1 hour
+            if "start_time" in progress:
+                age = (now - progress["start_time"]).total_seconds()
+                if age > 3600:  # 1 hour
+                    to_delete.append(conversion_id)
+        
+        for conversion_id in to_delete:
+            del conversion_progress[conversion_id]
+            logger.debug(f"Cleaned up old progress entry: {conversion_id}")
+            
+    except Exception as e:
+        logger.warning(f"Progress cleanup error: {e}")
+
+
 # Health check endpoint for Cloud Run
 @app.route('/health', methods=['GET'])
 def health():
@@ -292,6 +312,9 @@ def convert():
 @app.route('/status/<conversion_id>', methods=['GET'])
 def get_status(conversion_id):
     """Get conversion status for polling."""
+    # Clean up old progress entries periodically
+    cleanup_old_progress_entries()
+    
     if conversion_id not in conversion_progress:
         return jsonify({
             "error": "Conversion ID not found",
