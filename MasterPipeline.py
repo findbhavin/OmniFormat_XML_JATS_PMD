@@ -350,6 +350,11 @@ class HighFidelityConverter:
             # Perform additional PMC-specific checks
             pmc_passed = self._validate_pmc_requirements(doc)
             
+            # Run PMC Style Checker if available
+            pmc_stylechecker_result = self._run_pmc_stylechecker()
+
+            # Generate comprehensive validation report
+            self._generate_validation_report(doc, True, pmc_passed=pmc_passed, pmc_stylechecker=pmc_stylechecker_result)
             # Run PMC Style Checker XSLT
             pmc_style_check = self._run_pmc_stylechecker()
 
@@ -608,7 +613,7 @@ class HighFidelityConverter:
             logger.error(f"PMC validation check failed: {e}")
             return {"passed": False, "error": str(e)}
 
-    def _generate_validation_report(self, xml_doc, passed, error_msg=None, pmc_passed=None, pmc_style_check=None):
+    def _generate_validation_report(self, xml_doc, passed, error_msg=None, pmc_passed=None, pmc_stylechecker=None):
         """Generate detailed validation report for PMC compliance."""
         report_path = os.path.join(self.output_dir, "validation_report.json")
 
@@ -640,6 +645,24 @@ class HighFidelityConverter:
             },
             "recommendations": []
         }
+        
+        # Add PMC Style Checker results
+        if pmc_stylechecker:
+            report["pmc_stylechecker"] = pmc_stylechecker
+            
+            if pmc_stylechecker.get("available"):
+                if pmc_stylechecker.get("status") == "PASS":
+                    report["recommendations"].append(
+                        "PMC Style Checker passed with no errors."
+                    )
+                elif pmc_stylechecker.get("status") == "FAIL":
+                    report["recommendations"].append(
+                        f"PMC Style Checker found {pmc_stylechecker.get('error_count', 0)} errors. Review and fix before submission."
+                    )
+                if pmc_stylechecker.get("warning_count", 0) > 0:
+                    report["recommendations"].append(
+                        f"PMC Style Checker found {pmc_stylechecker.get('warning_count', 0)} warnings. Review for best practices."
+                    )
 
         # Add PMC compliance details
         if pmc_passed:
@@ -725,6 +748,85 @@ class HighFidelityConverter:
         """Get current timestamp in ISO format."""
         from datetime import datetime
         return datetime.now().isoformat()
+    
+    def _run_pmc_stylechecker(self):
+        """
+        Run PMC Style Checker XSLT transformation if available.
+        Returns a dictionary with style checker results.
+        """
+        logger.info("Running PMC Style Checker...")
+        
+        # Look for style checker XSLT files
+        pmc_dir = "pmc-stylechecker"
+        xslt_files = [
+            "nlm-style-5-0.xsl",
+            "nlm-style-3-0.xsl",
+            "nlm-stylechecker.xsl"
+        ]
+        
+        xslt_path = None
+        for xslt_file in xslt_files:
+            candidate_path = os.path.join(pmc_dir, xslt_file)
+            if os.path.exists(candidate_path):
+                xslt_path = candidate_path
+                break
+        
+        if not xslt_path:
+            logger.warning("PMC Style Checker XSLT not found. Skipping style check.")
+            logger.info(f"To enable: Download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
+            return {
+                "available": False,
+                "message": "PMC Style Checker XSLT files not installed",
+                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz"
+            }
+        
+        try:
+            # Parse the XML and XSLT
+            xml_doc = etree.parse(self.xml_path)
+            xslt_doc = etree.parse(xslt_path)
+            transform = etree.XSLT(xslt_doc)
+            
+            # Apply transformation
+            result = transform(xml_doc)
+            result_str = str(result)
+            
+            # Parse the result to extract errors and warnings
+            errors = []
+            warnings = []
+            
+            # The PMC style checker typically outputs error/warning messages in the result
+            if result_str:
+                lines = result_str.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    if 'error' in line.lower() or 'ERROR' in line:
+                        errors.append(line)
+                    elif 'warning' in line.lower() or 'WARNING' in line:
+                        warnings.append(line)
+            
+            logger.info(f"✅ PMC Style Checker completed: {len(errors)} errors, {len(warnings)} warnings")
+            
+            return {
+                "available": True,
+                "xslt_used": os.path.basename(xslt_path),
+                "errors": errors,
+                "warnings": warnings,
+                "error_count": len(errors),
+                "warning_count": len(warnings),
+                "status": "PASS" if len(errors) == 0 else "FAIL",
+                "full_output": result_str[:2000] if result_str else ""  # Limit output size
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ PMC Style Checker failed: {e}")
+            return {
+                "available": True,
+                "error": str(e),
+                "status": "ERROR"
+            }
 
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
@@ -755,7 +857,7 @@ class HighFidelityConverter:
                         '<article xmlns:mml="http://www.w3.org/1998/Math/MathML"'
                     )
                 
-                # Add xsi namespace and schemaLocation for PMC Style Checker
+                # Add xsi namespace and schemaLocation for PMC Style Checker validation
                 if 'xmlns:xsi=' not in content:
                     content = content.replace(
                         '<article',

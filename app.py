@@ -611,6 +611,75 @@ def download_zip(filename):
     return send_file(file_path, as_attachment=True)
 
 
+@app.route('/status/<conversion_id>', methods=['GET'])
+def get_status(conversion_id):
+    """Get the status of a conversion."""
+    with conversion_lock:
+        if conversion_id not in conversion_status:
+            return jsonify({
+                "error": "Conversion ID not found",
+                "conversion_id": conversion_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 404
+        
+        status = conversion_status[conversion_id].copy()
+        
+        # Remove internal paths from response
+        status.pop('docx_path', None)
+        status.pop('zip_path', None)
+        status.pop('safe_filename', None)
+        
+        return jsonify(status), 200
+
+
+@app.route('/download/<conversion_id>', methods=['GET'])
+def download(conversion_id):
+    """Download the converted package."""
+    with conversion_lock:
+        if conversion_id not in conversion_status:
+            return jsonify({
+                "error": "Conversion ID not found",
+                "conversion_id": conversion_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 404
+        
+        status = conversion_status[conversion_id]
+        
+        if status["status"] != "completed":
+            return jsonify({
+                "error": "Conversion not completed yet",
+                "status": status["status"],
+                "conversion_id": conversion_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 400
+        
+        zip_path = status.get("zip_path")
+        if not zip_path or not os.path.exists(zip_path):
+            return jsonify({
+                "error": "Output file not found",
+                "conversion_id": conversion_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 404
+        
+        filename = status.get("filename", "output")
+        download_name = f"OmniJAX_{filename.rsplit('.', 1)[0]}.zip"
+        
+        # Prepare response
+        response = send_file(
+            zip_path,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/zip'
+        )
+        
+        # Add headers for monitoring
+        response.headers['X-Conversion-ID'] = conversion_id
+        response.headers['X-Processing-Time'] = f"{status.get('processing_time', 0):.2f}s"
+        response.headers['X-File-Size'] = f"{status.get('zip_size_mb', 0):.2f}MB"
+        
+        return response
+
+
 def cleanup_file(file_path, conversion_id, file_type):
     """Clean up a single file with error handling."""
     try:
