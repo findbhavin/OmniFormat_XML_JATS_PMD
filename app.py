@@ -360,25 +360,12 @@ def process_conversion_async(conversion_id, docx_path, safe_filename, original_f
         # Log full traceback for debugging
         error_trace = traceback.format_exc()
         logger.error(f"[{conversion_id}] Conversion failed: {str(e)}\n{error_trace}")
-        
-        # Update status: failed
-        conversion_jobs[conversion_id]["status"] = "failed"
-        conversion_jobs[conversion_id]["progress"] = 0
-        conversion_jobs[conversion_id]["message"] = "Conversion failed"
-        conversion_jobs[conversion_id]["error"] = str(e)
-        
-    finally:
-        # Clean up uploaded DOCX
-        cleanup_file(docx_path, conversion_id, "uploaded DOCX")
-        
 
-        # Update status to failed
-        with conversion_status_lock:
-            conversion_status[conversion_id]['state'] = 'failed'
-            conversion_status[conversion_id]['message'] = f"Conversion failed: {str(e)[:200]}"
-            conversion_status[conversion_id]['error'] = str(e)[:500]
-            if app.debug:
-                conversion_status[conversion_id]['traceback'] = error_trace
+        # Update progress: failed
+        conversion_progress[conversion_id]["status"] = "failed"
+        conversion_progress[conversion_id]["message"] = f"Conversion failed: {str(e)}"
+        conversion_progress[conversion_id]["error"] = str(e)
+        conversion_progress[conversion_id]["progress"] = 0
 
     finally:
         # Clean up uploaded DOCX
@@ -391,8 +378,6 @@ def process_conversion_async(conversion_id, docx_path, safe_filename, original_f
 
 @app.route('/convert', methods=['POST'])
 def convert():
-    """Handle file upload and start conversion asynchronously."""
-    start_time = datetime.now()
     """Handle file upload and start async conversion."""
     conversion_id = datetime.now().strftime("%Y%m%d_%H%M%S_") + os.urandom(4).hex()
 
@@ -452,11 +437,33 @@ def convert():
 
         logger.info(f"[{conversion_id}] File saved: {file.filename} ({file_size_mb:.2f} MB)")
 
+        # Initialize progress tracking
+        conversion_progress[conversion_id] = {
+            "status": "queued",
+            "message": "File uploaded, queued for conversion...",
+            "progress": 0,
+            "filename": file.filename,
+            "file_size_mb": file_size_mb,
+            "start_time": datetime.now(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
         # Start background conversion
-        set_progress(conversion_id, percent=1, stage="queued", message="Queued for conversion", state="queued")
-        t = threading.Thread(target=background_conversion_runner, args=(conversion_id, docx_path, safe_filename), daemon=True)
-        t.start()
-        return jsonify({"conversion_id": conversion_id, "status": "accepted", "timestamp": datetime.utcnow().isoformat()}), 202
+        thread = threading.Thread(
+            target=run_conversion_background,
+            args=(conversion_id, docx_path, safe_filename, file.filename)
+        )
+        thread.daemon = True
+        thread.start()
+
+        # Return 202 Accepted with conversion_id
+        return jsonify({
+            "conversion_id": conversion_id,
+            "status": "accepted",
+            "message": "File uploaded successfully, conversion started",
+            "filename": file.filename,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 202
 
     except Exception as e:
         logger.error(f"[{conversion_id}] Failed to save file: {e}")
@@ -467,217 +474,70 @@ def convert():
             "timestamp": datetime.utcnow().isoformat()
         }), 500
 
-    # Initialize job status
-    conversion_jobs[conversion_id] = {
-        "status": "queued",
-        "progress": 0,
-        "message": "File uploaded, starting conversion...",
-        "filename": file.filename,
-        "file_size_mb": file_size_mb,
-        "started_at": start_time.isoformat()
-    }
-
-    # Start conversion in background thread
-    thread = threading.Thread(
-        target=run_conversion_async,
-        args=(conversion_id, docx_path, safe_filename)
-    # Initialize conversion status (thread-safe)
-    with conversion_status_lock:
-        conversion_status[conversion_id] = {
-            'state': 'pending',
-            'message': 'Conversion queued',
-            'filename': safe_filename,
-            'original_filename': file.filename,
-            'timestamp': datetime.utcnow().isoformat()
-        }
-
-    # Start conversion in background thread
-    # Note: daemon=True for simplicity in single-instance testing
-    # For production: Use proper task queue (Celery, RQ) for graceful shutdown
-    thread = threading.Thread(
-        target=process_conversion_async,
-        args=(conversion_id, docx_path, safe_filename, file.filename)
-    )
-    thread.daemon = True
-    thread.start()
-
-    # Return immediately with conversion ID
-    return jsonify({
-        "conversion_id": conversion_id,
-        "status": "queued",
-        "message": "Conversion started",
-        "filename": file.filename,
-        "status_url": f"/status/{conversion_id}",
-        "timestamp": datetime.utcnow().isoformat()
-    }), 202
-    # Return 202 Accepted with conversion_id
-    return jsonify({
-        "conversion_id": conversion_id,
-        "state": "pending",
-        "message": "Conversion queued",
-        "timestamp": datetime.utcnow().isoformat()
-    }), 202
-
 
 @app.route('/status/<conversion_id>', methods=['GET'])
 def get_status(conversion_id):
-    """Get conversion status or download ZIP if ready."""
-    # Thread-safe status check
-    with conversion_status_lock:
-        if conversion_id not in conversion_status:
-            return jsonify({
-                "error": "Conversion ID not found",
-                "conversion_id": conversion_id,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 404
-
-        # Get a copy of status to avoid holding lock during file operations
-        status = conversion_status[conversion_id].copy()
+    """Get conversion status for polling."""
+    # Clean up old progress entries periodically
+    cleanup_old_progress_entries()
     
-    state = status['state']
-
-    # If completed, serve the ZIP file
-    if state == 'completed' and 'zip_path' in status:
-        zip_path = status['zip_path']
-        if os.path.exists(zip_path):
-            response = send_file(
-                zip_path,
-                as_attachment=True,
-                download_name=status.get('download_name', 'conversion.zip'),
-                mimetype='application/zip'
-            )
-            response.headers['X-Conversion-ID'] = conversion_id
-            response.headers['X-Processing-Time'] = f"{status.get('processing_time', 0):.2f}s"
-            response.headers['X-File-Size'] = f"{status.get('file_size_mb', 0):.2f}MB"
-            return response
-        else:
-            # File was deleted or doesn't exist - update status
-            with conversion_status_lock:
-                conversion_status[conversion_id]['state'] = 'failed'
-                conversion_status[conversion_id]['message'] = 'Output file not found'
-                status = conversion_status[conversion_id].copy()
-
-    # Return status as JSON
-    return jsonify({
-        "conversion_id": conversion_id,
-        "state": state,
-        "message": status.get('message', ''),
-        "timestamp": status.get('timestamp', datetime.utcnow().isoformat()),
-        "error": status.get('error') if state == 'failed' else None
-    }), 200
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-
-@app.route('/status/<conversion_id>', methods=['GET'])
-def conversion_status(conversion_id):
-    """Get the status of a conversion by its ID."""
-    entry = conversion_progress.get(conversion_id)
-    if not entry:
+    if conversion_id not in conversion_progress:
         return jsonify({
             "error": "Conversion ID not found",
             "conversion_id": conversion_id,
-            "status": "not_found",
             "timestamp": datetime.utcnow().isoformat()
         }), 404
-    return jsonify(entry), 200
 
-
-@app.route('/download/<path:filename>', methods=['GET'])
-def download_zip(filename):
-    """Serve a converted ZIP file for download."""
-    # Secure the filename to prevent path traversal attacks
-    safe_filename = secure_filename(filename)
-    file_path = os.path.join(OUTPUT_ZIP_DIR, safe_filename)
+    status_data = conversion_progress[conversion_id].copy()
+    # Don't include start_time in response (not JSON serializable)
+    if "start_time" in status_data:
+        del status_data["start_time"]
     
-    # Ensure the resolved path is within OUTPUT_ZIP_DIR
-    real_path = os.path.realpath(file_path)
-    real_output_dir = os.path.realpath(OUTPUT_ZIP_DIR)
-    
-    try:
-        common_path = os.path.commonpath([real_path, real_output_dir])
-        if common_path != real_output_dir:
-            logger.warning(f"Path traversal attempt blocked: {filename}")
-            return "Not found", 404
-    except ValueError:
-        # Paths are on different drives on Windows
-        logger.warning(f"Path traversal attempt blocked: {filename}")
-        return "Not found", 404
-    
-    if not os.path.exists(file_path):
-        return "Not found", 404
-    
-    return send_file(file_path, as_attachment=True)
-
-
-@app.route('/status/<conversion_id>', methods=['GET'])
-def get_status(conversion_id):
-    """Get the status of a conversion."""
-    with conversion_lock:
-        if conversion_id not in conversion_status:
-            return jsonify({
-                "error": "Conversion ID not found",
-                "conversion_id": conversion_id,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 404
-        
-        status = conversion_status[conversion_id].copy()
-        
-        # Remove internal paths from response
-        status.pop('docx_path', None)
-        status.pop('zip_path', None)
-        status.pop('safe_filename', None)
-        
-        return jsonify(status), 200
+    status_data["conversion_id"] = conversion_id
+    return jsonify(status_data), 200
 
 
 @app.route('/download/<conversion_id>', methods=['GET'])
-def download(conversion_id):
-    """Download the converted package."""
-    with conversion_lock:
-        if conversion_id not in conversion_status:
-            return jsonify({
-                "error": "Conversion ID not found",
-                "conversion_id": conversion_id,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 404
-        
-        status = conversion_status[conversion_id]
-        
-        if status["status"] != "completed":
-            return jsonify({
-                "error": "Conversion not completed yet",
-                "status": status["status"],
-                "conversion_id": conversion_id,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 400
-        
-        zip_path = status.get("zip_path")
-        if not zip_path or not os.path.exists(zip_path):
-            return jsonify({
-                "error": "Output file not found",
-                "conversion_id": conversion_id,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 404
-        
-        filename = status.get("filename", "output")
-        download_name = f"OmniJAX_{filename.rsplit('.', 1)[0]}.zip"
-        
-        # Prepare response
-        response = send_file(
-            zip_path,
-            as_attachment=True,
-            download_name=download_name,
-            mimetype='application/zip'
-        )
-        
-        # Add headers for monitoring
-        response.headers['X-Conversion-ID'] = conversion_id
-        response.headers['X-Processing-Time'] = f"{status.get('processing_time', 0):.2f}s"
-        response.headers['X-File-Size'] = f"{status.get('zip_size_mb', 0):.2f}MB"
-        
-        return response
+def download_result(conversion_id):
+    """Download the conversion result."""
+    if conversion_id not in conversion_progress:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 404
+
+    progress = conversion_progress[conversion_id]
+    
+    if progress["status"] != "completed":
+        return jsonify({
+            "error": "Conversion not completed yet",
+            "conversion_id": conversion_id,
+            "status": progress["status"],
+            "timestamp": datetime.utcnow().isoformat()
+        }), 400
+
+    if "download_path" not in progress or not os.path.exists(progress["download_path"]):
+        return jsonify({
+            "error": "Download file not found",
+            "conversion_id": conversion_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 404
+
+    # Prepare response
+    response = send_file(
+        progress["download_path"],
+        as_attachment=True,
+        download_name=progress["download_filename"],
+        mimetype='application/zip'
+    )
+
+    # Add headers for monitoring
+    response.headers['X-Conversion-ID'] = conversion_id
+    response.headers['X-Processing-Time'] = f"{progress.get('processing_time', 0):.2f}s"
+    response.headers['X-File-Size'] = f"{progress.get('file_size_mb', 0):.2f}MB"
+
+    return response
 
 
 def cleanup_file(file_path, conversion_id, file_type):
@@ -716,8 +576,7 @@ def not_found(error):
     return jsonify({
         "error": "Not found",
         "message": "The requested endpoint does not exist",
-        "available_endpoints": ["/", "/health", "/version", "/convert", "/status/<id>", "/download/<id>"],
-        "available_endpoints": ["/", "/health", "/version", "/convert", "/status/<conversion_id>", "/download/<filename>"],
+        "available_endpoints": ["/", "/health", "/version", "/convert", "/status/<conversion_id>", "/download/<conversion_id>"],
         "timestamp": datetime.utcnow().isoformat()
     }), 404
 
