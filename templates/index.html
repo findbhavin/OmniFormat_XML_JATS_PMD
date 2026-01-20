@@ -97,7 +97,12 @@
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelect(file);
             } else {
-                alert('Please upload a .docx file');
+                // Show error in status message
+                progressContainer.style.display = 'block';
+                updateStatus('failed', 'Please upload a .docx file');
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 3000);
             }
         });
 
