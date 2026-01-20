@@ -151,3 +151,71 @@ All merge conflicts have been successfully resolved. The application now:
 - ✅ Is 215 lines smaller and more maintainable
 
 The codebase is now ready for production deployment.
+
+---
+
+## Update: Official PMC Style Checker Integration (nlm-style-5.47)
+
+**Date**: 2026-01-20
+
+The official PMC nlm-style-5.47 XSLT bundle has been integrated into the repository for comprehensive PMC compliance checking.
+
+### What Changed
+
+1. **Official Bundle**: Added infrastructure to download and integrate the official PMC style checker XSLT bundle (nlm-style-5.47)
+   - Location: `pmc-stylechecker/nlm-style-5.47/`
+   - Source: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+
+2. **Download Script**: Updated `tools/fetch_pmc_style.sh` to download and extract the official bundle
+   - Idempotent: Won't re-download if files exist
+   - Automatic extraction and file listing
+
+3. **Pipeline Changes**: Enhanced `MasterPipeline.py` to:
+   - Prefer official XSLT files from `pmc-stylechecker/nlm-style-5.47/`
+   - Use xsltproc via subprocess instead of lxml for XSLT processing
+   - Include stdout/stderr and return code in validation reports
+   - Fixed kwarg mismatch: `pmc_style_check` → `pmc_stylechecker`
+   - Added backward compatibility for `pmc_style_check` parameter
+
+4. **Documentation**: Comprehensive updates to `pmc-stylechecker/README.md`
+   - Installation instructions for xsltproc
+   - Manual xsltproc usage examples
+   - XSLT 1.0 vs 2.0 compatibility notes
+   - Saxon recommendations for advanced use cases
+
+### How to Refresh the Bundle
+
+To update or re-download the official PMC style checker bundle:
+
+```bash
+# Remove existing bundle (optional)
+rm -rf pmc-stylechecker/nlm-style-5.47
+
+# Download and extract fresh bundle
+./tools/fetch_pmc_style.sh
+```
+
+### Requirements
+
+- **xsltproc**: Required for PMC style checking
+  ```bash
+  # Ubuntu/Debian
+  sudo apt-get install xsltproc
+  
+  # macOS
+  brew install libxslt
+  
+  # Alpine
+  apk add libxslt
+  ```
+
+### Verification
+
+After conversion, check `validation_report.json` for PMC style checker results:
+- `pmc_stylechecker.available: true`
+- `pmc_stylechecker.xslt_stdout`: HTML report output
+- `pmc_stylechecker.returncode`: 0 for success
+
+HTML report is saved as `pmc_style_report.html` in the output directory.
+
+---
