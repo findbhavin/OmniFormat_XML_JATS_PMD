@@ -12,6 +12,11 @@ from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
 
+# In-memory conversion tracking (for single-instance testing)
+# For production: use Redis or a task queue
+conversion_status = {}
+conversion_status_lock = threading.Lock()
+
 # Configure Logging
 logging.basicConfig(
     level=logging.INFO,
@@ -181,10 +186,79 @@ def index():
         """, 500
 
 
+def process_conversion_async(conversion_id, docx_path, safe_filename, original_filename):
+    """Background worker to process conversion asynchronously."""
+    start_time = datetime.now()
+    
+    try:
+        # Update status to processing
+        with conversion_status_lock:
+            conversion_status[conversion_id]['state'] = 'processing'
+            conversion_status[conversion_id]['message'] = 'Converting document...'
+        logger.info(f"[{conversion_id}] Starting conversion pipeline...")
+        
+        # Run the full pipeline
+        converter = HighFidelityConverter(docx_path)
+        output_folder = converter.run_pipeline()
+
+        # Package all outputs into ZIP
+        base_name = os.path.splitext(safe_filename)[0]
+        zip_filename = f"OmniJAX_{base_name}"
+        zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
+
+        # Clean existing zip if exists
+        if os.path.exists(zip_full_path + ".zip"):
+            try:
+                os.remove(zip_full_path + ".zip")
+            except:
+                pass
+
+        # Create ZIP archive
+        shutil.make_archive(zip_full_path, 'zip', output_folder)
+        zip_file_path = zip_full_path + ".zip"
+        zip_size = os.path.getsize(zip_file_path)
+        zip_size_mb = zip_size / (1024 * 1024)
+
+        logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
+
+        # Calculate processing time
+        processing_time = (datetime.now() - start_time).total_seconds()
+        logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
+
+        # Update status to completed
+        with conversion_status_lock:
+            conversion_status[conversion_id]['state'] = 'completed'
+            conversion_status[conversion_id]['message'] = 'Conversion completed successfully'
+            conversion_status[conversion_id]['zip_path'] = zip_file_path
+            conversion_status[conversion_id]['download_name'] = f"OmniJAX_{original_filename.rsplit('.', 1)[0]}.zip"
+            conversion_status[conversion_id]['processing_time'] = processing_time
+            conversion_status[conversion_id]['file_size_mb'] = zip_size_mb
+
+    except Exception as e:
+        # Log full traceback for debugging
+        error_trace = traceback.format_exc()
+        logger.error(f"[{conversion_id}] Conversion failed: {str(e)}\n{error_trace}")
+
+        # Update status to failed
+        with conversion_status_lock:
+            conversion_status[conversion_id]['state'] = 'failed'
+            conversion_status[conversion_id]['message'] = f"Conversion failed: {str(e)[:200]}"
+            conversion_status[conversion_id]['error'] = str(e)[:500]
+            if app.debug:
+                conversion_status[conversion_id]['traceback'] = error_trace
+
+    finally:
+        # Clean up uploaded DOCX
+        cleanup_file(docx_path, conversion_id, "uploaded DOCX")
+
+        # Clean up old files to prevent disk space issues
+        cleanup_old_files(UPLOAD_FOLDER, hours=1, conversion_id=conversion_id)
+        cleanup_old_files(OUTPUT_ZIP_DIR, hours=1, conversion_id=conversion_id)
+
+
 @app.route('/convert', methods=['POST'])
 def convert():
-    """Handle file upload and conversion."""
-    start_time = datetime.now()
+    """Handle file upload and start async conversion."""
     conversion_id = datetime.now().strftime("%Y%m%d_%H%M%S_") + os.urandom(4).hex()
 
     logger.info(f"[{conversion_id}] Conversion request started")
@@ -194,7 +268,7 @@ def convert():
         return jsonify({
             "error": "No file uploaded",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 400
 
@@ -205,7 +279,7 @@ def convert():
         return jsonify({
             "error": "No file selected",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 400
 
@@ -215,7 +289,7 @@ def convert():
         return jsonify({
             "error": "Only .docx files are supported",
             "conversion_id": conversion_id,
-            "status": "failed",
+            "state": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 400
 
@@ -237,7 +311,7 @@ def convert():
             return jsonify({
                 "error": f"File too large ({file_size_mb:.1f} MB). Maximum size is 50 MB.",
                 "conversion_id": conversion_id,
-                "status": "failed",
+                "state": "failed",
                 "timestamp": datetime.utcnow().isoformat()
             }), 400
 
@@ -254,6 +328,85 @@ def convert():
         return jsonify({
             "error": f"File save failed: {str(e)}",
             "conversion_id": conversion_id,
+            "state": "failed",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
+
+    # Initialize conversion status (thread-safe)
+    with conversion_status_lock:
+        conversion_status[conversion_id] = {
+            'state': 'pending',
+            'message': 'Conversion queued',
+            'filename': safe_filename,
+            'original_filename': file.filename,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+
+    # Start conversion in background thread
+    # Note: daemon=True for simplicity in single-instance testing
+    # For production: Use proper task queue (Celery, RQ) for graceful shutdown
+    thread = threading.Thread(
+        target=process_conversion_async,
+        args=(conversion_id, docx_path, safe_filename, file.filename)
+    )
+    thread.daemon = True
+    thread.start()
+
+    # Return 202 Accepted with conversion_id
+    return jsonify({
+        "conversion_id": conversion_id,
+        "state": "pending",
+        "message": "Conversion queued",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 202
+
+
+@app.route('/status/<conversion_id>', methods=['GET'])
+def get_status(conversion_id):
+    """Get conversion status or download ZIP if ready."""
+    # Thread-safe status check
+    with conversion_status_lock:
+        if conversion_id not in conversion_status:
+            return jsonify({
+                "error": "Conversion ID not found",
+                "conversion_id": conversion_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }), 404
+
+        # Get a copy of status to avoid holding lock during file operations
+        status = conversion_status[conversion_id].copy()
+    
+    state = status['state']
+
+    # If completed, serve the ZIP file
+    if state == 'completed' and 'zip_path' in status:
+        zip_path = status['zip_path']
+        if os.path.exists(zip_path):
+            response = send_file(
+                zip_path,
+                as_attachment=True,
+                download_name=status.get('download_name', 'conversion.zip'),
+                mimetype='application/zip'
+            )
+            response.headers['X-Conversion-ID'] = conversion_id
+            response.headers['X-Processing-Time'] = f"{status.get('processing_time', 0):.2f}s"
+            response.headers['X-File-Size'] = f"{status.get('file_size_mb', 0):.2f}MB"
+            return response
+        else:
+            # File was deleted or doesn't exist - update status
+            with conversion_status_lock:
+                conversion_status[conversion_id]['state'] = 'failed'
+                conversion_status[conversion_id]['message'] = 'Output file not found'
+                status = conversion_status[conversion_id].copy()
+
+    # Return status as JSON
+    return jsonify({
+        "conversion_id": conversion_id,
+        "state": state,
+        "message": status.get('message', ''),
+        "timestamp": status.get('timestamp', datetime.utcnow().isoformat()),
+        "error": status.get('error') if state == 'failed' else None
+    }), 200
             "status": "failed",
             "timestamp": datetime.utcnow().isoformat()
         }), 500

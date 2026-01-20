@@ -4,6 +4,29 @@
     <title>OmniJAX - JATS 1.3 High-Fidelity Converter</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 450px; text-align: center; }
+        h1 { color: #1a73e8; margin-bottom: 1rem; }
+        .upload-box { border: 2px dashed #dadce0; padding: 2rem; border-radius: 8px; margin: 2rem 0; background: #fafafa; cursor: pointer; transition: all 0.3s; }
+        .upload-box:hover { border-color: #1a73e8; background: #e8f0fe; }
+        .upload-box.drag-over { border-color: #1a73e8; background: #e8f0fe; }
+        input[type="file"] { display: none; }
+        .file-info { margin: 1rem 0; font-size: 0.9rem; color: #5f6368; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; transition: background 0.3s; }
+        button:hover:not(:disabled) { background: #1557b0; }
+        button:disabled { background: #dadce0; cursor: not-allowed; }
+        .info { font-size: 0.8rem; color: #5f6368; margin-top: 1.5rem; text-align: left; line-height: 1.4; }
+        .progress-container { display: none; margin: 1.5rem 0; }
+        .progress-bar { width: 100%; height: 8px; background: #e8eaed; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #1a73e8; width: 0%; transition: width 0.3s; border-radius: 4px; }
+        .status-message { margin: 1rem 0; padding: 1rem; border-radius: 6px; font-size: 0.9rem; }
+        .status-pending { background: #fef7e0; color: #f9ab00; border: 1px solid #f9ab00; }
+        .status-processing { background: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8; }
+        .status-completed { background: #e6f4ea; color: #1e8e3e; border: 1px solid #1e8e3e; }
+        .status-failed { background: #fce8e6; color: #d93025; border: 1px solid #d93025; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(26, 115, 232, 0.3); border-top-color: #1a73e8; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .spinner { animation: none; opacity: 0.6; } }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .container { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 520px; text-align: center; }
         h1 { color: #1a73e8; margin-bottom: 0.25rem; }
@@ -26,6 +49,23 @@
 <body>
     <div class="container">
         <h1>OmniJAX</h1>
+        <p>Professional JATS XML & Dual PDF Engine</p>
+        
+        <div id="uploadForm">
+            <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+                <p id="uploadText">📄 Click or drag to upload .docx file</p>
+                <input type="file" id="fileInput" accept=".docx">
+            </div>
+            <div class="file-info" id="fileInfo"></div>
+            <button id="convertBtn" onclick="startConversion()" disabled>Convert & Download Package</button>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status-message" id="statusMessage"></div>
+        </div>
         <p class="lead">Professional JATS XML & Dual PDF Engine</p>
 
         <div class="upload-box">
@@ -55,6 +95,77 @@
     </div>
 
     <script>
+        let selectedFile = null;
+        let conversionId = null;
+        let pollingInterval = null;
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadBox = document.getElementById('uploadBox');
+        const uploadText = document.getElementById('uploadText');
+        const fileInfo = document.getElementById('fileInfo');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // File input change handler
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileSelect(file);
+            }
+        });
+
+        // Drag and drop handlers
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('drag-over');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('drag-over');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.toLowerCase().endsWith('.docx')) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(file);
+            } else {
+                // Show error in status message
+                progressContainer.style.display = 'block';
+                updateStatus('failed', 'Please upload a .docx file');
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            uploadText.textContent = '✓ File selected';
+            fileInfo.textContent = `${file.name} (${sizeMB} MB)`;
+            convertBtn.disabled = false;
+        }
+
+        async function startConversion() {
+            if (!selectedFile) return;
+
+            // Disable button and show progress
+            convertBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            updateStatus('pending', 'Uploading file...');
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                // Upload file and start conversion
+                const response = await fetch('/convert', {
         const uploadBtn = document.getElementById('uploadBtn');
         const fileInput = document.getElementById('fileInput');
         const progressWrapper = document.getElementById('progressWrapper');
@@ -98,6 +209,123 @@
                     }
                 });
 
+                const data = await response.json();
+
+                if (response.ok && response.status === 202) {
+                    // Conversion started successfully
+                    conversionId = data.conversion_id;
+                    updateStatus('processing', 'Conversion in progress...');
+                    
+                    // Start polling for status
+                    startPolling();
+                } else {
+                    // Error occurred
+                    updateStatus('failed', data.error || 'Upload failed');
+                    convertBtn.disabled = false;
+                }
+            } catch (error) {
+                updateStatus('failed', 'Network error: ' + error.message);
+                convertBtn.disabled = false;
+            }
+        }
+
+        function startPolling() {
+            // Poll every 2 seconds
+            pollingInterval = setInterval(checkStatus, 2000);
+            // Also check immediately
+            checkStatus();
+        }
+
+        async function checkStatus() {
+            if (!conversionId) return;
+
+            try {
+                const response = await fetch(`/status/${conversionId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json, application/zip'
+                    }
+                });
+
+                if (response.ok) {
+                    const contentType = response.headers.get('Content-Type');
+                    
+                    if (contentType && contentType.includes('application/zip')) {
+                        // Conversion complete, download ZIP
+                        stopPolling();
+                        updateStatus('completed', 'Conversion complete! Downloading...');
+                        progressFill.style.width = '100%';
+                        
+                        // Download the file
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `OmniJAX_${selectedFile.name.replace(/\.docx$/i, '.zip')}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        // Reset after 3 seconds
+                        setTimeout(resetForm, 3000);
+                    } else {
+                        // Still processing or pending
+                        const data = await response.json();
+                        
+                        if (data.state === 'processing') {
+                            updateStatus('processing', data.message || 'Converting document...');
+                            progressFill.style.width = '50%';
+                        } else if (data.state === 'pending') {
+                            updateStatus('pending', data.message || 'Queued for conversion...');
+                            progressFill.style.width = '10%';
+                        } else if (data.state === 'failed') {
+                            stopPolling();
+                            updateStatus('failed', data.message || 'Conversion failed');
+                            convertBtn.disabled = false;
+                        }
+                    }
+                } else {
+                    // Error response
+                    const data = await response.json();
+                    stopPolling();
+                    updateStatus('failed', data.error || 'Status check failed');
+                    convertBtn.disabled = false;
+                }
+            } catch (error) {
+                stopPolling();
+                updateStatus('failed', 'Network error: ' + error.message);
+                convertBtn.disabled = false;
+            }
+        }
+
+        function updateStatus(state, message) {
+            statusMessage.className = `status-message status-${state}`;
+            
+            if (state === 'processing') {
+                statusMessage.innerHTML = `<span class="spinner"></span>${message}`;
+            } else {
+                statusMessage.textContent = message;
+            }
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function resetForm() {
+            selectedFile = null;
+            conversionId = null;
+            fileInput.value = '';
+            uploadText.textContent = '📄 Click or drag to upload .docx file';
+            fileInfo.textContent = '';
+            convertBtn.disabled = true;
+            progressContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+        }
                 if (!resp.ok) {
                     const txt = await resp.text();
                     throw new Error(`Upload failed: ${resp.status} ${txt}`);
