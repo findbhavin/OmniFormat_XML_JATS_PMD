@@ -388,6 +388,8 @@ class HighFidelityConverter:
         
         # Look for style checker XSLT files in order of preference
         pmc_dir = "pmc-stylechecker"
+        nlm_style_dir = os.path.join(pmc_dir, "nlm-style-5.47")
+        
         xslt_candidates = [
             # Official PMC nlm-style-5.47 bundle (highest priority)
             os.path.join(pmc_dir, "nlm-style-5.47", "nlm-stylechecker.xsl"),
@@ -512,6 +514,9 @@ class HighFidelityConverter:
             xslt_doc = etree.parse(xslt_path)
             transform = etree.XSLT(xslt_doc)
             
+            # Capture any XSLT errors
+            xslt_error_log = transform.error_log if hasattr(transform, 'error_log') else None
+            
             # Apply transformation
             result = transform(xml_doc)
             result_str = str(result)
@@ -611,8 +616,16 @@ class HighFidelityConverter:
                 "xslt_used": os.path.basename(xslt_path) if xslt_path else "unknown",
                 "processor": "lxml",
                 "error": str(e),
-                "status": "ERROR"
+                "error_type": type(e).__name__,
+                "status": "ERROR",
+                "xslt_used": os.path.basename(xslt_path) if xslt_path else None
             }
+            
+            # Include traceback in debug mode
+            if logger.isEnabledFor(logging.DEBUG):
+                error_details["traceback"] = traceback.format_exc()
+            
+            return error_details
 
     def _validate_pmc_requirements(self, xml_doc):
         """
