@@ -943,6 +943,10 @@ class HighFidelityConverter:
             if 'article-type' not in root.attrib:
                 root.set('article-type', 'research-article')
             
+            # Remove DOCTYPE declaration to avoid "DTD not found" errors during validation
+            # The DOCTYPE with external URL causes xsltproc to fail when validating
+            tree.docinfo.clear()
+            
             # Write back the XML with proper formatting
             tree.write(
                 self.xml_path,
