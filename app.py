@@ -4,8 +4,10 @@ import logging
 import traceback
 import subprocess
 import threading
+import time
 from datetime import datetime
-from flask import Flask, request, render_template, send_file, jsonify, abort
+from flask import Flask, request, render_template, send_file, jsonify, abort, url_for
+from werkzeug.utils import secure_filename
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
@@ -30,6 +32,68 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB limit
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_ZIP_DIR, exist_ok=True)
+
+# In-memory progress store (single-process only)
+conversion_progress = {}
+
+def set_progress(conv_id, percent=None, stage=None, message=None, state=None, download_url=None):
+    entry = conversion_progress.setdefault(conv_id, {
+        "percent": 0,
+        "stage": "queued",
+        "message": "",
+        "state": "queued",
+        "download_url": None,
+        "started_at": datetime.utcnow().isoformat()
+    })
+    if percent is not None:
+        entry["percent"] = int(percent)
+    if stage is not None:
+        entry["stage"] = stage
+    if message is not None:
+        entry["message"] = message
+    if state is not None:
+        entry["state"] = state
+    if download_url is not None:
+        entry["download_url"] = download_url
+
+
+def background_conversion_runner(conversion_id, docx_path, safe_filename):
+    try:
+        set_progress(conversion_id, percent=5, stage="saved", message="File saved", state="running")
+
+        logger.info(f"[{conversion_id}] Background conversion started for {docx_path}")
+
+        converter = HighFidelityConverter(docx_path)
+        set_progress(conversion_id, percent=15, stage="initializing", message="Preparing conversion environment")
+
+        output_folder = converter.run_pipeline()
+
+        set_progress(conversion_id, percent=70, stage="packaging", message="Packaging outputs into ZIP")
+
+        base_name = os.path.splitext(safe_filename)[0]
+        zip_filename = f"OmniJAX_{base_name}"
+        zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
+
+        if os.path.exists(zip_full_path + ".zip"):
+            try:
+                os.remove(zip_full_path + ".zip")
+            except Exception:
+                pass
+
+        shutil.make_archive(zip_full_path, 'zip', output_folder)
+        zip_file_path = zip_full_path + ".zip"
+
+        download_url = url_for('download_zip', filename=os.path.basename(zip_file_path), _external=False)
+
+        set_progress(conversion_id, percent=100, stage="completed", message="Conversion completed", state="completed", download_url=download_url)
+
+        cleanup_file(docx_path, conversion_id, "uploaded DOCX")
+        cleanup_old_files(UPLOAD_FOLDER, hours=1, conversion_id=conversion_id)
+        cleanup_old_files(OUTPUT_ZIP_DIR, hours=1, conversion_id=conversion_id)
+
+    except Exception as e:
+        logger.exception(f"[{conversion_id}] Background conversion failed: {e}")
+        set_progress(conversion_id, percent=0, stage="failed", message=str(e), state="failed")
 
 
 # Health check endpoint for Cloud Run
@@ -230,7 +294,8 @@ def convert():
         }), 400
 
     # Save uploaded file with unique name
-    safe_filename = f"{conversion_id}_{file.filename.replace(' ', '_').replace('/', '_')}"
+    sanitized_filename = secure_filename(file.filename)
+    safe_filename = f"{conversion_id}_{sanitized_filename}"
     docx_path = os.path.join(UPLOAD_FOLDER, safe_filename)
 
     try:
@@ -251,6 +316,12 @@ def convert():
             }), 400
 
         logger.info(f"[{conversion_id}] File saved: {file.filename} ({file_size_mb:.2f} MB)")
+
+        # Start background conversion
+        set_progress(conversion_id, percent=1, stage="queued", message="Queued for conversion", state="queued")
+        t = threading.Thread(target=background_conversion_runner, args=(conversion_id, docx_path, safe_filename), daemon=True)
+        t.start()
+        return jsonify({"conversion_id": conversion_id, "status": "accepted", "timestamp": datetime.utcnow().isoformat()}), 202
 
     except Exception as e:
         logger.error(f"[{conversion_id}] Failed to save file: {e}")
@@ -336,6 +407,50 @@ def get_status(conversion_id):
         "timestamp": status.get('timestamp', datetime.utcnow().isoformat()),
         "error": status.get('error') if state == 'failed' else None
     }), 200
+            "status": "failed",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
+
+
+@app.route('/status/<conversion_id>', methods=['GET'])
+def conversion_status(conversion_id):
+    """Get the status of a conversion by its ID."""
+    entry = conversion_progress.get(conversion_id)
+    if not entry:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id,
+            "status": "not_found",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 404
+    return jsonify(entry), 200
+
+
+@app.route('/download/<path:filename>', methods=['GET'])
+def download_zip(filename):
+    """Serve a converted ZIP file for download."""
+    # Secure the filename to prevent path traversal attacks
+    safe_filename = secure_filename(filename)
+    file_path = os.path.join(OUTPUT_ZIP_DIR, safe_filename)
+    
+    # Ensure the resolved path is within OUTPUT_ZIP_DIR
+    real_path = os.path.realpath(file_path)
+    real_output_dir = os.path.realpath(OUTPUT_ZIP_DIR)
+    
+    try:
+        common_path = os.path.commonpath([real_path, real_output_dir])
+        if common_path != real_output_dir:
+            logger.warning(f"Path traversal attempt blocked: {filename}")
+            return "Not found", 404
+    except ValueError:
+        # Paths are on different drives on Windows
+        logger.warning(f"Path traversal attempt blocked: {filename}")
+        return "Not found", 404
+    
+    if not os.path.exists(file_path):
+        return "Not found", 404
+    
+    return send_file(file_path, as_attachment=True)
 
 
 def cleanup_file(file_path, conversion_id, file_type):
@@ -374,7 +489,7 @@ def not_found(error):
     return jsonify({
         "error": "Not found",
         "message": "The requested endpoint does not exist",
-        "available_endpoints": ["/", "/health", "/version", "/convert"],
+        "available_endpoints": ["/", "/health", "/version", "/convert", "/status/<conversion_id>", "/download/<filename>"],
         "timestamp": datetime.utcnow().isoformat()
     }), 404
 
