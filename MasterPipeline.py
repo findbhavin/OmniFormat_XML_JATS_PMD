@@ -1048,6 +1048,60 @@ class HighFidelityConverter:
             import traceback
             logger.warning(f"Traceback: {traceback.format_exc()}")
 
+    def _post_process_html(self):
+        """
+        Post-process the HTML to fix anchor references for WeasyPrint.
+        Adds ID attributes to reference list items based on xref rid attributes in XML.
+        """
+        try:
+            if not os.path.exists(self.html_path) or not os.path.exists(self.xml_path):
+                return
+            
+            # Parse the XML to get xref references
+            parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
+            xml_tree = etree.parse(self.xml_path, parser)
+            xml_root = xml_tree.getroot()
+            
+            # Collect all xref rid values and their alt (reference number) attributes
+            xref_mapping = {}  # Maps alt number to rid
+            for xref in xml_root.findall('.//xref'):
+                rid = xref.get('rid')
+                alt = xref.get('alt')
+                if rid and alt and alt.isdigit():
+                    xref_mapping[int(alt)] = rid
+            
+            # Read the HTML file
+            with open(self.html_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            
+            # Parse HTML using lxml
+            from lxml import html as lxml_html
+            html_doc = lxml_html.fromstring(html_content)
+            
+            # Find all <ol> lists (reference lists) and add IDs to their <li> items
+            for ol in html_doc.findall('.//ol'):
+                li_items = ol.findall('.//li')
+                for i, li in enumerate(li_items, 1):
+                    # Check if this li needs an ID based on xref mapping
+                    if i in xref_mapping:
+                        ref_id = xref_mapping[i]
+                        li.set('id', ref_id)
+                        logger.info(f"Added id='{ref_id}' to reference list item {i}")
+            
+            # Serialize back to HTML
+            html_content = lxml_html.tostring(html_doc, encoding='unicode', method='html')
+            
+            # Write back the HTML
+            with open(self.html_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            logger.info("✅ HTML post-processing completed (added anchor IDs for references)")
+            
+        except Exception as e:
+            logger.warning(f"HTML post-processing failed: {e}")
+            import traceback
+            logger.warning(f"Traceback: {traceback.format_exc()}")
+
     def _generate_articledtd_xml(self):
         """
         Generate articledtd.xml with DOCTYPE declaration for PMC Style Checker.
@@ -1374,6 +1428,9 @@ class HighFidelityConverter:
                 logger.info(f"HTML created: {html_size:,} bytes")
             else:
                 raise FileNotFoundError(f"HTML not created at {self.html_path}")
+            
+            # Post-process HTML to fix anchor references
+            self._post_process_html()
                 
         except Exception as e:
             logger.error(f"Failed to generate HTML: {e}")
