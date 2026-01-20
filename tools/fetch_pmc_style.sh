@@ -58,7 +58,7 @@ if ! command -v tar &> /dev/null; then
 fi
 
 # Create directories
-mkdir -p "$NLM_547_DIR"
+mkdir -p "$PMC_STYLE_DIR"
 mkdir -p "$TEMP_DIR"
 
 # Download the bundle
