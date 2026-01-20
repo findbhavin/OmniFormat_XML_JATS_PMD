@@ -3,11 +3,15 @@ import shutil
 import logging
 import traceback
 import subprocess
+import threading
 from datetime import datetime
 from flask import Flask, request, render_template, send_file, jsonify, abort
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
+
+# Global dictionary to track conversion jobs
+conversion_jobs = {}
 
 # Configure Logging
 logging.basicConfig(
@@ -116,9 +120,168 @@ def index():
         """, 500
 
 
+@app.route('/status/<conversion_id>', methods=['GET'])
+def get_status(conversion_id):
+    """Get the status of a conversion job."""
+    if conversion_id not in conversion_jobs:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id,
+            "status": "not_found"
+        }), 404
+    
+    job_info = conversion_jobs[conversion_id]
+    
+    # Return job status
+    response = {
+        "conversion_id": conversion_id,
+        "status": job_info["status"],
+        "progress": job_info.get("progress", 0),
+        "message": job_info.get("message", ""),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    
+    # If completed, add download URL
+    if job_info["status"] == "completed":
+        response["download_url"] = f"/download/{conversion_id}"
+        response["zip_filename"] = job_info.get("zip_filename", "")
+        response["processing_time"] = job_info.get("processing_time", 0)
+    
+    # If failed, add error details
+    if job_info["status"] == "failed":
+        response["error"] = job_info.get("error", "Unknown error")
+    
+    return jsonify(response), 200
+
+
+@app.route('/download/<conversion_id>', methods=['GET'])
+def download(conversion_id):
+    """Download the converted package."""
+    if conversion_id not in conversion_jobs:
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id
+        }), 404
+    
+    job_info = conversion_jobs[conversion_id]
+    
+    if job_info["status"] != "completed":
+        return jsonify({
+            "error": "Conversion not completed",
+            "conversion_id": conversion_id,
+            "status": job_info["status"]
+        }), 400
+    
+    zip_file_path = job_info.get("zip_file_path")
+    
+    if not zip_file_path or not os.path.exists(zip_file_path):
+        return jsonify({
+            "error": "Output file not found",
+            "conversion_id": conversion_id
+        }), 404
+    
+    try:
+        response = send_file(
+            zip_file_path,
+            as_attachment=True,
+            download_name=job_info.get("zip_filename", "OmniJAX_output.zip"),
+            mimetype='application/zip'
+        )
+        
+        response.headers['X-Conversion-ID'] = conversion_id
+        response.headers['X-Processing-Time'] = f"{job_info.get('processing_time', 0):.2f}s"
+        
+        return response
+    except Exception as e:
+        logger.error(f"[{conversion_id}] Download failed: {e}")
+        return jsonify({
+            "error": "Failed to send file",
+            "conversion_id": conversion_id,
+            "details": str(e)
+        }), 500
+
+
+def run_conversion_async(conversion_id, docx_path, safe_filename):
+    """Run conversion in background thread."""
+    start_time = datetime.now()
+    
+    try:
+        # Update status: starting
+        conversion_jobs[conversion_id]["status"] = "processing"
+        conversion_jobs[conversion_id]["progress"] = 10
+        conversion_jobs[conversion_id]["message"] = "Initializing conversion pipeline..."
+        logger.info(f"[{conversion_id}] Starting conversion pipeline...")
+        
+        # Run the full pipeline
+        converter = HighFidelityConverter(docx_path)
+        
+        # Update progress during conversion
+        conversion_jobs[conversion_id]["progress"] = 30
+        conversion_jobs[conversion_id]["message"] = "Converting DOCX to JATS XML..."
+        
+        output_folder = converter.run_pipeline()
+        
+        # Update progress: packaging
+        conversion_jobs[conversion_id]["progress"] = 80
+        conversion_jobs[conversion_id]["message"] = "Packaging output files..."
+        
+        # Package all outputs into ZIP
+        base_name = os.path.splitext(safe_filename)[0]
+        zip_filename = f"OmniJAX_{base_name}"
+        zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
+        
+        # Clean existing zip if exists
+        if os.path.exists(zip_full_path + ".zip"):
+            try:
+                os.remove(zip_full_path + ".zip")
+            except:
+                pass
+        
+        # Create ZIP archive
+        shutil.make_archive(zip_full_path, 'zip', output_folder)
+        zip_file_path = zip_full_path + ".zip"
+        zip_size = os.path.getsize(zip_file_path)
+        zip_size_mb = zip_size / (1024 * 1024)
+        
+        logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
+        
+        # Calculate processing time
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
+        # Update status: completed
+        conversion_jobs[conversion_id]["status"] = "completed"
+        conversion_jobs[conversion_id]["progress"] = 100
+        conversion_jobs[conversion_id]["message"] = "Conversion completed successfully!"
+        conversion_jobs[conversion_id]["zip_file_path"] = zip_file_path
+        conversion_jobs[conversion_id]["zip_filename"] = f"{zip_filename}.zip"
+        conversion_jobs[conversion_id]["processing_time"] = processing_time
+        conversion_jobs[conversion_id]["file_size_mb"] = zip_size_mb
+        
+        logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
+        
+    except Exception as e:
+        # Log full traceback for debugging
+        error_trace = traceback.format_exc()
+        logger.error(f"[{conversion_id}] Conversion failed: {str(e)}\n{error_trace}")
+        
+        # Update status: failed
+        conversion_jobs[conversion_id]["status"] = "failed"
+        conversion_jobs[conversion_id]["progress"] = 0
+        conversion_jobs[conversion_id]["message"] = "Conversion failed"
+        conversion_jobs[conversion_id]["error"] = str(e)
+        
+    finally:
+        # Clean up uploaded DOCX
+        cleanup_file(docx_path, conversion_id, "uploaded DOCX")
+        
+        # Clean up old files to prevent disk space issues
+        cleanup_old_files(UPLOAD_FOLDER, hours=1, conversion_id=conversion_id)
+        cleanup_old_files(OUTPUT_ZIP_DIR, hours=1, conversion_id=conversion_id)
+
+
 @app.route('/convert', methods=['POST'])
 def convert():
-    """Handle file upload and conversion."""
+    """Handle file upload and start conversion asynchronously."""
     start_time = datetime.now()
     conversion_id = datetime.now().strftime("%Y%m%d_%H%M%S_") + os.urandom(4).hex()
 
@@ -186,108 +349,33 @@ def convert():
             "timestamp": datetime.utcnow().isoformat()
         }), 500
 
-    try:
-        # Run the full pipeline
-        logger.info(f"[{conversion_id}] Starting conversion pipeline...")
-        converter = HighFidelityConverter(docx_path)
-        output_folder = converter.run_pipeline()
+    # Initialize job status
+    conversion_jobs[conversion_id] = {
+        "status": "queued",
+        "progress": 0,
+        "message": "File uploaded, starting conversion...",
+        "filename": file.filename,
+        "file_size_mb": file_size_mb,
+        "started_at": start_time.isoformat()
+    }
 
-        # Package all outputs into ZIP
-        base_name = os.path.splitext(safe_filename)[0]
-        zip_filename = f"OmniJAX_{base_name}"
-        zip_full_path = os.path.join(OUTPUT_ZIP_DIR, zip_filename)
+    # Start conversion in background thread
+    thread = threading.Thread(
+        target=run_conversion_async,
+        args=(conversion_id, docx_path, safe_filename)
+    )
+    thread.daemon = True
+    thread.start()
 
-        # Clean existing zip if exists
-        if os.path.exists(zip_full_path + ".zip"):
-            try:
-                os.remove(zip_full_path + ".zip")
-            except:
-                pass
-
-        # Create ZIP archive
-        shutil.make_archive(zip_full_path, 'zip', output_folder)
-        zip_file_path = zip_full_path + ".zip"
-        zip_size = os.path.getsize(zip_file_path)
-        zip_size_mb = zip_size / (1024 * 1024)
-
-        logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
-
-        # Calculate processing time
-        processing_time = (datetime.now() - start_time).total_seconds()
-
-        # Log successful conversion
-        logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
-
-        # Prepare response
-        response = send_file(
-            zip_file_path,
-            as_attachment=True,
-            download_name=f"OmniJAX_{file.filename.rsplit('.', 1)[0]}.zip",
-            mimetype='application/zip'
-        )
-
-        # Add headers for monitoring
-        response.headers['X-Conversion-ID'] = conversion_id
-        response.headers['X-Processing-Time'] = f"{processing_time:.2f}s"
-        response.headers['X-File-Size'] = f"{zip_size_mb:.2f}MB"
-
-        return response
-
-    except subprocess.CalledProcessError as e:
-        logger.error(f"[{conversion_id}] Conversion process error: {e.stderr if hasattr(e, 'stderr') else str(e)}")
-        return jsonify({
-            "error": "Document conversion failed",
-            "details": e.stderr[:500] if hasattr(e, 'stderr') and e.stderr else str(e)[:500],
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-    except ImportError as e:
-        logger.error(f"[{conversion_id}] Import error: {e}")
-        return jsonify({
-            "error": "Required library not available",
-            "details": str(e),
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-    except MemoryError:
-        logger.error(f"[{conversion_id}] Out of memory error")
-        return jsonify({
-            "error": "Out of memory. File may be too large or complex.",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
-
-    except Exception as e:
-        # Log full traceback for debugging
-        error_trace = traceback.format_exc()
-        logger.error(f"[{conversion_id}] Conversion failed: {str(e)}\n{error_trace}")
-
-        # Return error response
-        error_response = {
-            "error": "Conversion failed due to an internal error",
-            "conversion_id": conversion_id,
-            "status": "failed",
-            "timestamp": datetime.utcnow().isoformat()
-        }
-
-        # Include traceback in debug mode
-        if app.debug:
-            error_response["traceback"] = error_trace
-
-        return jsonify(error_response), 500
-
-    finally:
-        # Clean up uploaded DOCX
-        cleanup_file(docx_path, conversion_id, "uploaded DOCX")
-
-        # Clean up old files to prevent disk space issues
-        cleanup_old_files(UPLOAD_FOLDER, hours=1, conversion_id=conversion_id)
-        cleanup_old_files(OUTPUT_ZIP_DIR, hours=1, conversion_id=conversion_id)
+    # Return immediately with conversion ID
+    return jsonify({
+        "conversion_id": conversion_id,
+        "status": "queued",
+        "message": "Conversion started",
+        "filename": file.filename,
+        "status_url": f"/status/{conversion_id}",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 202
 
 
 def cleanup_file(file_path, conversion_id, file_type):
@@ -326,7 +414,7 @@ def not_found(error):
     return jsonify({
         "error": "Not found",
         "message": "The requested endpoint does not exist",
-        "available_endpoints": ["/", "/health", "/version", "/convert"],
+        "available_endpoints": ["/", "/health", "/version", "/convert", "/status/<id>", "/download/<id>"],
         "timestamp": datetime.utcnow().isoformat()
     }), 404
 
