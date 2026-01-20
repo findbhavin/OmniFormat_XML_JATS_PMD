@@ -7,6 +7,7 @@ import threading
 import time
 from datetime import datetime
 from flask import Flask, request, render_template, send_file, jsonify, abort, url_for
+from werkzeug.utils import secure_filename
 from MasterPipeline import HighFidelityConverter
 
 app = Flask(__name__)
@@ -76,8 +77,6 @@ def background_conversion_runner(conversion_id, docx_path, safe_filename):
 
         shutil.make_archive(zip_full_path, 'zip', output_folder)
         zip_file_path = zip_full_path + ".zip"
-
-        time.sleep(0.2)
 
         download_url = url_for('download_zip', filename=os.path.basename(zip_file_path), _external=False)
 
@@ -276,9 +275,21 @@ def conversion_status(conversion_id):
 @app.route('/download/<path:filename>', methods=['GET'])
 def download_zip(filename):
     """Serve a converted ZIP file for download."""
-    file_path = os.path.join(OUTPUT_ZIP_DIR, filename)
+    # Secure the filename to prevent path traversal attacks
+    safe_filename = secure_filename(filename)
+    file_path = os.path.join(OUTPUT_ZIP_DIR, safe_filename)
+    
+    # Ensure the resolved path is within OUTPUT_ZIP_DIR
+    real_path = os.path.realpath(file_path)
+    real_output_dir = os.path.realpath(OUTPUT_ZIP_DIR)
+    
+    if not real_path.startswith(real_output_dir + os.sep):
+        logger.warning(f"Path traversal attempt blocked: {filename}")
+        return "Not found", 404
+    
     if not os.path.exists(file_path):
         return "Not found", 404
+    
     return send_file(file_path, as_attachment=True)
 
 
