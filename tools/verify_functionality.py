@@ -279,7 +279,8 @@ class FunctionalityVerifier:
                 with open(pipeline_file, 'r') as f:
                     content = f.read()
                 
-                # Check for PMC requirements
+                # Check for PMC requirements (checking for documentation reference)
+                # Note: This is checking for a string literal in comments/documentation, not URL validation
                 if 'pmc.ncbi.nlm.nih.gov' in content:
                     logger.info("  ✓ PMC guidelines referenced")
                     
