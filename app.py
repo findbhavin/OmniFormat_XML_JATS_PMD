@@ -196,8 +196,8 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         conversion_progress[conversion_id]["status"] = "completed"
         conversion_progress[conversion_id]["progress"] = 100
         conversion_progress[conversion_id]["message"] = "Conversion completed successfully!"
-        conversion_progress[conversion_id]["zip_file_path"] = zip_file_path
-        conversion_progress[conversion_id]["zip_filename"] = f"{zip_filename}.zip"
+        conversion_progress[conversion_id]["download_path"] = zip_file_path
+        conversion_progress[conversion_id]["download_filename"] = f"{zip_filename}.zip"
         conversion_progress[conversion_id]["processing_time"] = processing_time
         conversion_progress[conversion_id]["file_size_mb"] = zip_size_mb
         
