@@ -267,6 +267,8 @@ def convert():
     }
 
     # Start conversion in background thread
+    # Note: daemon=True for simplicity in single-instance testing
+    # For production: Use proper task queue (Celery, RQ) for graceful shutdown
     thread = threading.Thread(
         target=process_conversion_async,
         args=(conversion_id, docx_path, safe_filename, file.filename)
