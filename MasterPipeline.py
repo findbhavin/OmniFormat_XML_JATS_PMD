@@ -34,7 +34,7 @@ class HighFidelityConverter:
         # Configuration Paths - JATS 1.4 Publishing DTD
         # Official schema: https://public.nlm.nih.gov/projects/jats/publishing/1.4/
         self.xsd_path = "JATS-journalpublishing-oasis-article1-3-mathml2.xsd"  # Fallback to 1.3 for now
-        self.jats_version = "1.4"  # Target version for PMC compliance
+        self.jats_version = "1.3"  # Using 1.3 since we have 1.3 XSD
         self.css_path = "templates/style.css"
 
     def _prepare_environment(self):
@@ -325,6 +325,9 @@ class HighFidelityConverter:
         """Validates against JATS XSD and performs PMC Style Checker compliance checks."""
         if not os.path.exists(self.xsd_path):
             logger.error(f"❌ XSD file not found: {self.xsd_path}")
+            # Still try to run PMC Style Checker even if XSD is missing
+            pmc_style_check = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, "XSD file not found", pmc_style_check=pmc_style_check)
             return False
 
         try:
@@ -356,17 +359,23 @@ class HighFidelityConverter:
 
         except etree.XMLSchemaError as e:
             logger.error(f"❌ JATS Validation Failed: {e}")
-            self._generate_validation_report(None, False, str(e))
+            # Still try to run PMC Style Checker even if schema validation fails
+            pmc_style_check = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, str(e), pmc_style_check=pmc_style_check)
             return False
 
         except etree.XMLSyntaxError as e:
             logger.error(f"❌ XML Syntax Error: {e}")
-            self._generate_validation_report(None, False, f"XML Syntax Error: {e}")
+            # Try to run PMC Style Checker if XML can be parsed
+            pmc_style_check = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, f"XML Syntax Error: {e}", pmc_style_check=pmc_style_check)
             return False
 
         except Exception as e:
             logger.error(f"❌ Validation Error: {e}")
-            self._generate_validation_report(None, False, str(e))
+            # Try to run PMC Style Checker
+            pmc_style_check = self._run_pmc_stylechecker()
+            self._generate_validation_report(None, False, str(e), pmc_style_check=pmc_style_check)
             return False
 
     def _run_pmc_stylechecker(self):
