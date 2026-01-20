@@ -220,7 +220,8 @@ def convert():
         }), 400
 
     # Save uploaded file with unique name
-    safe_filename = f"{conversion_id}_{file.filename.replace(' ', '_').replace('/', '_')}"
+    sanitized_filename = secure_filename(file.filename)
+    safe_filename = f"{conversion_id}_{sanitized_filename}"
     docx_path = os.path.join(UPLOAD_FOLDER, safe_filename)
 
     try:
@@ -283,7 +284,13 @@ def download_zip(filename):
     real_path = os.path.realpath(file_path)
     real_output_dir = os.path.realpath(OUTPUT_ZIP_DIR)
     
-    if not real_path.startswith(real_output_dir + os.sep):
+    try:
+        common_path = os.path.commonpath([real_path, real_output_dir])
+        if common_path != real_output_dir:
+            logger.warning(f"Path traversal attempt blocked: {filename}")
+            return "Not found", 404
+    except ValueError:
+        # Paths are on different drives on Windows
         logger.warning(f"Path traversal attempt blocked: {filename}")
         return "Not found", 404
     
