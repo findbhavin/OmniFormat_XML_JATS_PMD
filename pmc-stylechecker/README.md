@@ -44,7 +44,7 @@ If automatic download fails or is not available:
 - `pmc_style_checker.xsl` - Simplified PMC style checker for basic compliance validation (custom)
 - `README.md` - This file
 
-## Official PMC Style Checker
+### Download and Setup
 
 For complete and official PMC validation, the pipeline now uses the official nlm-style-5.47 bundle.
 
@@ -64,9 +64,12 @@ The PMC Style Checker performs comprehensive PMC compliance checks including:
 - Figure and reference counting
 - Many other PMC-specific requirements
 
-## Usage
+To update to a newer version when PMC releases updates:
 
-The style checker is automatically run during the JATS validation phase of the conversion pipeline. Results are included in the `validation_report.json` file.
+1. Remove the old bundle:
+   ```bash
+   rm -rf pmc-stylechecker/nlm-style-5.47
+   ```
 
 ### Running Manually with xsltproc
 

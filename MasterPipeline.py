@@ -420,19 +420,38 @@ class HighFidelityConverter:
             os.path.join(pmc_dir, "pmc_style_checker.xsl")
         ])
         
+        # Find first existing XSLT file
         xslt_path = None
         for candidate_path in xslt_candidates:
             if os.path.exists(candidate_path):
                 xslt_path = candidate_path
+                logger.info(f"Found PMC Style Checker XSLT: {xslt_path}")
                 break
+        
+        # If no candidate found, try to find any .xsl file in nlm-style-5.47 directory
+        if not xslt_path:
+            nlm_547_dir = os.path.join(pmc_dir, "nlm-style-5.47")
+            if os.path.exists(nlm_547_dir) and os.path.isdir(nlm_547_dir):
+                xsl_files = [f for f in os.listdir(nlm_547_dir) 
+                           if f.endswith('.xsl') and not f.startswith('PLACEHOLDER')]
+                if xsl_files:
+                    # Prefer files with "stylechecker" in the name, otherwise use the first .xsl
+                    stylechecker_files = [f for f in xsl_files if 'stylechecker' in f.lower()]
+                    if stylechecker_files:
+                        xslt_path = os.path.join(nlm_547_dir, stylechecker_files[0])
+                    else:
+                        xslt_path = os.path.join(nlm_547_dir, xsl_files[0])
+                    logger.info(f"Found PMC Style Checker XSLT in nlm-style-5.47: {xslt_path}")
         
         if not xslt_path:
             logger.warning("PMC Style Checker XSLT not found. Skipping style check.")
-            logger.info(f"To enable: Download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
+            logger.info(f"To enable: Run ./tools/fetch_pmc_style.sh")
+            logger.info(f"Or download from https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz")
             return {
                 "available": False,
                 "message": "PMC Style Checker XSLT files not installed",
-                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz"
+                "installation_url": "https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz",
+                "installation_script": "./tools/fetch_pmc_style.sh"
             }
         
         # Check if xsltproc is available
@@ -534,6 +553,7 @@ class HighFidelityConverter:
             }
         except Exception as e:
             logger.error(f"❌ PMC Style Checker failed: {e}")
+            logger.debug(f"Exception details: {traceback.format_exc()}")
             return {
                 "available": True,
                 "xslt_used": os.path.basename(xslt_path),
@@ -541,6 +561,12 @@ class HighFidelityConverter:
                 "status": "ERROR",
                 "returncode": -1
             }
+            
+            # Include traceback in debug mode
+            if logger.isEnabledFor(logging.DEBUG):
+                error_details["traceback"] = traceback.format_exc()
+            
+            return error_details
 
 
     def _validate_pmc_requirements(self, xml_doc):

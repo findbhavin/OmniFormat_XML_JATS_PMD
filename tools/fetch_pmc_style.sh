@@ -58,7 +58,7 @@ if ! command -v tar &> /dev/null; then
 fi
 
 # Create directories
-mkdir -p "$PMC_STYLE_DIR"
+mkdir -p "$NLM_547_DIR"
 mkdir -p "$TEMP_DIR"
 
 # Download the bundle
@@ -175,3 +175,6 @@ echo "   xsltproc $PMC_STYLE_DIR/nlm-stylechecker.xsl output/article.xml > pmc_r
 echo ""
 echo "4. Run a conversion - PMC style checker will run automatically"
 echo "==================================================================="
+echo ""
+echo "The MasterPipeline will automatically detect and use these files."
+echo ""
