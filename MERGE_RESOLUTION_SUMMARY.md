@@ -192,86 +192,66 @@ The codebase is now ready for production deployment.
 
 ## Update: Official PMC Style Checker Integration (nlm-style-5.47)
 
-### Summary
-Added official NLM/PMC Style Checker XSLT bundle (nlm-style-5.47) to the repository and integrated it into the validation pipeline.
+**Date**: 2026-01-20
 
-### Changes Made
+The official PMC nlm-style-5.47 XSLT bundle has been integrated into the repository for comprehensive PMC compliance checking.
 
-1. **New Directory Structure**
-   - Created `pmc-stylechecker/nlm-style-5.47/` directory for official bundle
-   - Added README and placeholder files to guide installation
-   - Structure ready to receive official XSLT files via fetch script
+### What Changed
 
-2. **MasterPipeline.py Updates**
-   - **Fixed TypeError**: Corrected kwarg mismatch `pmc_style_check` → `pmc_stylechecker` in all exception handlers (lines 330, 364, 371, 378)
-   - **Enhanced _run_pmc_stylechecker()**: 
-     - Updated search order to prioritize nlm-style-5.47 files
-     - Added automatic directory scanning for .xsl files in nlm-style-5.47/
-     - Implemented dual processor support (xsltproc preferred, lxml fallback)
-     - Enhanced error logging with stderr capture
-     - Added detailed metadata in results (processor, xslt_path, stderr)
-   
-3. **tools/fetch_pmc_style.sh**
-   - Completely rewritten to download nlm-style-5.47.tar.gz
-   - Supports both curl and wget
-   - Automatic extraction and file placement
-   - Preserves LICENSE and documentation files
-   - Comprehensive error handling and manual installation guidance
-   - Idempotent operation (safe to run multiple times)
+1. **Official Bundle**: Added infrastructure to download and integrate the official PMC style checker XSLT bundle (nlm-style-5.47)
+   - Location: `pmc-stylechecker/nlm-style-5.47/`
+   - Source: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
 
-4. **Documentation Updates**
-   - **pmc-stylechecker/README.md**: Comprehensive documentation of official bundle, installation, usage, and troubleshooting
-   - **pmc-stylechecker/nlm-style-5.47/README.md**: Directory-specific installation guide
-   - Added XSLT compatibility notes (1.0 vs 2.0, xsltproc vs Saxon)
-   - Manual usage examples with xsltproc
+2. **Download Script**: Updated `tools/fetch_pmc_style.sh` to download and extract the official bundle
+   - Idempotent: Won't re-download if files exist
+   - Automatic extraction and file listing
 
-### Key Features
+3. **Pipeline Changes**: Enhanced `MasterPipeline.py` to:
+   - Prefer official XSLT files from `pmc-stylechecker/nlm-style-5.47/`
+   - Use xsltproc via subprocess instead of lxml for XSLT processing
+   - Include stdout/stderr and return code in validation reports
+   - Fixed kwarg mismatch: `pmc_style_check` → `pmc_stylechecker`
+   - Added backward compatibility for `pmc_style_check` parameter
 
-- **Defensive Pipeline**: Missing or failing style checker does not abort conversion
-- **Smart Detection**: Automatically finds and uses the best available XSLT
-- **Dual Processor Support**: xsltproc (XSLT 1.0, recommended) with lxml fallback
-- **Detailed Logging**: Captures stderr and includes in validation reports
-- **Easy Installation**: Single command `./tools/fetch_pmc_style.sh`
-- **Manual Fallback**: Clear instructions if automatic download fails
+4. **Documentation**: Comprehensive updates to `pmc-stylechecker/README.md`
+   - Installation instructions for xsltproc
+   - Manual xsltproc usage examples
+   - XSLT 1.0 vs 2.0 compatibility notes
+   - Saxon recommendations for advanced use cases
 
-### Installation
+### How to Refresh the Bundle
 
-Run the fetch script to download and install the official bundle:
+To update or re-download the official PMC style checker bundle:
+
 ```bash
+# Remove existing bundle (optional)
+rm -rf pmc-stylechecker/nlm-style-5.47
+
+# Download and extract fresh bundle
 ./tools/fetch_pmc_style.sh
 ```
 
-Or manually download from:
-- https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
+### Requirements
 
-### Files Modified
-- `MasterPipeline.py` - Fixed TypeError, enhanced style checker integration
-- `tools/fetch_pmc_style.sh` - Rewritten for nlm-style-5.47 download
-- `pmc-stylechecker/README.md` - Updated with official bundle documentation
-- `pmc-stylechecker/nlm-style-5.47/README.md` - Added installation guide
-- `pmc-stylechecker/nlm-style-5.47/PLACEHOLDER.xsl` - Helpful placeholder file
-- `MERGE_RESOLUTION_SUMMARY.md` - This update
+- **xsltproc**: Required for PMC style checking
+  ```bash
+  # Ubuntu/Debian
+  sudo apt-get install xsltproc
+  
+  # macOS
+  brew install libxslt
+  
+  # Alpine
+  apk add libxslt
+  ```
 
-### Benefits
+### Verification
 
-- **Official Validation**: Uses authentic PMC style checker for submission compliance
-- **Better Coverage**: Comprehensive PMC requirement checks beyond simplified version
-- **No Breaking Changes**: Existing conversions continue to work
-- **Graceful Degradation**: Falls back to simplified checker if official not installed
-- **Production Ready**: TypeError fix prevents pipeline crashes
+After conversion, check `validation_report.json` for PMC style checker results:
+- `pmc_stylechecker.available: true`
+- `pmc_stylechecker.xslt_stdout`: HTML report output
+- `pmc_stylechecker.returncode`: 0 for success
 
-### Testing Recommendations
+HTML report is saved as `pmc_style_report.html` in the output directory.
 
-1. Run `./tools/fetch_pmc_style.sh` to install bundle
-2. Verify xsltproc is installed: `which xsltproc`
-3. Run a test conversion with known DOCX file
-4. Check output for `pmc_style_report.html`
-5. Review `validation_report.json` for style checker results
-6. Test with missing xsltproc (should fall back to lxml)
-7. Test with missing XSLT files (should use simplified checker)
-
-### References
-
-- Official PMC Style Checker: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/
-- Archive Download: https://cdn.ncbi.nlm.nih.gov/pmc/cms/files/nlm-style-5.47.tar.gz
-- PMC Tagging Guidelines: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
+---
