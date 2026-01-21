@@ -53,6 +53,82 @@ def cleanup_old_progress_entries(max_age_hours=24):
         logger.error(f"Error cleaning up progress entries: {e}")
 
 
+# Performance metrics tracking
+METRICS_FILE = '/tmp/performancemtrics.txt'
+
+def save_performance_metric(conversion_id, filename, processing_time, file_size_mb, status):
+    """Save performance metric to persistent file."""
+    try:
+        timestamp = datetime.now().isoformat()
+        metric_line = f"{timestamp}|{conversion_id}|{filename}|{processing_time:.2f}|{file_size_mb:.2f}|{status}\n"
+        
+        with open(METRICS_FILE, 'a', encoding='utf-8') as f:
+            f.write(metric_line)
+        
+        logger.debug(f"Saved metric for {conversion_id}")
+    except Exception as e:
+        logger.error(f"Failed to save performance metric: {e}")
+
+
+def get_performance_metrics(limit=10):
+    """Get recent performance metrics from file."""
+    try:
+        if not os.path.exists(METRICS_FILE):
+            return []
+        
+        metrics = []
+        with open(METRICS_FILE, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Get last N lines
+        for line in lines[-limit:]:
+            parts = line.strip().split('|')
+            if len(parts) == 6:
+                metrics.append({
+                    'timestamp': parts[0],
+                    'conversion_id': parts[1],
+                    'filename': parts[2],
+                    'processing_time': float(parts[3]),
+                    'file_size_mb': float(parts[4]),
+                    'status': parts[5]
+                })
+        
+        return metrics
+    except Exception as e:
+        logger.error(f"Failed to read performance metrics: {e}")
+        return []
+
+
+def get_metrics_summary():
+    """Get summary statistics of performance metrics."""
+    try:
+        metrics = get_performance_metrics(limit=100)  # Last 100 conversions
+        
+        if not metrics:
+            return None
+        
+        # Filter only successful conversions
+        successful = [m for m in metrics if m['status'] == 'completed']
+        
+        if not successful:
+            return None
+        
+        times = [m['processing_time'] for m in successful]
+        
+        summary = {
+            'total_conversions': len(successful),
+            'avg_time': sum(times) / len(times),
+            'min_time': min(times),
+            'max_time': max(times),
+            'recent_count': len([m for m in successful[-10:]])  # Last 10
+        }
+        
+        return summary
+    except Exception as e:
+        logger.error(f"Failed to generate metrics summary: {e}")
+        return None
+
+
 # Health check endpoint for Cloud Run
 @app.route('/health', methods=['GET'])
 def health():
@@ -114,7 +190,9 @@ def version():
 def index():
     """Serve the main upload page."""
     try:
-        return render_template('index.html')
+        # Get metrics summary for display
+        metrics_summary = get_metrics_summary()
+        return render_template('index.html', metrics=metrics_summary)
     except Exception as e:
         logger.error(f"Failed to render index: {e}")
         return """
@@ -143,6 +221,25 @@ def index():
         """, 500
 
 
+@app.route('/metrics', methods=['GET'])
+def metrics():
+    """Return performance metrics."""
+    try:
+        summary = get_metrics_summary()
+        recent_metrics = get_performance_metrics(limit=10)
+        
+        return jsonify({
+            "summary": summary,
+            "recent_conversions": recent_metrics,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        logger.error(f"Failed to get metrics: {e}")
+        return jsonify({
+            "error": "Failed to retrieve metrics",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
+
 
 def run_conversion_background(conversion_id, docx_path, safe_filename, original_filename):
     """Run conversion in background thread with progress tracking."""
@@ -151,23 +248,36 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
     try:
         # Update progress: starting
         conversion_progress[conversion_id]["status"] = "processing"
-        conversion_progress[conversion_id]["progress"] = 10
-        conversion_progress[conversion_id]["message"] = "Initializing conversion pipeline..."
+        conversion_progress[conversion_id]["progress"] = 5
+        conversion_progress[conversion_id]["message"] = "Uploading..."
+        conversion_progress[conversion_id]["stage"] = "Uploading"
         
         logger.info(f"[{conversion_id}] Starting conversion pipeline...")
         
-        # Run the full pipeline
+        # Stage 1: Parsing
+        conversion_progress[conversion_id]["progress"] = 15
+        conversion_progress[conversion_id]["message"] = "Parsing DOCX file..."
+        conversion_progress[conversion_id]["stage"] = "Parsing"
+        
+        # Run the full pipeline with progress callback
         converter = HighFidelityConverter(docx_path)
         
-        # Update progress: converting
+        # Stage 2: Transforming
         conversion_progress[conversion_id]["progress"] = 30
-        conversion_progress[conversion_id]["message"] = "Converting DOCX to JATS XML..."
+        conversion_progress[conversion_id]["message"] = "Transforming to JATS XML..."
+        conversion_progress[conversion_id]["stage"] = "Transforming"
         
         output_folder = converter.run_pipeline()
         
-        # Update progress: packaging
-        conversion_progress[conversion_id]["progress"] = 80
-        conversion_progress[conversion_id]["message"] = "Packaging output files..."
+        # Stage 3: Validating
+        conversion_progress[conversion_id]["progress"] = 70
+        conversion_progress[conversion_id]["message"] = "Validating JATS compliance..."
+        conversion_progress[conversion_id]["stage"] = "Validating"
+        
+        # Stage 4: Exporting
+        conversion_progress[conversion_id]["progress"] = 85
+        conversion_progress[conversion_id]["message"] = "Exporting final package..."
+        conversion_progress[conversion_id]["stage"] = "Exporting"
 
         # Package all outputs into ZIP
         base_name = os.path.splitext(safe_filename)[0]
@@ -201,6 +311,9 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         conversion_progress[conversion_id]["processing_time"] = processing_time
         conversion_progress[conversion_id]["file_size_mb"] = zip_size_mb
         
+        # Save performance metrics to file
+        save_performance_metric(conversion_id, original_filename, processing_time, zip_size_mb, "completed")
+        
         logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
 
     except Exception as e:
@@ -213,6 +326,10 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         conversion_progress[conversion_id]["message"] = f"Conversion failed: {str(e)}"
         conversion_progress[conversion_id]["error"] = str(e)
         conversion_progress[conversion_id]["progress"] = 0
+        
+        # Save failure metric
+        processing_time = (datetime.now() - start_time).total_seconds()
+        save_performance_metric(conversion_id, original_filename, processing_time, 0, "failed")
 
     finally:
         # Clean up uploaded DOCX

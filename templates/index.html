@@ -116,6 +116,26 @@
             font-size: 0.9rem;
             margin-bottom: 0.5rem;
         }
+        .stage-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+        }
+        .stage {
+            color: #dadce0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .stage.active {
+            color: #1a73e8;
+            background: #e8f0fe;
+            font-weight: 500;
+        }
+        .stage.completed {
+            color: #137333;
+        }
         .error-message {
             background: #fce8e6;
             color: #d93025;
@@ -164,6 +184,29 @@
         .info strong {
             color: #1a73e8;
         }
+        .metrics-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+        .metrics-box h3 {
+            color: #1a73e8;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .metrics-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            color: #5f6368;
+        }
+        .metrics-value {
+            color: #1a73e8;
+            font-weight: 500;
+        }
         .spinner {
             display: inline-block;
             width: 16px;
@@ -179,6 +222,13 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
         .reset-button {
             background: #5f6368;
             margin-top: 0.5rem;
@@ -193,6 +243,28 @@
         <h1>🚀 OmniJAX</h1>
         <p class="subtitle">Professional JATS XML & Dual PDF Engine</p>
         
+        {% if metrics %}
+        <div class="metrics-box">
+            <h3>📊 Conversion Statistics</h3>
+            <div class="metrics-row">
+                <span>Total Conversions:</span>
+                <span class="metrics-value">{{ metrics.total_conversions }}</span>
+            </div>
+            <div class="metrics-row">
+                <span>Average Time:</span>
+                <span class="metrics-value">{{ "%.1f"|format(metrics.avg_time) }}s</span>
+            </div>
+            <div class="metrics-row">
+                <span>Fastest:</span>
+                <span class="metrics-value">{{ "%.1f"|format(metrics.min_time) }}s</span>
+            </div>
+            <div class="metrics-row">
+                <span>Slowest:</span>
+                <span class="metrics-value">{{ "%.1f"|format(metrics.max_time) }}s</span>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon">📄</div>
             <div class="upload-text">
@@ -206,6 +278,13 @@
         <button id="convertBtn" disabled>Select a file to convert</button>
         
         <div class="progress-container" id="progressContainer">
+            <div class="stage-indicator" id="stageIndicator">
+                <span class="stage" id="stage-upload">Upload</span>
+                <span class="stage" id="stage-parse">Parse</span>
+                <span class="stage" id="stage-transform">Transform</span>
+                <span class="stage" id="stage-validate">Validate</span>
+                <span class="stage" id="stage-export">Export</span>
+            </div>
             <div class="progress-bar-bg">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
@@ -307,6 +386,7 @@
             // Show progress container
             progressContainer.style.display = 'block';
             progressBar.style.width = '0%';
+            updateStage('upload');
             statusText.innerHTML = '<span class="spinner"></span>Uploading file...';
 
             try {
@@ -337,6 +417,30 @@
                 resetUI();
             }
         });
+
+        function updateStage(stageName) {
+            // Clear all stages
+            const stages = ['upload', 'parse', 'transform', 'validate', 'export'];
+            stages.forEach(s => {
+                const elem = document.getElementById(`stage-${s}`);
+                elem.classList.remove('active', 'completed');
+            });
+            
+            // Mark completed stages
+            const stageIndex = stages.indexOf(stageName);
+            for (let i = 0; i < stageIndex; i++) {
+                document.getElementById(`stage-${stages[i]}`).classList.add('completed');
+            }
+            
+            // Mark active stage
+            if (stageName && stageName !== 'complete') {
+                document.getElementById(`stage-${stageName}`).classList.add('active');
+            } else if (stageName === 'complete') {
+                stages.forEach(s => {
+                    document.getElementById(`stage-${s}`).classList.add('completed');
+                });
+            }
+        }
 
         function startPolling() {
             // Poll every 1 second
@@ -371,6 +475,12 @@
             const progress = data.progress || 0;
             progressBar.style.width = `${progress}%`;
             
+            // Update stage indicator based on progress/stage
+            const stage = data.stage ? data.stage.toLowerCase() : null;
+            if (stage) {
+                updateStage(stage);
+            }
+            
             let statusHTML = '';
             if (data.status === 'processing') {
                 statusHTML = '<span class="spinner"></span>';
@@ -381,6 +491,7 @@
 
         function handleSuccess(data) {
             progressBar.style.width = '100%';
+            updateStage('complete');
             statusText.textContent = '✓ Conversion completed successfully!';
             
             // Show success message with download link
@@ -422,6 +533,7 @@
             progressContainer.style.display = 'none';
             progressBar.style.width = '0%';
             statusText.textContent = '';
+            updateStage(null);
         }
 
         // Reset button
@@ -438,6 +550,7 @@
             progressContainer.style.display = 'none';
             progressBar.style.width = '0%';
             statusText.textContent = '';
+            updateStage(null);
         });
     </script>
 </body>
