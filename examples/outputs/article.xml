@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink" 
+         xmlns:mml="http://www.w3.org/1998/Math/MathML"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         dtd-version="1.3" 
+         article-type="research-article"
+         xsi:schemaLocation="http://jats.nlm.nih.gov/publishing/1.3/ JATS-journalpublishing-oasis-article1-3-mathml2.xsd">
+  <front>
+    <journal-meta>
+      <journal-id journal-id-type="publisher-id">example-journal</journal-id>
+      <journal-title-group>
+        <journal-title>Example Journal of Medical Research</journal-title>
+        <abbrev-journal-title abbrev-type="publisher">Ex. J. Med. Res.</abbrev-journal-title>
+      </journal-title-group>
+      <issn pub-type="ppub">1234-5678</issn>
+      <issn pub-type="epub">8765-4321</issn>
+      <publisher>
+        <publisher-name>Example Publishing Group</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <article-id pub-id-type="doi">10.1234/example.2024.001</article-id>
+      <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>Research Article</subject>
+        </subj-group>
+      </article-categories>
+      <title-group>
+        <article-title>Enhanced Output Pipeline for DOCX to JATS XML Conversion: A Comprehensive Approach</article-title>
+      </title-group>
+      <contrib-group>
+        <contrib contrib-type="author" corresp="yes">
+          <name>
+            <surname>Smith</surname>
+            <given-names>John A.</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">1</xref>
+          <xref ref-type="corresp" rid="cor1">*</xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <name>
+            <surname>Johnson</surname>
+            <given-names>Mary B.</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">1</xref>
+          <xref ref-type="aff" rid="aff2">2</xref>
+        </contrib>
+        <aff id="aff1"><label>1</label>Department of Computer Science, Example University, City, State 12345, USA</aff>
+        <aff id="aff2"><label>2</label>Institute of Digital Publishing, Example Research Center, City, State 67890, USA</aff>
+      </contrib-group>
+      <author-notes>
+        <corresp id="cor1"><label>*</label>Correspondence: <email>john.smith@example.edu</email></corresp>
+      </author-notes>
+      <pub-date pub-type="epub">
+        <day>21</day>
+        <month>1</month>
+        <year>2026</year>
+      </pub-date>
+      <volume>10</volume>
+      <issue>1</issue>
+      <fpage>1</fpage>
+      <lpage>15</lpage>
+      <permissions>
+        <copyright-statement>© 2026 Smith et al.</copyright-statement>
+        <copyright-year>2026</copyright-year>
+        <license license-type="open-access">
+          <license-p>This is an open access article distributed under the terms of the Creative Commons Attribution License.</license-p>
+        </license>
+      </permissions>
+      <abstract>
+        <p>This article demonstrates a comprehensive pipeline for converting DOCX documents to JATS XML format with multiple output types. The pipeline generates XSD-compliant JATS XML, PMC-compliant XML with DOCTYPE, HTML with embedded media, and dual PDF outputs. We describe the methodology, implementation, and validation approaches used to ensure high-quality, standards-compliant outputs suitable for scholarly publishing.</p>
+      </abstract>
+      <kwd-group>
+        <kwd>JATS XML</kwd>
+        <kwd>Document Conversion</kwd>
+        <kwd>PMC Compliance</kwd>
+        <kwd>Publishing Standards</kwd>
+        <kwd>PDF Generation</kwd>
+      </kwd-group>
+    </article-meta>
+  </front>
+  <body>
+    <sec id="sec1">
+      <title>Introduction</title>
+      <p>The conversion of Microsoft Word documents (DOCX) to JATS XML format is a critical requirement in modern scholarly publishing. This article presents a comprehensive pipeline that addresses this challenge by generating multiple output formats from a single source document.</p>
+      <p>Our approach ensures compliance with both XSD schema validation and PMC (PubMed Central) guidelines, while also providing human-readable HTML and professionally formatted PDF outputs.</p>
+    </sec>
+    <sec id="sec2">
+      <title>Methods</title>
+      <sec id="sec2-1">
+        <title>Pipeline Architecture</title>
+        <p>The enhanced output pipeline consists of five main components:</p>
+        <list list-type="order">
+          <list-item>
+            <p>JATS XML Generation (XSD-Compliant)</p>
+          </list-item>
+          <list-item>
+            <p>PMC-Compliant XML with DOCTYPE</p>
+          </list-item>
+          <list-item>
+            <p>HTML with Embedded Media</p>
+          </list-item>
+          <list-item>
+            <p>Direct DOCX to PDF Conversion</p>
+          </list-item>
+          <list-item>
+            <p>Standards-Compliant PDF from HTML/JATS</p>
+          </list-item>
+        </list>
+      </sec>
+      <sec id="sec2-2">
+        <title>Validation Strategy</title>
+        <p>All outputs undergo rigorous validation:</p>
+        <list list-type="bullet">
+          <list-item>
+            <p>XSD schema validation for JATS XML</p>
+          </list-item>
+          <list-item>
+            <p>PMC Style Checker verification</p>
+          </list-item>
+          <list-item>
+            <p>W3C HTML validation</p>
+          </list-item>
+          <list-item>
+            <p>Visual verification of PDFs</p>
+          </list-item>
+        </list>
+      </sec>
+    </sec>
+    <sec id="sec3">
+      <title>Results</title>
+      <p>The pipeline successfully generates all required output formats with high fidelity. <xref ref-type="table" rid="table1">Table 1</xref> summarizes the output characteristics.</p>
+      <table-wrap id="table1" position="float">
+        <label>Table 1</label>
+        <caption>
+          <p>Output Format Characteristics</p>
+        </caption>
+        <table frame="hsides" rules="groups">
+          <thead>
+            <tr>
+              <th>Output Type</th>
+              <th>Format</th>
+              <th>Primary Use</th>
+              <th>Validation Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>XSD-Compliant XML</td>
+              <td>JATS 1.3/1.4</td>
+              <td>Schema validation</td>
+              <td>XSD validation</td>
+            </tr>
+            <tr>
+              <td>PMC-Compliant XML</td>
+              <td>JATS with DOCTYPE</td>
+              <td>PMC submission</td>
+              <td>PMC Style Checker</td>
+            </tr>
+            <tr>
+              <td>HTML</td>
+              <td>HTML5</td>
+              <td>Web display</td>
+              <td>W3C validation</td>
+            </tr>
+            <tr>
+              <td>Direct PDF</td>
+              <td>PDF 1.4+</td>
+              <td>Original formatting</td>
+              <td>Visual inspection</td>
+            </tr>
+            <tr>
+              <td>Published PDF</td>
+              <td>PDF 1.7</td>
+              <td>PMC standards</td>
+              <td>Visual inspection</td>
+            </tr>
+          </tbody>
+        </table>
+      </table-wrap>
+    </sec>
+    <sec id="sec4">
+      <title>Discussion</title>
+      <p>The enhanced output pipeline provides a robust solution for document conversion in scholarly publishing. By generating multiple formats from a single source, we enable flexibility in downstream processing while maintaining high standards of compliance and quality.</p>
+      <p>Key advantages include:</p>
+      <list list-type="simple">
+        <list-item>
+          <p>Automated validation at each stage</p>
+        </list-item>
+        <list-item>
+          <p>Preservation of original formatting in direct PDF</p>
+        </list-item>
+        <list-item>
+          <p>Standards compliance for archival and indexing</p>
+        </list-item>
+        <list-item>
+          <p>Comprehensive unit testing</p>
+        </list-item>
+      </list>
+    </sec>
+    <sec id="sec5">
+      <title>Conclusion</title>
+      <p>The enhanced output pipeline successfully addresses the challenges of modern scholarly document conversion. Future work will focus on expanding format support and improving AI-powered content repair capabilities.</p>
+    </sec>
+  </body>
+  <back>
+    <ack>
+      <title>Acknowledgments</title>
+      <p>We thank the contributors to the JATS specification and PMC tagging guidelines for their continued work in standardizing scholarly publishing formats.</p>
+    </ack>
+    <ref-list>
+      <title>References</title>
+      <ref id="ref1">
+        <label>1</label>
+        <element-citation publication-type="web">
+          <person-group person-group-type="author">
+            <collab>National Library of Medicine</collab>
+          </person-group>
+          <article-title>JATS: Journal Article Tag Suite</article-title>
+          <source>JATS Official Site</source>
+          <year>2024</year>
+          <uri>https://jats.nlm.nih.gov/</uri>
+        </element-citation>
+      </ref>
+      <ref id="ref2">
+        <label>2</label>
+        <element-citation publication-type="web">
+          <person-group person-group-type="author">
+            <collab>PubMed Central</collab>
+          </person-group>
+          <article-title>PMC Tagging Guidelines</article-title>
+          <source>PMC Documentation</source>
+          <year>2024</year>
+          <uri>https://www.ncbi.nlm.nih.gov/pmc/pub/tagging-guidelines/</uri>
+        </element-citation>
+      </ref>
+      <ref id="ref3">
+        <label>3</label>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Smith</surname>
+              <given-names>JA</given-names>
+            </name>
+          </person-group>
+          <article-title>Modern approaches to document conversion</article-title>
+          <source>Journal of Digital Publishing</source>
+          <year>2023</year>
+          <volume>15</volume>
+          <issue>3</issue>
+          <fpage>45</fpage>
+          <lpage>67</lpage>
+        </element-citation>
+      </ref>
+    </ref-list>
+  </back>
+</article>

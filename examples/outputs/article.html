@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Output Pipeline for DOCX to JATS XML Conversion: A Comprehensive Approach</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    
+    h1 {
+      font-size: 24px;
+      color: #2c3e50;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    
+    h2 {
+      font-size: 20px;
+      color: #34495e;
+      margin-top: 25px;
+      margin-bottom: 10px;
+    }
+    
+    h3 {
+      font-size: 16px;
+      color: #7f8c8d;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    
+    .article-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .article-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    
+    .authors {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    
+    .affiliations {
+      font-size: 14px;
+      color: #777;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+    
+    .abstract {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-left: 4px solid #3498db;
+      margin: 30px 0;
+    }
+    
+    .abstract h2 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    
+    .keywords {
+      margin-top: 15px;
+      font-style: italic;
+    }
+    
+    .keywords strong {
+      font-style: normal;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 14px;
+    }
+    
+    table caption {
+      caption-side: top;
+      text-align: left;
+      font-weight: bold;
+      padding: 10px;
+      color: #2c3e50;
+    }
+    
+    thead {
+      background-color: #3498db;
+      color: white;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    
+    tbody tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    
+    tbody tr:hover {
+      background-color: #e8f4f8;
+    }
+    
+    ul, ol {
+      margin: 15px 0;
+      padding-left: 30px;
+    }
+    
+    li {
+      margin-bottom: 8px;
+    }
+    
+    .references {
+      margin-top: 40px;
+      border-top: 2px solid #ddd;
+      padding-top: 20px;
+    }
+    
+    .references ol {
+      list-style-type: none;
+      counter-reset: ref-counter;
+      padding-left: 0;
+    }
+    
+    .references li {
+      counter-increment: ref-counter;
+      margin-bottom: 12px;
+      padding-left: 30px;
+      position: relative;
+    }
+    
+    .references li::before {
+      content: counter(ref-counter) ".";
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+    
+    .figure {
+      margin: 25px 0;
+      text-align: center;
+    }
+    
+    .figure img {
+      max-width: 90%;
+      height: auto;
+      border: 1px solid #ddd;
+      padding: 5px;
+    }
+    
+    .figure-caption {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+      font-style: italic;
+    }
+    
+    .acknowledgments {
+      margin-top: 30px;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    
+    @media print {
+      body {
+        font-size: 12pt;
+      }
+      
+      .abstract {
+        page-break-inside: avoid;
+      }
+      
+      table {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <article>
+    <header class="article-header">
+      <div class="article-title">
+        Enhanced Output Pipeline for DOCX to JATS XML Conversion: A Comprehensive Approach
+      </div>
+      <div class="authors">
+        John A. Smith<sup>1,*</sup>, Mary B. Johnson<sup>1,2</sup>
+      </div>
+      <div class="affiliations">
+        <sup>1</sup>Department of Computer Science, Example University, City, State 12345, USA<br>
+        <sup>2</sup>Institute of Digital Publishing, Example Research Center, City, State 67890, USA<br>
+        <sup>*</sup>Correspondence: john.smith@example.edu
+      </div>
+    </header>
+
+    <section class="abstract">
+      <h2>Abstract</h2>
+      <p>This article demonstrates a comprehensive pipeline for converting DOCX documents to JATS XML format with multiple output types. The pipeline generates XSD-compliant JATS XML, PMC-compliant XML with DOCTYPE, HTML with embedded media, and dual PDF outputs. We describe the methodology, implementation, and validation approaches used to ensure high-quality, standards-compliant outputs suitable for scholarly publishing.</p>
+      <div class="keywords">
+        <strong>Keywords:</strong> JATS XML, Document Conversion, PMC Compliance, Publishing Standards, PDF Generation
+      </div>
+    </section>
+
+    <section id="sec1">
+      <h1>1. Introduction</h1>
+      <p>The conversion of Microsoft Word documents (DOCX) to JATS XML format is a critical requirement in modern scholarly publishing. This article presents a comprehensive pipeline that addresses this challenge by generating multiple output formats from a single source document.</p>
+      <p>Our approach ensures compliance with both XSD schema validation and PMC (PubMed Central) guidelines, while also providing human-readable HTML and professionally formatted PDF outputs.</p>
+    </section>
+
+    <section id="sec2">
+      <h1>2. Methods</h1>
+      
+      <section id="sec2-1">
+        <h2>2.1. Pipeline Architecture</h2>
+        <p>The enhanced output pipeline consists of five main components:</p>
+        <ol>
+          <li>JATS XML Generation (XSD-Compliant)</li>
+          <li>PMC-Compliant XML with DOCTYPE</li>
+          <li>HTML with Embedded Media</li>
+          <li>Direct DOCX to PDF Conversion</li>
+          <li>Standards-Compliant PDF from HTML/JATS</li>
+        </ol>
+      </section>
+
+      <section id="sec2-2">
+        <h2>2.2. Validation Strategy</h2>
+        <p>All outputs undergo rigorous validation:</p>
+        <ul>
+          <li>XSD schema validation for JATS XML</li>
+          <li>PMC Style Checker verification</li>
+          <li>W3C HTML validation</li>
+          <li>Visual verification of PDFs</li>
+        </ul>
+      </section>
+    </section>
+
+    <section id="sec3">
+      <h1>3. Results</h1>
+      <p>The pipeline successfully generates all required output formats with high fidelity. Table 1 summarizes the output characteristics.</p>
+      
+      <table id="table1">
+        <caption>Table 1: Output Format Characteristics</caption>
+        <thead>
+          <tr>
+            <th>Output Type</th>
+            <th>Format</th>
+            <th>Primary Use</th>
+            <th>Validation Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>XSD-Compliant XML</td>
+            <td>JATS 1.3/1.4</td>
+            <td>Schema validation</td>
+            <td>XSD validation</td>
+          </tr>
+          <tr>
+            <td>PMC-Compliant XML</td>
+            <td>JATS with DOCTYPE</td>
+            <td>PMC submission</td>
+            <td>PMC Style Checker</td>
+          </tr>
+          <tr>
+            <td>HTML</td>
+            <td>HTML5</td>
+            <td>Web display</td>
+            <td>W3C validation</td>
+          </tr>
+          <tr>
+            <td>Direct PDF</td>
+            <td>PDF 1.4+</td>
+            <td>Original formatting</td>
+            <td>Visual inspection</td>
+          </tr>
+          <tr>
+            <td>Published PDF</td>
+            <td>PDF 1.7</td>
+            <td>PMC standards</td>
+            <td>Visual inspection</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="sec4">
+      <h1>4. Discussion</h1>
+      <p>The enhanced output pipeline provides a robust solution for document conversion in scholarly publishing. By generating multiple formats from a single source, we enable flexibility in downstream processing while maintaining high standards of compliance and quality.</p>
+      <p>Key advantages include:</p>
+      <ul>
+        <li>Automated validation at each stage</li>
+        <li>Preservation of original formatting in direct PDF</li>
+        <li>Standards compliance for archival and indexing</li>
+        <li>Comprehensive unit testing</li>
+      </ul>
+    </section>
+
+    <section id="sec5">
+      <h1>5. Conclusion</h1>
+      <p>The enhanced output pipeline successfully addresses the challenges of modern scholarly document conversion. Future work will focus on expanding format support and improving AI-powered content repair capabilities.</p>
+    </section>
+
+    <section class="acknowledgments">
+      <h2>Acknowledgments</h2>
+      <p>We thank the contributors to the JATS specification and PMC tagging guidelines for their continued work in standardizing scholarly publishing formats.</p>
+    </section>
+
+    <section class="references">
+      <h1>References</h1>
+      <ol>
+        <li>National Library of Medicine. JATS: Journal Article Tag Suite. JATS Official Site. 2024. Available from: https://jats.nlm.nih.gov/</li>
+        <li>PubMed Central. PMC Tagging Guidelines. PMC Documentation. 2024. Available from: https://www.ncbi.nlm.nih.gov/pmc/pub/tagging-guidelines/</li>
+        <li>Smith JA. Modern approaches to document conversion. Journal of Digital Publishing. 2023;15(3):45-67.</li>
+      </ol>
+    </section>
+  </article>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# This is a placeholder for an example image file
+# In a real pipeline, this would be a PNG image extracted from the DOCX file
+
+To create actual image files:
+- The pipeline extracts images from DOCX files
+- Supported formats: PNG, JPG, JPEG, GIF, SVG
+- Images are referenced in the HTML output
+- Media files are packaged in the output ZIP
+
+Example image generation would produce:
+- example_figure1.png (chart/graph)
+- example_figure2.jpg (photo)
+- example_table_image.png (table as image)
