@@ -17,25 +17,37 @@ caption {
     font-size: 11pt;
 }
 
-/* Table styling for JATS compliance */
+/* Table styling for JATS compliance - Enhanced Professional Appearance */
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15pt;
     margin-bottom: 20pt;
     page-break-inside: avoid;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 th, td {
-    border: 1px solid #333;
-    padding: 8px 10px;
+    border: 1px solid #666;
+    padding: 10px 12px;
     text-align: left;
     vertical-align: top;
+    line-height: 1.4;
 }
 
 thead th {
-    background-color: #f2f2f2;
+    background-color: #e8f0f7;
     font-weight: bold;
+    border-bottom: 2px solid #4a90d9;
+    color: #1a1a1a;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+    background-color: #f0f7ff;
 }
 
 /* Requirement 4: Maintain superscripts and subscripts */
@@ -64,12 +76,12 @@ math[mode="display"] {
     text-align: center;
 }
 
-/* Professional PDF Layout */
+/* Professional PDF Layout - Optimized Margins */
 body {
     font-family: "Liberation Serif", "Times New Roman", serif;
     font-size: 11pt;
     line-height: 1.6;
-    margin: 1in;
+    margin: 0.75in 0.65in;  /* Reduced left/right margins for better space utilization */
     color: #000;
     background: white;
 }
@@ -136,12 +148,13 @@ abstract p {
     page-break-inside: avoid;
 }
 
-/* Figures */
+/* Figures - Enhanced sizing and alignment */
 fig {
     display: block;
     margin: 20pt auto;
     text-align: center;
     page-break-inside: avoid;
+    max-width: 90%;  /* Prevent oversized figures */
 }
 
 fig caption {
@@ -152,10 +165,13 @@ fig caption {
     caption-side: bottom;
 }
 
-.graphic {
+.graphic, img {
     max-width: 100%;
+    max-height: 500pt;  /* Limit maximum height to prevent page overflow */
     height: auto;
     margin: 10pt auto;
+    display: block;
+    object-fit: contain;  /* Maintain aspect ratio */
 }
 
 /* Metadata styling */
@@ -226,4 +242,47 @@ pre {
     overflow-x: auto;
     border: 1px solid #ddd;
     margin: 10pt 0;
+}
+
+/* PMC Compliance Text Highlighting */
+/* Styles for text added to ensure DTD/PMC compliance */
+.pmc-compliance-text, 
+.compliance-added,
+[data-compliance="true"] {
+    background-color: #fff9e6;  /* Light yellow background */
+    border-left: 3px solid #ff9900;  /* Orange left border */
+    padding: 4px 8px;
+    margin: 4px 0;
+    display: inline-block;
+}
+
+.pmc-compliance-text::before {
+    content: "📋 ";  /* Compliance icon */
+    font-size: 0.9em;
+}
+
+/* Compliance warning style */
+.pmc-validation-warning {
+    background-color: #ffe6e6;  /* Light red background */
+    border-left: 3px solid #cc0000;  /* Red left border */
+    padding: 4px 8px;
+    margin: 4px 0;
+    display: inline-block;
+}
+
+/* Print-specific compliance highlighting */
+@media print {
+    .pmc-compliance-text, 
+    .compliance-added,
+    [data-compliance="true"] {
+        background-color: #ffeecc !important;  /* Stronger yellow for print */
+        -webkit-print-color-adjust: exact;  /* Force color printing */
+        print-color-adjust: exact;
+    }
+    
+    .pmc-validation-warning {
+        background-color: #ffcccc !important;  /* Stronger red for print */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 }
