@@ -117,6 +117,9 @@ body {
     margin: 0;  /* Margins set via @page rule */
     color: #000;
     background: white;
+    text-rendering: optimizeLegibility;  /* Better font rendering */
+    -webkit-font-smoothing: antialiased;  /* Smooth font rendering */
+    -moz-osx-font-smoothing: grayscale;  /* Smooth font rendering on macOS */
 }
 
 /* Headers */

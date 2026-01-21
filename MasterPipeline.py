@@ -1776,6 +1776,10 @@ class HighFidelityConverter:
         logger.info("Step 5: Rendering JATS-compliant PDF via WeasyPrint...")
         try:
             from weasyprint import HTML, CSS
+            from weasyprint.text.fonts import FontConfiguration
+            
+            # Initialize font configuration for proper font embedding
+            font_config = FontConfiguration()
             
             # Check if WeasyPrint can access the CSS file
             css_path = self.css_path
@@ -1783,14 +1787,14 @@ class HighFidelityConverter:
                 logger.warning(f"CSS file not found at {css_path}, using default styling")
                 css_path = None
             
-            # Generate PDF
+            # Generate PDF with font configuration
             html = HTML(filename=self.html_path, base_url=self.output_dir)
             
             if css_path and os.path.exists(css_path):
-                css = CSS(filename=css_path)
-                html.write_pdf(target=self.pdf_path, stylesheets=[css])
+                css = CSS(filename=css_path, font_config=font_config)
+                html.write_pdf(target=self.pdf_path, stylesheets=[css], font_config=font_config)
             else:
-                html.write_pdf(target=self.pdf_path)
+                html.write_pdf(target=self.pdf_path, font_config=font_config)
             
             # Verify PDF was created
             if os.path.exists(self.pdf_path):
@@ -1811,6 +1815,12 @@ class HighFidelityConverter:
         # STEP 6: Direct DOCX to PDF Conversion
         logger.info("Step 6: Creating direct DOCX→PDF (preserving Word formatting)...")
         try:
+            from weasyprint import HTML
+            from weasyprint.text.fonts import FontConfiguration
+            
+            # Initialize font configuration
+            font_config = FontConfiguration()
+            
             # Create a temporary HTML file from DOCX
             temp_html = os.path.join(self.output_dir, "direct_temp.html")
             
@@ -1822,10 +1832,10 @@ class HighFidelityConverter:
                 "-o", temp_html
             ], "DOCX to HTML (direct)")
             
-            # Convert HTML to PDF
-            from weasyprint import HTML
+            # Convert HTML to PDF with font configuration
             HTML(filename=temp_html, base_url=self.output_dir).write_pdf(
-                target=self.direct_pdf_path
+                target=self.direct_pdf_path,
+                font_config=font_config
             )
             
             # Clean up temp file
