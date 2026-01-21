@@ -7,6 +7,7 @@ from lxml import etree
 import json
 import re
 import html
+import datetime
 
 # Configure detailed logging for Google Cloud Run
 logging.basicConfig(level=logging.INFO)
@@ -1087,7 +1088,6 @@ class HighFidelityConverter:
                         pub_date_elem.set('publication-format', 'electronic')
                         
                         # Use simple year-only format to avoid schema issues
-                        import datetime
                         current_date = datetime.datetime.now()
                         
                         year_elem = etree.SubElement(pub_date_elem, 'year')
