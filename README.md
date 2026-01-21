@@ -24,7 +24,6 @@ Before diving into the details, here are the key terms you'll encounter:
 | **XML** (eXtensible Markup Language) | A structured format for organizing information, similar to HTML. It uses tags like `<title>` and `<author>` to mark up different parts of your document. |
 | **DTD** (Document Type Definition) | A set of rules that define what's allowed in an XML document, like a grammar book for documents. |
 | **XSD** (XML Schema Definition) | Another way to define rules for XML documents, more modern than DTD. |
-| **PDF** (Portable Document Format) | The familiar format that looks the same on any device. OmniJAX creates publication-quality PDFs from your document. |
 | **Validation** | The process of checking if your document follows all the required rules and standards. |
 | **Metadata** | Information about your article (like title, authors, publication date) that helps people find and cite it. |
 
@@ -41,7 +40,7 @@ Before diving into the details, here are the key terms you'll encounter:
 - ✅ **Standards Compliant**: Full JATS 1.4 and PMC compliance
 - ✅ **Automated Validation**: Built-in validation against official schemas
 - ✅ **Extensible Pipeline**: Modular Python architecture for customization
-- ✅ **Multiple Output Formats**: XML, PDF, and HTML generation
+- ✅ **Multiple Output Formats**: XML and HTML generation
 - ✅ **API Access**: RESTful API for integration with other systems
 
 ## Quick Start Guide
@@ -71,7 +70,7 @@ python app.py
 The tool will show you a progress bar with updates like:
 - "Processing document..." (0-20%)
 - "Converting to JATS XML..." (20-40%)
-- "Generating PDFs..." (40-80%)
+- "Generating HTML..." (40-80%)
 - "Validating output..." (80-100%)
 
 This usually takes 30 seconds to 2 minutes depending on document size.
@@ -81,15 +80,12 @@ This usually takes 30 seconds to 2 minutes depending on document size.
 Once complete (100%), click "Download Package" to get a ZIP file containing:
 
 #### What You Get (For Non-Technical Users)
-- 📄 **published_article.pdf** - A professionally formatted PDF ready for publication
-- 📄 **direct_from_word.pdf** - A PDF that looks like your original Word document
+- 📄 **article.html** - HTML version for viewing in your browser
 - 📄 **README.txt** - Explains what each file is for
 
 #### What You Get (For Technical Users)
 - 📄 **article.xml** - JATS XML for schema validation (XSD-compliant)
 - 📄 **articledtd.xml** - JATS XML for PMC submission (DTD-compliant)
-- 📄 **published_article.pdf** - PDF generated from JATS XML with PMC styling
-- 📄 **direct_from_word.pdf** - Direct DOCX to PDF conversion
 - 📄 **article.html** - HTML version with embedded images
 - 📁 **media/** - All extracted images from your document
 - 📄 **validation_report.json** - Detailed validation results
@@ -120,11 +116,8 @@ Once complete (100%), click "Download Package" to get a ZIP file containing:
 │           Publication-Ready Files             │
 ├──────────────────────────────────────────────┤
 │                                               │
-│  ├─ published_article.pdf (Main PDF)         │
-│  │  Professional, journal-ready format       │
-│  │                                            │
-│  ├─ direct_from_word.pdf (Original look)     │
-│  │  Preserves your Word formatting           │
+│  ├─ article.html (For viewing)               │
+│  │  Web-ready HTML version                   │
 │  │                                            │
 │  ├─ article.xml (For validation)             │
 │  │  Technical format for quality checks      │
@@ -151,14 +144,14 @@ Once complete (100%), click "Download Package" to get a ZIP file containing:
 5. If validation passes, submit to PMC
 6. If there are warnings, review and fix them in your original Word document, then re-convert
 
-### Use Case 2: Creating a Publication-Ready PDF
-**Goal**: Get a professionally formatted PDF of your article
+### Use Case 2: Creating HTML for Web Viewing
+**Goal**: Get a web-ready HTML version of your article
 
 **Steps**:
 1. Upload your Word document to OmniJAX
 2. Download the converted package
-3. Use `published_article.pdf` - this has professional styling with proper tables, figures, and formatting
-4. This PDF follows publication standards and looks great for sharing or printing
+3. Use `article.html` - this has professional styling with proper tables, figures, and formatting
+4. This HTML follows publication standards and looks great in any web browser
 
 ### Use Case 3: Preparing for Journal Submission
 **Goal**: Submit to a journal that requires JATS XML format
@@ -167,7 +160,7 @@ Once complete (100%), click "Download Package" to get a ZIP file containing:
 1. Upload your manuscript to OmniJAX
 2. Download the package
 3. Submit `article.xml` to your journal's submission system
-4. Include `published_article.pdf` as a preview version
+4. Include `article.html` as a preview version
 5. The journal can validate your XML against their requirements
 
 ## Features Overview
@@ -186,7 +179,6 @@ The tool reads your Word document and identifies:
 #### 2. **Format Conversion**
 Converts your document into multiple professional formats:
 - **JATS XML**: The standard format for scientific articles
-- **PDF**: Two versions - one publication-ready, one that looks like your original
 - **HTML**: Web-friendly version with images
 
 #### 3. **Quality Checking**
@@ -220,7 +212,7 @@ If your document is missing required elements (like an abstract or specific meta
 
 #### Multiple Output Versions
 Different users need different things:
-- **Researchers**: Get publication-ready PDFs
+- **Researchers**: Get validated JATS XML
 - **Publishers**: Get validated JATS XML
 - **Reviewers**: Get easy-to-read HTML versions
 - **Archives**: Get properly structured XML for long-term preservation
@@ -237,8 +229,8 @@ Watch the conversion happen:
 
 | File Name | What It's For | When to Use It |
 |-----------|---------------|----------------|
-| `published_article.pdf` | Main publication-ready PDF | Sharing with colleagues, submitting to journals, posting online |
-| `direct_from_word.pdf` | PDF that looks like your Word doc | Quick preview, informal sharing |
+| `article.html` | HTML version for viewing | Viewing in a web browser, sharing online |
+| `article.xml` | Technical XML file | For journal submissions |
 | `validation_report.json` | Quality check results | See if there are any issues to fix |
 | `README.txt` | File descriptions | Learn what each file does |
 
@@ -248,8 +240,6 @@ Watch the conversion happen:
 |-----------|--------|---------|-----------|
 | `article.xml` | JATS XML 1.4 | Schema validation, XSD tools | No DOCTYPE, includes xsi:schemaLocation |
 | `articledtd.xml` | JATS XML 1.4 | PMC submission, DTD validation | Includes DOCTYPE declaration |
-| `published_article.pdf` | PDF | Publication output | PMC-compliant styling |
-| `direct_from_word.pdf` | PDF | Format preservation | LibreOffice/Pandoc conversion |
 | `article.html` | HTML5 | Web display | W3C compliant |
 | `media/` | Images | Extracted figures | Referenced from HTML/XML |
 | `validation_report.json` | JSON | Validation results | JATS/PMC compliance report |
@@ -328,9 +318,8 @@ converter.add_doctype()       # Creates articledtd.xml
 # Step 4: Generate HTML
 converter.convert_to_html()   # Creates article.html + media/
 
-# Step 5: Generate PDFs
-converter.convert_to_pdf()    # Creates published_article.pdf
-converter.direct_pdf()        # Creates direct_from_word.pdf
+# Step 5: Generate HTML
+converter.convert_to_html()    # Creates article.html
 
 # Step 6: Run all validations
 converter.validate_all()      # Creates validation_report.json
@@ -360,7 +349,7 @@ Your document converted successfully, but some elements don't perfectly match pu
 3. For critical issues, update your Word document and re-convert
 4. Consult your target journal's submission guidelines
 
-### Issue 3: Yellow Highlighted Content in PDF
+### Issue 3: Yellow Highlighted Content in HTML
 **What It Means:**
 The tool added these elements to meet formatting requirements.
 
@@ -408,8 +397,8 @@ If you want to install and run OmniJAX on your own system:
 **Software Requirements:**
 - Python 3.11 or newer
 - Pandoc 3.x (document converter)
-- WeasyPrint (PDF generator)
-- LibreOffice (optional, for better PDF conversion)
+- Python 3.11+
+- Pandoc (document converter)
 
 **Detailed Setup:**
 See [SETUP.md](SETUP.md) for complete installation instructions.
@@ -478,10 +467,10 @@ When you convert a document, OmniJAX generates a `validation_report.json` file. 
 
 Different journals have different requirements:
 
-1. **Check journal guidelines** - See what format they want (XML, PDF, or both)
+1. **Check journal guidelines** - See what format they want (XML or HTML)
 2. **Use the appropriate file**:
    - JATS XML required? → Use `article.xml`
-   - PDF only? → Use `published_article.pdf`
+   - HTML preferred? → Use `article.html`
    - PMC/NLM compliance needed? → Use `articledtd.xml`
 3. **Include supplementary materials**:
    - Upload images from `media/` folder if requested
@@ -524,13 +513,6 @@ A: Save your document as .docx format first, then use OmniJAX.
 
 ### Output Questions
 
-**Q: Why are there two PDF files?**
-A: 
-- `published_article.pdf` - Professional format following publication standards
-- `direct_from_word.pdf` - Looks like your original Word document
-
-Use whichever suits your needs!
-
 **Q: What's the difference between article.xml and articledtd.xml?**
 A: Both have the same content, but:
 - `article.xml` - For general XML validation and modern tools
@@ -541,9 +523,9 @@ A: Yes, but you'll need an XML editor. For most users, it's easier to edit the W
 
 ### Problem-Solving Questions
 
-**Q: The PDF doesn't look right. What should I do?**
+**Q: The HTML doesn't look right. What should I do?**
 A: 
-1. Check `direct_from_word.pdf` - does it look better?
+1. Check if the original Word document looks correct
 2. If the Word doc looks wrong, fix formatting there first
 3. Re-upload and convert again
 4. If issues persist, check if your Word doc has unusual formatting
@@ -621,13 +603,13 @@ If you need additional features:
 - Figure and caption compliance
 - Reference formatting validation
 
-#### 3. Enhanced Professional PDF Styling
+#### 3. Enhanced Professional HTML Styling
 - **Professional Table Styles**: Enhanced borders, colors, and spacing for better readability
   - Alternating row colors for improved visual clarity
   - Professional header styling with subtle blue accents
   - Optimized padding and spacing for clean presentation
   - Smaller table font size (10pt) for better content fit
-- **Optimized Margins**: Further reduced left/right margins (0.5in) for better space utilization
+- **Optimized Margins**: Reduced left/right margins (0.5in) for better space utilization
 - **Enhanced Font Handling**: CSS variables for consistent font usage across document
   - Primary font stack: Liberation Serif, Times New Roman, DejaVu Serif
   - Header font stack: Liberation Sans, Arial, Helvetica
@@ -641,11 +623,7 @@ If you need additional features:
 - Separate download endpoint for completed conversions
 - Modern drag-and-drop UI with progress bar
 
-#### 5. Dual PDF Generation
-- PDF from JATS XML (semantic, PMC-ready)
-- Direct DOCX→PDF (format preserving)
-
-#### 6. AI-Powered Content Repair and Formatting
+#### 5. AI-Powered Content Repair and Formatting
 - Fixes truncated headers
 - Ensures PMC metadata requirements
 - Validates accessibility compliance
@@ -674,15 +652,14 @@ If you need additional features:
 │   └── README.md              # Installation instructions
 ├── templates/
 │   ├── index.html             # Modern async upload interface
-│   └── style.css              # PMC-compliant PDF styling
+│   └── style.css              # PMC-compliant HTML styling
 ├── standard-modules/          # JATS XSD modules
 │   ├── mathml2/              # MathML 2.0 schema
 │   ├── xlink.xsd             # XLink schema
 │   └── xml.xsd               # XML namespace schema
 └── tools/
     ├── safe_render.py         # Validation and rendering tool
-    ├── add_doctype.py         # DOCTYPE declaration utility for PMC validation
-    └── direct_pdf_converter.py # Direct PDF conversion utility
+    └── add_doctype.py         # DOCTYPE declaration utility for PMC validation
 ```
 
 ### JATS 1.4 and PMC Compliance Features
@@ -765,15 +742,14 @@ Figures include enhanced sizing and alignment:
 ### Compliance Text Highlighting
 
 #### Overview
-To ensure transparency and facilitate review, any text or elements added by the AI system specifically for DTD/PMC compliance are automatically highlighted in the generated PDF output.
+To ensure transparency and facilitate review, any text or elements added by the AI system specifically for DTD/PMC compliance are automatically highlighted in the generated HTML output.
 
 #### How It Works
 1. **AI Marking**: When the AI repair system adds content for compliance (e.g., mandatory DOI elements, journal metadata), it marks them with `data-compliance="true"` attribute
 2. **Visual Highlighting**: Marked content appears with:
-   - Light yellow background (#fff9e6 / #ffeecc in print)
+   - Light yellow background (#fff9e6)
    - Orange left border (3px, #ff9900)
    - Compliance icon (📋) prefix
-   - Special print color adjustment to ensure visibility in printed PDFs
 
 #### Examples of Highlighted Content
 Compliance text may include:
@@ -784,7 +760,7 @@ Compliance text may include:
 - Structural elements needed for DTD validation
 
 #### Reviewing Highlighted Content
-When reviewing the generated PDF:
+When reviewing the generated HTML:
 - ✅ **Yellow highlighted sections** = Content added for DTD/PMC compliance
 - ⚠️ **Original content** = Remains unhighlighted and unmodified
 - 📋 Icon indicates compliance-related additions
@@ -801,16 +777,13 @@ Each conversion generates a complete package with enhanced professional styling:
 
 1. **article.xml** - JATS 1.4 Publishing DTD XML with xsi:schemaLocation (without DOCTYPE for XSD validation)
 2. **articledtd.xml** - JATS 1.4 Publishing DTD XML with DOCTYPE declaration (for PMC Style Checker validation)
-3. **published_article.pdf** - PDF from JATS XML with enhanced styling:
-   - **Optimized Margins**: 0.75in vertical, 0.65in horizontal (reduced from 1in for better space utilization)
+3. **article.html** - HTML version with enhanced styling:
+   - **Optimized Margins**: 0.75in vertical, 0.65in horizontal for better space utilization
    - **Professional Tables**: Enhanced borders, colors, and spacing
    - **Enhanced Images**: Proper sizing with max-width 90%, max-height 500pt, aspect ratio preservation
    - **Compliance Highlighting**: Yellow background for compliance-added text
-   - **Print-Optimized**: Special color adjustments for print output
-4. **direct_from_word.pdf** - Direct DOCX conversion
-5. **article.html** - HTML version
-6. **media/** - All extracted images
-7. **validation_report.json** - Detailed validation report with:
+4. **media/** - All extracted images
+5. **validation_report.json** - Detailed validation report with:
    - JATS schema validation results
    - PMC compliance check results
    - PMC Style Checker results (if available)
@@ -923,17 +896,11 @@ The pipeline generates 5 main output types:
    - CSS styling applied
    - W3C HTML5 compliant
 
-4. **Direct DOCX to PDF**: `direct_from_word.pdf`
-   - Preserves original DOCX fonts
-   - Maintains superscripts/subscripts
-   - Table formatting preserved
-   - Created via LibreOffice/Pandoc
-
-5. **PDF from HTML/JATS**: `published_article.pdf`
-   - Generated from JATS XML via WeasyPrint
-   - PMC-compliant styling
-   - Professional table formatting
-   - Enhanced margins and spacing
+3. **HTML for Display**: `article.html`
+   - W3C HTML5 compliant
+   - Professional styling
+   - Embedded images
+   - Responsive design
 
 ### Validation Workflow
 

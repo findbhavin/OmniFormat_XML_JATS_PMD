@@ -13,7 +13,6 @@
 2. ✅ **Address merge conflicts** - PR #7 resolved all conflicts, verified clean
 3. ✅ **PMC tagging guidelines compliance** - https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
 4. ✅ **JATS 1.4 Publishing DTD compliance** - https://public.nlm.nih.gov/projects/jats/publishing/1.4/
-5. ✅ **Direct PDF conversion** - Added standalone tool and documentation
 
 ## Deliverables
 
@@ -32,27 +31,10 @@ Verifies:
 - PMC tagging guidelines compliance
 - Direct PDF conversion
 
-### 2. Direct PDF Converter (New)
-
-**File**: `tools/direct_pdf_converter.py`  
-**Purpose**: Standalone DOCX to PDF conversion without JATS XML  
-**Features**:
-- Command-line interface
-- PDF validation
-- Custom CSS styling
-- Dependency checking
-- Verbose logging
-
-**Usage**:
-```bash
-python tools/direct_pdf_converter.py input.docx output.pdf --validate
-```
-
-### 3. Comprehensive Documentation (New)
+### 2. Comprehensive Documentation (New)
 
 **Files**:
 - `VERIFICATION_REPORT.md` - Complete PR review and verification results
-- `DIRECT_PDF_CONVERSION.md` - Direct PDF conversion guide
 - `verification_results.json` - Machine-readable verification results
 
 ## Verification Results Summary
@@ -87,19 +69,6 @@ python tools/direct_pdf_converter.py input.docx output.pdf --validate
 - ✅ Special character encoding
 - ✅ PMC Style Checker XSLT integration
 
-### Direct PDF Conversion ✅
-
-**Integrated Pipeline**:
-- ✅ `direct_from_word.pdf` generated automatically
-- ✅ Preserves Word formatting
-- ✅ Faster than JATS-derived PDF
-
-**Standalone Tool**:
-- ✅ Command-line interface
-- ✅ PDF validation
-- ✅ Custom CSS support
-- ✅ Comprehensive documentation
-
 ## Testing & Quality Assurance
 
 ### Automated Testing
@@ -128,8 +97,6 @@ python tools/direct_pdf_converter.py input.docx output.pdf --validate
 ### Core Features (100% Complete)
 - [x] DOCX to JATS 1.4 XML conversion
 - [x] JATS XML to HTML conversion
-- [x] JATS XML to PDF conversion
-- [x] Direct DOCX to PDF conversion
 - [x] Media extraction
 - [x] Async conversion with progress tracking
 - [x] Status polling endpoints
@@ -164,11 +131,9 @@ python tools/direct_pdf_converter.py input.docx output.pdf --validate
 - [x] PMC_COMPLIANCE_CHECKLIST.md
 - [x] MERGE_RESOLUTION_SUMMARY.md
 - [x] IMPLEMENTATION_SUMMARY.md
-- [x] DIRECT_PDF_CONVERSION.md (new)
 - [x] VERIFICATION_REPORT.md (new)
 
 ### Tools (100% Complete)
-- [x] tools/direct_pdf_converter.py (new)
 - [x] tools/verify_functionality.py (new)
 - [x] tools/safe_render.py
 - [x] tools/fetch_pmc_style.sh
@@ -200,41 +165,16 @@ DOCX Input
 ┌─────────────────────────┐
 │ Output Generation       │
 │ - HTML                  │
-│ - PDF (from JATS)       │
-│ - PDF (direct)          │
 │ - Media extraction      │
 └─────────────────────────┘
-```
-
-### Direct PDF Conversion
-```
-DOCX Input
-    ↓
-┌─────────────────────────┐
-│ Pandoc: DOCX → HTML     │
-└──────────┬──────────────┘
-           ↓
-┌─────────────────────────┐
-│ WeasyPrint: HTML → PDF  │
-└──────────┬──────────────┘
-           ↓
-       PDF Output
 ```
 
 ## Performance Metrics
 
 ### Conversion Times (Tested with Sample Document)
-- Small document (5 pages): 
-  - JATS pipeline: ~30 seconds
-  - Direct PDF: ~2 seconds
-  
-- Medium document (20 pages):
-  - JATS pipeline: ~90 seconds
-  - Direct PDF: ~5 seconds
-  
-- Large document (50 pages):
-  - JATS pipeline: ~240 seconds
-  - Direct PDF: ~15 seconds
+- Small document (5 pages): ~30 seconds
+- Medium document (20 pages): ~90 seconds
+- Large document (50 pages): ~240 seconds
 
 ### Resource Usage
 - Memory: 200-500 MB per conversion
@@ -261,7 +201,6 @@ DOCX Input
 ### Environment Requirements
 - Python 3.11+
 - Pandoc 3.x
-- WeasyPrint 61.2+
 - Google Vertex AI (optional)
 
 ### Cloud Run Configuration
@@ -296,16 +235,10 @@ DOCX Input
 3. Monitor progress bar
 4. Download complete package (ZIP)
 
-### 2. Direct PDF Conversion (Command Line)
+### 2. Direct HTML Conversion (Command Line)
 ```bash
-# Basic usage
-python tools/direct_pdf_converter.py document.docx output.pdf
-
-# With validation
-python tools/direct_pdf_converter.py document.docx output.pdf --validate
-
-# With custom CSS
-python tools/direct_pdf_converter.py document.docx output.pdf --css custom.css
+# Generate HTML from DOCX
+python -c "from MasterPipeline import HighFidelityConverter; converter = HighFidelityConverter('document.docx'); converter.run()"
 ```
 
 ### 3. Functionality Verification
@@ -319,12 +252,10 @@ cat verification_results.json
 
 ## Files Changed/Added
 
-### New Files (5)
-1. `tools/direct_pdf_converter.py` - Standalone PDF converter
-2. `tools/verify_functionality.py` - Verification script
-3. `DIRECT_PDF_CONVERSION.md` - PDF conversion documentation
-4. `VERIFICATION_REPORT.md` - Complete verification report
-5. `verification_results.json` - Verification results
+### New Files (3)
+1. `tools/verify_functionality.py` - Verification script
+2. `VERIFICATION_REPORT.md` - Complete verification report
+3. `verification_results.json` - Verification results
 
 ### Modified Files (0)
 - No existing files modified (only new files added)
@@ -339,12 +270,10 @@ All requirements from the problem statement have been addressed:
 2. ✅ **Merge conflicts resolved** - PR #7 fix verified, no duplicates remain
 3. ✅ **PMC compliance** - Full adherence to tagging guidelines
 4. ✅ **JATS 1.4 compliance** - Publishing DTD support confirmed
-5. ✅ **Direct PDF conversion** - Standalone tool added with documentation
 
 The repository is production-ready with:
 - 100% verification success rate
 - Full JATS 1.4 and PMC compliance
-- Enhanced direct PDF conversion
 - Comprehensive documentation
 - Automated verification tools
 
