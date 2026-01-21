@@ -1465,7 +1465,7 @@ class HighFidelityConverter:
                     # Check if paragraph contains only article type pattern and bold formatting
                     elif any(pattern in first_p_text_upper for pattern in article_type_patterns):
                         # Only remove if it's mostly uppercase (metadata-like)
-                        if len(first_p_text) > 0:
+                        if first_p_text and len(first_p_text) > 0:
                             uppercase_ratio = sum(1 for c in first_p_text if c.isupper()) / len(first_p_text)
                             # If 80%+ uppercase and short (likely metadata), remove it
                             if uppercase_ratio > 0.8 and len(first_p_text) < 100:
