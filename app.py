@@ -55,11 +55,13 @@ def cleanup_old_progress_entries(max_age_hours=24):
 
 # Performance metrics tracking
 METRICS_FILE = '/tmp/performancemetrics.txt'
+METRIC_FIELDS_COUNT = 6  # timestamp|conversion_id|filename|processing_time|file_size_mb|status
 
 def save_performance_metric(conversion_id, filename, processing_time, file_size_mb, status):
     """Save performance metric to persistent file."""
     try:
         timestamp = datetime.now().isoformat()
+        # Format: timestamp|conversion_id|filename|processing_time|file_size_mb|status
         metric_line = f"{timestamp}|{conversion_id}|{filename}|{processing_time:.2f}|{file_size_mb:.2f}|{status}\n"
         
         with open(METRICS_FILE, 'a', encoding='utf-8') as f:
@@ -84,7 +86,7 @@ def get_performance_metrics(limit=10):
         for line in lines[-limit:]:
             parts = line.strip().split('|')
             # Expected format: timestamp|conversion_id|filename|processing_time|file_size_mb|status
-            if len(parts) == 6:
+            if len(parts) == METRIC_FIELDS_COUNT:
                 metrics.append({
                     'timestamp': parts[0],
                     'conversion_id': parts[1],
