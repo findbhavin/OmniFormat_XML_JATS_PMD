@@ -109,7 +109,7 @@ class HighFidelityConverter:
                 return xml_content
                 
             prompt = f"""
-            You are an expert JATS XML validator. Fix the following issues to ensure PMC Style Checker compliance.
+            You are an expert JATS XML validator and content formatter. Fix the following issues to ensure PMC Style Checker compliance and professional formatting.
             Reference: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
 
             JATS 1.4 PUBLISHING DTD REQUIREMENTS (NLM/PMC):
@@ -134,40 +134,58 @@ class HighFidelityConverter:
                  * <pub-date> with valid date-type
                  * <abstract> (HIGHLY RECOMMENDED)
 
-            3. AUTHOR FORMATTING:
+            3. AUTHOR FORMATTING (Professional Style):
                <contrib contrib-type="author">
                  <name><surname>Smith</surname><given-names>John</given-names></name>
                  <xref ref-type="aff" rid="aff1"><sup>1</sup></xref>
                </contrib>
                <aff id="aff1"><label>1</label>Department, Institution</aff>
 
-            4. TABLES (PMC REQUIREMENT):
+            4. TABLES (PMC REQUIREMENT - Enhanced Professional Style):
                - <table-wrap> MUST have position="float" or position="anchor"
                - <caption> MUST be FIRST child of table-wrap
-               - Use <label> for table number
+               - Use <label> for table number (e.g., "Table 1")
+               - Professional formatting with proper headers
                - Avoid colspan/rowspan when possible
+               - Ensure consistent alignment and spacing
 
-            5. FIGURES:
+            5. FIGURES (Enhanced Sizing and Alignment):
                - <fig> with proper id attribute
                - <label> and <caption> elements
                - <graphic xlink:href="filename.ext"> with proper namespacing
+               - Professional sizing and alignment
 
             6. REFERENCES:
                - <ref-list> in <back> section
                - Each <ref> with unique id
                - Proper citation elements
+               - Professional formatting
 
             7. SPECIAL CHARACTERS:
                - Use XML entities: &lt; &gt; &amp; &apos; &quot;
                - Unicode: &#x20B9; (Rupee), &#xB1; (plus-minus)
 
-            8. SECTIONS:
+            8. SECTIONS (Professional Structure):
                - <sec> elements with id attributes
                - <title> for each section
                - Proper nesting hierarchy
+               - Consistent formatting
 
-            PRESERVE: All scientific content, measurements, formulas, data.
-            RETURN: Only valid JATS 1.4 XML, no explanations.
+            IMPORTANT - COMPLIANCE TEXT MARKING:
+            If you add ANY text, elements, or attributes solely for DTD/PMC compliance that were not in the original content:
+            - Wrap added paragraphs in: <p data-compliance="true">Added text here</p>
+            - Mark added elements with: data-compliance="true" attribute
+            - This will highlight them in yellow in the PDF output for review
+            - NOTE: The data-compliance attribute is for PDF rendering only and will be stripped during final validation
+            
+            Examples:
+            - <journal-id data-compliance="true">journal-id</journal-id>
+            - <p data-compliance="true">This abstract was added for PMC compliance.</p>
+            - <article-id pub-id-type="doi" data-compliance="true">10.xxxx/xxxxx</article-id>
+
+            PRESERVE: All scientific content, measurements, formulas, data, original text.
+            FORMAT: Improve consistency, structure, and professional appearance.
+            RETURN: Only valid JATS 1.4 XML, no explanations or comments.
 
             XML to fix:
             {xml_content[:8000]}

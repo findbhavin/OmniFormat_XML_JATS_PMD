@@ -26,25 +26,36 @@ Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM
    - Figure and caption compliance
    - Reference formatting validation
 
-3. **Asynchronous Conversion with Progress Tracking**
+3. **Enhanced Professional PDF Styling**
+   - **Professional Table Styles**: Enhanced borders, colors, and spacing for better readability
+     - Alternating row colors for improved visual clarity
+     - Professional header styling with subtle blue accents
+     - Optimized padding and spacing for clean presentation
+   - **Optimized Margins**: Reduced left/right margins (0.65in) for better space utilization
+   - **Enhanced Image Handling**: Proper sizing and alignment with automatic aspect ratio preservation
+   - **Compliance Text Highlighting**: Visual indicators for DTD/PMC compliance additions
+
+4. **Asynchronous Conversion with Progress Tracking**
    - Real-time progress updates during conversion
    - Non-blocking file uploads
    - Status polling via REST API
    - Separate download endpoint for completed conversions
    - Modern drag-and-drop UI with progress bar
 
-4. **Dual PDF Generation**
+5. **Dual PDF Generation**
    - PDF from JATS XML (semantic, PMC-ready)
    - Direct DOCX→PDF (format preserving)
 
-5. **AI-Powered Content Repair**
+6. **AI-Powered Content Repair and Formatting**
    - Fixes truncated headers
    - Ensures PMC metadata requirements
    - Validates accessibility compliance
    - Proper author formatting with affiliations
    - Special character encoding
+   - Professional content formatting for consistency
+   - **Compliance Text Marking**: AI-added content for compliance is automatically marked
 
-6. **Automatic Features**
+7. **Automatic Features**
    - Table captions with proper positioning
    - Media extraction to `/media` folder
    - Superscript/subscript preservation
@@ -123,27 +134,78 @@ The pipeline performs comprehensive PMC compliance checks:
 
 ### Table Formatting
 
-Tables are formatted according to PMC requirements:
+Tables are formatted according to PMC requirements with enhanced professional styling:
+
+**PMC Compliance:**
 - `position="float"` or `position="anchor"` (not "top")
 - Caption as first child element
 - Proper label for table numbers
 - Minimal use of colspan/rowspan
 
+**Enhanced Professional Styling:**
+- Professional borders (#666) with subtle box shadows for depth
+- Header row styling with light blue background (#e8f0f7) and accent border (#4a90d9)
+- Alternating row colors (#f9f9f9) for improved readability
+- Hover effects for interactive viewing
+- Optimized padding (10px 12px) for clean presentation
+- All styling preserves PMC/DTD compliance and does not alter content
+
 ### Figure Formatting
 
-Figures include:
+Figures include enhanced sizing and alignment:
 - Unique ID attributes
 - Label elements for figure numbers
 - Caption elements with descriptions
 - Proper graphic references with XLink namespace
+- **Enhanced Sizing**: Maximum width of 90% to prevent oversizing, maximum height of 500pt to prevent page overflow
+- **Aspect Ratio Preservation**: `object-fit: contain` ensures proper proportions
+- **Professional Alignment**: Centered with optimized margins for clean presentation
+
+## Compliance Text Highlighting
+
+### Overview
+To ensure transparency and facilitate review, any text or elements added by the AI system specifically for DTD/PMC compliance are automatically highlighted in the generated PDF output.
+
+### How It Works
+1. **AI Marking**: When the AI repair system adds content for compliance (e.g., mandatory DOI elements, journal metadata), it marks them with `data-compliance="true"` attribute
+2. **Visual Highlighting**: Marked content appears with:
+   - Light yellow background (#fff9e6 / #ffeecc in print)
+   - Orange left border (3px, #ff9900)
+   - Compliance icon (📋) prefix
+   - Special print color adjustment to ensure visibility in printed PDFs
+
+### Examples of Highlighted Content
+Compliance text may include:
+- Journal metadata elements added for PMC requirements
+- DOI placeholders when not present in source document
+- Abstract sections added for compliance
+- Required front matter elements
+- Structural elements needed for DTD validation
+
+### Reviewing Highlighted Content
+When reviewing the generated PDF:
+- ✅ **Yellow highlighted sections** = Content added for DTD/PMC compliance
+- ⚠️ **Original content** = Remains unhighlighted and unmodified
+- 📋 Icon indicates compliance-related additions
+
+This feature allows you to:
+1. Easily identify what was added versus what was in the original document
+2. Review compliance additions before final submission
+3. Update highlighted sections with actual document-specific information
+4. Maintain transparency in the conversion process
 
 ## Output Package
 
-Each conversion generates a complete package:
+Each conversion generates a complete package with enhanced professional styling:
 
 1. **article.xml** - JATS 1.4 Publishing DTD XML with xsi:schemaLocation (without DOCTYPE for XSD validation)
 2. **articledtd.xml** - JATS 1.4 Publishing DTD XML with DOCTYPE declaration (for PMC Style Checker validation)
-3. **published_article.pdf** - PDF from JATS XML
+3. **published_article.pdf** - PDF from JATS XML with enhanced styling:
+   - **Optimized Margins**: 0.75in vertical, 0.65in horizontal (reduced from 1in for better space utilization)
+   - **Professional Tables**: Enhanced borders, colors, and spacing
+   - **Enhanced Images**: Proper sizing with max-width 90%, max-height 500pt, aspect ratio preservation
+   - **Compliance Highlighting**: Yellow background for compliance-added text
+   - **Print-Optimized**: Special color adjustments for print output
 4. **direct_from_word.pdf** - Direct DOCX conversion
 5. **article.html** - HTML version
 6. **media/** - All extracted images
