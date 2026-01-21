@@ -914,6 +914,10 @@ class HighFidelityConverter:
         This is typically found in a text box on the first page (e.g., "SYSTEMATIC REVIEW/META ANALYSIS").
         Returns the article type string or None if not found.
         """
+        # Constants for article type detection
+        MAX_PARAGRAPHS_TO_CHECK = 5
+        MIN_TEXT_LENGTH = 5
+        
         try:
             if not os.path.exists(self.docx_path):
                 logger.warning(f"DOCX file not found: {self.docx_path}")
@@ -923,9 +927,9 @@ class HighFidelityConverter:
             
             # Check first few paragraphs for article type
             # Article type is typically in the first paragraph and in UPPERCASE
-            for para in doc.paragraphs[:5]:
+            for para in doc.paragraphs[:MAX_PARAGRAPHS_TO_CHECK]:
                 text = para.text.strip()
-                if text and text.isupper() and len(text) > 5:
+                if text and text.isupper() and len(text) > MIN_TEXT_LENGTH:
                     # Found a potential article type (uppercase text in first few paragraphs)
                     logger.info(f"Extracted article type from DOCX: {text}")
                     return text
@@ -1551,58 +1555,50 @@ class HighFidelityConverter:
                         xml_thead = xml_table.find('.//thead')
                         if xml_thead is not None:
                             html_thead = etree.Element('thead')
-                            for xml_tr in xml_thead.findall('.//tr'):
-                                html_tr = etree.SubElement(html_thead, 'tr')
-                                for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
-                                    cell_tag = 'th' if xml_cell.tag == 'th' else 'td'
-                                    html_cell = etree.SubElement(html_tr, cell_tag)
-                                    # Copy text content and children
-                                    html_cell.text = xml_cell.text
-                                    for child in xml_cell:
-                                        html_child = self._convert_xml_to_html_element(child)
-                                        if html_child is not None:
-                                            html_cell.append(html_child)
-                                    # Handle tail text
-                                    if xml_cell.tail:
-                                        if len(list(html_cell)) > 0:
-                                            list(html_cell)[-1].tail = (list(html_cell)[-1].tail or '') + xml_cell.tail
-                                        else:
-                                            html_cell.text = (html_cell.text or '') + xml_cell.tail
-                                    # Copy attributes (like colspan)
-                                    for attr, value in xml_cell.attrib.items():
-                                        html_cell.set(attr, value)
+                            self._rebuild_table_section(xml_thead, html_thead)
                             html_table.append(html_thead)
                         
                         # Rebuild tbody if present in XML
                         xml_tbody = xml_table.find('.//tbody')
                         if xml_tbody is not None:
                             html_tbody = etree.Element('tbody')
-                            for xml_tr in xml_tbody.findall('.//tr'):
-                                html_tr = etree.SubElement(html_tbody, 'tr')
-                                for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
-                                    cell_tag = 'th' if xml_cell.tag == 'th' else 'td'
-                                    html_cell = etree.SubElement(html_tr, cell_tag)
-                                    # Copy text content and children
-                                    html_cell.text = xml_cell.text
-                                    for child in xml_cell:
-                                        html_child = self._convert_xml_to_html_element(child)
-                                        if html_child is not None:
-                                            html_cell.append(html_child)
-                                    # Handle tail text
-                                    if xml_cell.tail:
-                                        if len(list(html_cell)) > 0:
-                                            list(html_cell)[-1].tail = (list(html_cell)[-1].tail or '') + xml_cell.tail
-                                        else:
-                                            html_cell.text = (html_cell.text or '') + xml_cell.tail
-                                    # Copy attributes
-                                    for attr, value in xml_cell.attrib.items():
-                                        html_cell.set(attr, value)
+                            self._rebuild_table_section(xml_tbody, html_tbody)
                             html_table.append(html_tbody)
                         
         except Exception as e:
             logger.warning(f"Failed to fix HTML table structure: {e}")
             import traceback
             logger.warning(f"Traceback: {traceback.format_exc()}")
+    
+    def _rebuild_table_section(self, xml_section, html_section):
+        """
+        Helper method to rebuild a table section (thead or tbody) from XML to HTML.
+        Reduces code duplication between thead and tbody processing.
+        """
+        for xml_tr in xml_section.findall('.//tr'):
+            html_tr = etree.SubElement(html_section, 'tr')
+            for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
+                cell_tag = 'th' if xml_cell.tag == 'th' else 'td'
+                html_cell = etree.SubElement(html_tr, cell_tag)
+                
+                # Copy text content and children
+                html_cell.text = xml_cell.text
+                for child in xml_cell:
+                    html_child = self._convert_xml_to_html_element(child)
+                    if html_child is not None:
+                        html_cell.append(html_child)
+                
+                # Handle tail text - optimize by storing list once
+                if xml_cell.tail:
+                    cell_children = list(html_cell)
+                    if cell_children:
+                        cell_children[-1].tail = (cell_children[-1].tail or '') + xml_cell.tail
+                    else:
+                        html_cell.text = (html_cell.text or '') + xml_cell.tail
+                
+                # Copy attributes (like colspan)
+                for attr, value in xml_cell.attrib.items():
+                    html_cell.set(attr, value)
     
     def _convert_xml_to_html_element(self, xml_elem):
         """
