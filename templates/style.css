@@ -49,11 +49,6 @@ th, td {
     hyphens: auto;  /* Enable hyphenation for better text flow */
 }
 
-/* Ensure narrow columns don't get too cramped */
-th:has(+ th:empty), td:has(+ td:empty) {
-    min-width: 3em;
-}
-
 thead th {
     background-color: #e8f0f7;
     font-weight: bold;

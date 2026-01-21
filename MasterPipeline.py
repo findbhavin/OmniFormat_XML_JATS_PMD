@@ -1791,7 +1791,7 @@ class HighFidelityConverter:
             html = HTML(filename=self.html_path, base_url=self.output_dir)
             
             if css_path and os.path.exists(css_path):
-                css = CSS(filename=css_path, font_config=font_config)
+                css = CSS(filename=css_path)
                 html.write_pdf(target=self.pdf_path, stylesheets=[css], font_config=font_config)
             else:
                 html.write_pdf(target=self.pdf_path, font_config=font_config)
