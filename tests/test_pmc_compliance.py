@@ -276,3 +276,119 @@ class TestPMCStyleChecker:
             pytest.fail("PMC Style Checker timed out")
         except FileNotFoundError:
             pytest.skip("xsltproc not found")
+
+
+class TestEmptyBackElementFix:
+    """
+    Tests for empty <back> element removal (PMC compliance).
+    
+    PMC requires that <back> elements must not be empty. An empty <back> element
+    is defined as one with:
+    - No child elements at all, OR
+    - Only comments (no actual XML elements like ref-list, ack, etc.)
+    """
+    
+    def test_empty_back_element_removed(self, mock_converter):
+        """Test that empty <back> elements are removed during post-processing."""
+        from lxml import etree
+        
+        # Create XML with empty back element
+        xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.3">
+  <front>
+    <article-meta>
+      <title-group><article-title>Test</article-title></title-group>
+    </article-meta>
+  </front>
+  <body><p>Content</p></body>
+  <back></back>
+</article>"""
+        
+        # Write XML file
+        with open(mock_converter.xml_path, 'w', encoding='utf-8') as f:
+            f.write(xml_content)
+        
+        # Run post-processing
+        mock_converter._post_process_xml()
+        
+        # Parse the processed XML
+        tree = etree.parse(mock_converter.xml_path)
+        root = tree.getroot()
+        
+        # Verify empty back element was removed
+        back = root.find('.//back')
+        assert back is None, "Empty <back> element should be removed"
+    
+    def test_back_element_with_content_kept(self, mock_converter):
+        """Test that <back> elements with content are kept."""
+        from lxml import etree
+        
+        # Create XML with non-empty back element
+        xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.3">
+  <front>
+    <article-meta>
+      <title-group><article-title>Test</article-title></title-group>
+    </article-meta>
+  </front>
+  <body><p>Content with reference <xref ref-type="bibr" rid="ref1">1</xref></p></body>
+  <back>
+    <ref-list>
+      <ref id="ref1">
+        <mixed-citation>Reference 1</mixed-citation>
+      </ref>
+    </ref-list>
+  </back>
+</article>"""
+        
+        # Write XML file
+        with open(mock_converter.xml_path, 'w', encoding='utf-8') as f:
+            f.write(xml_content)
+        
+        # Run post-processing
+        mock_converter._post_process_xml()
+        
+        # Parse the processed XML
+        tree = etree.parse(mock_converter.xml_path)
+        root = tree.getroot()
+        
+        # Verify back element with content was kept
+        back = root.find('.//back')
+        assert back is not None, "<back> element with content should be kept"
+        
+        # Verify ref-list is still present
+        ref_list = back.find('.//ref-list')
+        assert ref_list is not None, "ref-list should be preserved"
+    
+    def test_back_element_with_only_comments_removed(self, mock_converter):
+        """Test that <back> elements with only comments are removed."""
+        from lxml import etree
+        
+        # Create XML with back element containing only comments
+        xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.3">
+  <front>
+    <article-meta>
+      <title-group><article-title>Test</article-title></title-group>
+    </article-meta>
+  </front>
+  <body><p>Content</p></body>
+  <back>
+    <!-- This is just a comment -->
+  </back>
+</article>"""
+        
+        # Write XML file
+        with open(mock_converter.xml_path, 'w', encoding='utf-8') as f:
+            f.write(xml_content)
+        
+        # Run post-processing
+        mock_converter._post_process_xml()
+        
+        # Parse the processed XML
+        tree = etree.parse(mock_converter.xml_path)
+        root = tree.getroot()
+        
+        # Verify back element with only comments was removed
+        back = root.find('.//back')
+        assert back is None, "<back> element with only comments should be removed"

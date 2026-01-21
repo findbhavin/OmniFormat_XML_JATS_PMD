@@ -1369,6 +1369,34 @@ class HighFidelityConverter:
             # The DOCTYPE with external URL causes xsltproc to fail when validating
             tree.docinfo.clear()
             
+            # PMC Compliance: Remove empty <back> element if it has no children
+            # PMC Style Checker reports error: "empty element check: back should not be empty"
+            back = root.find('.//back')
+            if back is not None:
+                # Check if back element has any children
+                if len(back) == 0:
+                    # Back element is empty, remove it
+                    parent = back.getparent()
+                    if parent is not None:
+                        parent.remove(back)
+                        logger.info("Removed empty <back> element for PMC compliance")
+                else:
+                    # Back has children - ensure they're not all comments
+                    # In lxml: real XML elements have string tag, comments have callable tag function
+                    has_content = False
+                    for child in back:
+                        # Check for elements (not comments which have callable tag)
+                        if isinstance(child.tag, str):  # Real element
+                            has_content = True
+                            break
+                    
+                    if not has_content:
+                        # No real element children, only comments
+                        parent = back.getparent()
+                        if parent is not None:
+                            parent.remove(back)
+                            logger.info("Removed <back> element with no element children for PMC compliance")
+            
             # Write back the XML with proper formatting
             tree.write(
                 self.xml_path,
