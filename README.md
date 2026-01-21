@@ -325,6 +325,162 @@ Health check endpoint
 curl http://localhost:8080/health
 ```
 
+## Running the Enhanced Output Pipeline
+
+### Quick Start
+
+For detailed environment setup instructions, see [SETUP.md](SETUP.md).
+
+#### 1. Command-Line Pipeline Execution
+
+Run the complete pipeline programmatically:
+
+```python
+from MasterPipeline import HighFidelityConverter
+
+# Initialize converter with DOCX file
+converter = HighFidelityConverter('path/to/document.docx')
+
+# Run the complete pipeline
+# This generates all outputs:
+# - article.xml (XSD-compliant JATS XML)
+# - articledtd.xml (PMC-compliant JATS XML with DOCTYPE)
+# - published_article.pdf (PDF from JATS XML)
+# - direct_from_word.pdf (Direct DOCX to PDF)
+# - article.html (HTML with embedded media)
+# - media/ (extracted images)
+# - validation_report.json (validation results)
+converter.run()
+
+print(f"All outputs generated in: {converter.output_dir}")
+```
+
+#### 2. Step-by-Step Pipeline Execution
+
+Run individual pipeline steps:
+
+```python
+from MasterPipeline import HighFidelityConverter
+
+converter = HighFidelityConverter('document.docx')
+
+# Step 1: Generate XSD-compliant JATS XML
+converter.convert_to_jats()  # Creates article.xml
+converter.validate_jats()     # Validates against XSD schema
+
+# Step 2: Generate PMC-compliant JATS XML
+converter.add_doctype()      # Creates articledtd.xml with DOCTYPE
+
+# Step 3: Generate HTML with embedded media
+converter.convert_to_html()  # Creates article.html + media/
+
+# Step 4: Generate PDF from JATS XML
+converter.convert_to_pdf()   # Creates published_article.pdf
+
+# Step 5: Generate direct DOCX to PDF
+converter.direct_pdf()       # Creates direct_from_word.pdf
+
+# Step 6: Run validations
+converter.validate_all()     # Creates validation_report.json
+```
+
+#### 3. Running Tests
+
+```bash
+# Run all unit tests
+pytest tests/ -v
+
+# Run specific test suite
+pytest tests/test_jats_generation.py -v
+
+# Run with coverage report
+pytest tests/ --cov=. --cov-report=html
+
+# View coverage report
+open htmlcov/index.html
+```
+
+#### 4. Validation and Compliance Checking
+
+```bash
+# Validate JATS XML against XSD schema
+python -c "
+from MasterPipeline import HighFidelityConverter
+converter = HighFidelityConverter('document.docx')
+converter.convert_to_jats()
+converter.validate_jats()
+"
+
+# Run PMC Style Checker
+cd pmc-stylechecker
+xsltproc --path . nlm-style-5-0.xsl ../path/to/articledtd.xml
+
+# Validate HTML with W3C standards (requires external tool)
+# Install: npm install -g html-validator-cli
+html-validator path/to/article.html
+```
+
+### Pipeline Outputs Explained
+
+The pipeline generates 5 main output types:
+
+1. **JATS XML (XSD-Compliant)**: `article.xml`
+   - Validates against JATS 1.4 XSD schema
+   - No DOCTYPE declaration (optimized for schema validation)
+   - Contains xsi:schemaLocation for external validators
+   - Used for: Schema-based validation, XSD tools
+
+2. **JATS XML (PMC-Compliant)**: `articledtd.xml`
+   - Identical content to article.xml
+   - Includes DOCTYPE declaration for PMC Style Checker
+   - Compatible with DTD-based validators
+   - Used for: PMC Style Checker, PMC submission
+
+3. **HTML with Embedded Media**: `article.html` + `media/`
+   - Semantic HTML5 output
+   - Images embedded from media/ folder
+   - CSS styling applied
+   - W3C HTML5 compliant
+
+4. **Direct DOCX to PDF**: `direct_from_word.pdf`
+   - Preserves original DOCX fonts
+   - Maintains superscripts/subscripts
+   - Table formatting preserved
+   - Created via LibreOffice/Pandoc
+
+5. **PDF from HTML/JATS**: `published_article.pdf`
+   - Generated from JATS XML via WeasyPrint
+   - PMC-compliant styling
+   - Professional table formatting
+   - Enhanced margins and spacing
+
+### Validation Workflow
+
+```bash
+# 1. Generate all outputs
+python -c "
+from MasterPipeline import HighFidelityConverter
+converter = HighFidelityConverter('document.docx')
+converter.run()
+"
+
+# 2. Review validation report
+cat /tmp/output_files/validation_report.json
+
+# 3. Check XSD validation
+# Look for: jats_validation.status = "PASS"
+
+# 4. Check PMC compliance
+# Look for: pmc_compliance.status = "PASS" or "WARNING"
+
+# 5. Run PMC Style Checker manually (if needed)
+cd pmc-stylechecker
+xsltproc --path . nlm-style-5-0.xsl /tmp/output_files/articledtd.xml
+
+# 6. Review outputs
+ls -lah /tmp/output_files/
+```
+
 ## PMC Submission Workflow
 
 1. Convert document using OmniJAX

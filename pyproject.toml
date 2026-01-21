@@ -1,0 +1,56 @@
+[tool.pytest.ini_options]
+# Pytest configuration for OmniFormat XML JATS PMD
+
+# Test discovery patterns
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Test paths
+testpaths = ["tests"]
+
+# Minimum version
+minversion = "7.0"
+
+# Add current directory to Python path
+pythonpath = ["."]
+
+# Output options
+addopts = [
+    "-v",                    # Verbose output
+    "--strict-markers",      # Raise error on unknown markers
+    "--tb=short",           # Shorter traceback format
+    "--disable-warnings",    # Disable warnings (can be re-enabled with -W)
+    "-ra",                  # Show summary of all test outcomes
+]
+
+# Markers for organizing tests
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "validation: marks tests that perform validation",
+    "requires_external: marks tests that require external tools (LibreOffice, xsltproc, etc.)",
+]
+
+# Coverage options (when using pytest-cov)
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/.venv/*",
+    "*/env/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
