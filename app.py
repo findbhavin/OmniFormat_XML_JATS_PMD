@@ -54,7 +54,7 @@ def cleanup_old_progress_entries(max_age_hours=24):
 
 
 # Performance metrics tracking
-METRICS_FILE = '/tmp/performancemtrics.txt'
+METRICS_FILE = '/tmp/performancemetrics.txt'
 
 def save_performance_metric(conversion_id, filename, processing_time, file_size_mb, status):
     """Save performance metric to persistent file."""
@@ -83,6 +83,7 @@ def get_performance_metrics(limit=10):
         # Get last N lines
         for line in lines[-limit:]:
             parts = line.strip().split('|')
+            # Expected format: timestamp|conversion_id|filename|processing_time|file_size_mb|status
             if len(parts) == 6:
                 metrics.append({
                     'timestamp': parts[0],

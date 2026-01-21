@@ -279,7 +279,14 @@ class TestPMCStyleChecker:
 
 
 class TestEmptyBackElementFix:
-    """Tests for empty <back> element removal (PMC compliance)."""
+    """
+    Tests for empty <back> element removal (PMC compliance).
+    
+    PMC requires that <back> elements must not be empty. An empty <back> element
+    is defined as one with:
+    - No child elements at all, OR
+    - Only comments (no actual XML elements like ref-list, ack, etc.)
+    """
     
     def test_empty_back_element_removed(self, mock_converter):
         """Test that empty <back> elements are removed during post-processing."""

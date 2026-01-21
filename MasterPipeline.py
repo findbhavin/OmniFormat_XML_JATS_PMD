@@ -1379,16 +1379,17 @@ class HighFidelityConverter:
                     root.remove(back)
                     logger.info("Removed empty <back> element for PMC compliance")
                 else:
-                    # Back has children - ensure they're not all whitespace/comments
+                    # Back has children - ensure they're not all comments (which have callable tag attribute)
+                    # Real XML elements have string tag names, while comments have callable tags
                     has_content = False
                     for child in back:
-                        # Check for elements (not just text/tail/comments)
+                        # Check for elements (not just comments)
                         if isinstance(child.tag, str):  # Real element, not comment
                             has_content = True
                             break
                     
                     if not has_content:
-                        # No real element children, only comments/whitespace
+                        # No real element children, only comments
                         root.remove(back)
                         logger.info("Removed <back> element with no element children for PMC compliance")
             
