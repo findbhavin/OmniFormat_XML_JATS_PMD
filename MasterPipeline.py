@@ -8,6 +8,7 @@ import json
 import re
 import html
 import datetime
+from docx import Document
 
 # Configure detailed logging for Google Cloud Run
 logging.basicConfig(level=logging.INFO)
@@ -907,6 +908,39 @@ class HighFidelityConverter:
                 return True
         return False
 
+    def _extract_article_type_from_docx(self):
+        """
+        Extract the article type from the first paragraph of the Word document.
+        This is typically found in a text box on the first page (e.g., "SYSTEMATIC REVIEW/META ANALYSIS").
+        Returns the article type string or None if not found.
+        """
+        # Constants for article type detection
+        MAX_PARAGRAPHS_TO_CHECK = 5
+        MIN_TEXT_LENGTH = 5
+        
+        try:
+            if not os.path.exists(self.docx_path):
+                logger.warning(f"DOCX file not found: {self.docx_path}")
+                return None
+            
+            doc = Document(self.docx_path)
+            
+            # Check first few paragraphs for article type
+            # Article type is typically in the first paragraph and in UPPERCASE
+            for para in doc.paragraphs[:MAX_PARAGRAPHS_TO_CHECK]:
+                text = para.text.strip()
+                if text and text.isupper() and len(text) > MIN_TEXT_LENGTH:
+                    # Found a potential article type (uppercase text in first few paragraphs)
+                    logger.info(f"Extracted article type from DOCX: {text}")
+                    return text
+            
+            logger.warning("Could not extract article type from DOCX - no uppercase text found in first paragraphs")
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Failed to extract article type from DOCX: {e}")
+            return None
+
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
         try:
@@ -1048,7 +1082,15 @@ class HighFidelityConverter:
                         logger.info("Adding minimal title-group to article-meta")
                         title_group = etree.Element('title-group')
                         article_title = etree.SubElement(title_group, 'article-title')
-                        article_title.text = "Article Title"
+                        
+                        # Try to extract article type from the Word document
+                        extracted_type = self._extract_article_type_from_docx()
+                        if extracted_type:
+                            article_title.text = extracted_type
+                            logger.info(f"Using extracted article type as title: {extracted_type}")
+                        else:
+                            article_title.text = "Article Title"
+                            logger.info("Using default article title (extraction failed)")
                         
                         # Insert title-group before permissions
                         perm_index = list(article_meta).index(permissions)
@@ -1414,14 +1456,15 @@ class HighFidelityConverter:
 
     def _post_process_html(self):
         """
-        Post-process the HTML to fix anchor references for WeasyPrint.
+        Post-process the HTML to fix anchor references and table structures.
         Adds ID attributes to reference list items based on xref rid attributes in XML.
+        Fixes table column structures that Pandoc incorrectly converts.
         """
         try:
             if not os.path.exists(self.html_path) or not os.path.exists(self.xml_path):
                 return
             
-            # Parse the XML to get xref references
+            # Parse the XML to get xref references and table structures
             parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
             xml_tree = etree.parse(self.xml_path, parser)
             xml_root = xml_tree.getroot()
@@ -1452,6 +1495,17 @@ class HighFidelityConverter:
                         li.set('id', ref_id)
                         logger.info(f"Added id='{ref_id}' to reference list item {i}")
             
+            # Fix table structures - Pandoc incorrectly converts JATS tables
+            # Get all tables from JATS XML
+            xml_tables = xml_root.findall('.//table')
+            html_tables = html_doc.findall('.//table')
+            
+            if len(xml_tables) == len(html_tables):
+                for xml_table, html_table in zip(xml_tables, html_tables):
+                    self._fix_html_table_structure(xml_table, html_table)
+            else:
+                logger.warning(f"Table count mismatch: {len(xml_tables)} in XML vs {len(html_tables)} in HTML")
+            
             # Serialize back to HTML
             html_content = lxml_html.tostring(html_doc, encoding='unicode', method='html')
             
@@ -1459,12 +1513,126 @@ class HighFidelityConverter:
             with open(self.html_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
             
-            logger.info("✅ HTML post-processing completed (added anchor IDs for references)")
+            logger.info("✅ HTML post-processing completed (added anchor IDs for references and fixed tables)")
             
         except Exception as e:
             logger.warning(f"HTML post-processing failed: {e}")
             import traceback
             logger.warning(f"Traceback: {traceback.format_exc()}")
+    
+    def _fix_html_table_structure(self, xml_table, html_table):
+        """
+        Fix HTML table structure based on JATS XML table.
+        Pandoc sometimes incorrectly converts JATS tables, putting each cell as a separate row.
+        This method reconstructs the table structure from the XML.
+        """
+        try:
+            # Get rows from XML table
+            xml_rows = xml_table.findall('.//tr')
+            
+            # Check if this table needs fixing
+            # If HTML table has only 1 column but XML has multiple, we need to fix it
+            html_first_row = html_table.find('.//tr')
+            if html_first_row is not None:
+                html_cells = html_first_row.findall('.//th') + html_first_row.findall('.//td')
+                
+                # Get XML first row column count
+                xml_first_row = xml_rows[0] if xml_rows else None
+                if xml_first_row is not None:
+                    xml_cells = xml_first_row.findall('.//th') + xml_first_row.findall('.//td')
+                    xml_col_count = len(xml_cells)
+                    html_col_count = len(html_cells)
+                    
+                    # If HTML has fewer columns than XML, we need to rebuild the table
+                    if html_col_count < xml_col_count:
+                        logger.info(f"Fixing table structure: {html_col_count} cols in HTML -> {xml_col_count} cols from XML")
+                        
+                        # Clear existing table content
+                        for child in list(html_table):
+                            html_table.remove(child)
+                        
+                        # Rebuild thead if present in XML
+                        xml_thead = xml_table.find('.//thead')
+                        if xml_thead is not None:
+                            html_thead = etree.Element('thead')
+                            self._rebuild_table_section(xml_thead, html_thead)
+                            html_table.append(html_thead)
+                        
+                        # Rebuild tbody if present in XML
+                        xml_tbody = xml_table.find('.//tbody')
+                        if xml_tbody is not None:
+                            html_tbody = etree.Element('tbody')
+                            self._rebuild_table_section(xml_tbody, html_tbody)
+                            html_table.append(html_tbody)
+                        
+        except Exception as e:
+            logger.warning(f"Failed to fix HTML table structure: {e}")
+            import traceback
+            logger.warning(f"Traceback: {traceback.format_exc()}")
+    
+    def _rebuild_table_section(self, xml_section, html_section):
+        """
+        Helper method to rebuild a table section (thead or tbody) from XML to HTML.
+        Reduces code duplication between thead and tbody processing.
+        """
+        for xml_tr in xml_section.findall('.//tr'):
+            html_tr = etree.SubElement(html_section, 'tr')
+            for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
+                cell_tag = 'th' if xml_cell.tag == 'th' else 'td'
+                html_cell = etree.SubElement(html_tr, cell_tag)
+                
+                # Copy text content and children
+                html_cell.text = xml_cell.text
+                for child in xml_cell:
+                    html_child = self._convert_xml_to_html_element(child)
+                    if html_child is not None:
+                        html_cell.append(html_child)
+                
+                # Handle tail text - optimize by storing list once
+                if xml_cell.tail:
+                    cell_children = list(html_cell)
+                    if cell_children:
+                        cell_children[-1].tail = (cell_children[-1].tail or '') + xml_cell.tail
+                    else:
+                        html_cell.text = (html_cell.text or '') + xml_cell.tail
+                
+                # Copy attributes (like colspan)
+                for attr, value in xml_cell.attrib.items():
+                    html_cell.set(attr, value)
+    
+    def _convert_xml_to_html_element(self, xml_elem):
+        """
+        Convert JATS XML element to HTML element for table content.
+        Handles common inline elements like bold, italic, underline, sup, sub, etc.
+        """
+        # Map JATS tags to HTML tags
+        tag_map = {
+            'bold': 'strong',
+            'italic': 'em',
+            'underline': 'u',
+            'sup': 'sup',
+            'sub': 'sub',
+            'xref': 'a',
+            'p': 'p',
+            'br': 'br'
+        }
+        
+        html_tag = tag_map.get(xml_elem.tag, 'span')
+        html_elem = etree.Element(html_tag)
+        html_elem.text = xml_elem.text
+        html_elem.tail = xml_elem.tail
+        
+        # Copy attributes
+        for attr, value in xml_elem.attrib.items():
+            html_elem.set(attr, value)
+        
+        # Recursively convert children
+        for child in xml_elem:
+            html_child = self._convert_xml_to_html_element(child)
+            if html_child is not None:
+                html_elem.append(html_child)
+        
+        return html_elem
 
     def _generate_articledtd_xml(self):
         """
