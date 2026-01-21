@@ -29,6 +29,7 @@ table {
     margin-top: 15pt;
     margin-bottom: 20pt;
     page-break-inside: avoid;
+    table-layout: auto;  /* Allow automatic column width distribution */
 }
 
 /* Add subtle shadow for screen viewing only */
@@ -40,10 +41,17 @@ table {
 
 th, td {
     border: 1px solid #666;
-    padding: 10px 12px;
+    padding: 8px 10px;  /* Slightly reduced padding for better space utilization */
     text-align: left;
     vertical-align: top;
     line-height: 1.4;
+    word-wrap: break-word;  /* Allow long words to wrap */
+    hyphens: auto;  /* Enable hyphenation for better text flow */
+}
+
+/* Ensure narrow columns don't get too cramped */
+th:has(+ th:empty), td:has(+ td:empty) {
+    min-width: 3em;
 }
 
 thead th {
@@ -55,6 +63,12 @@ thead th {
 
 tbody tr:nth-child(even) {
     background-color: #f9f9f9;
+}
+
+/* Better handling for empty cells */
+td:empty::after, th:empty::after {
+    content: '\00a0';  /* Non-breaking space for empty cells */
+    visibility: hidden;
 }
 
 /* Hover effect for screen viewing only with improved contrast */
@@ -91,11 +105,16 @@ math[mode="display"] {
 }
 
 /* Professional PDF Layout - Optimized Margins */
+@page {
+    size: letter;  /* US Letter: 8.5in x 11in (instead of A4) */
+    margin: 0.75in 0.5in;  /* Further reduced left/right margins for better space utilization */
+}
+
 body {
     font-family: "Liberation Serif", "Times New Roman", serif;
     font-size: 11pt;
     line-height: 1.6;
-    margin: 0.75in 0.65in;  /* Reduced left/right margins for better space utilization */
+    margin: 0;  /* Margins set via @page rule */
     color: #000;
     background: white;
 }
@@ -215,8 +234,13 @@ fig caption {
 
 /* Page breaks for printing */
 @media print {
+    @page {
+        size: letter;  /* US Letter: 8.5in x 11in */
+        margin: 0.75in 0.5in;  /* Consistent with main @page rule */
+    }
+    
     body {
-        margin: 0.75in;
+        margin: 0;
     }
 
     h1, h2, h3, h4 {
