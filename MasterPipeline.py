@@ -918,19 +918,20 @@ class HighFidelityConverter:
                 
                 # Case 1: Table has thead or tfoot - MUST have at least one tbody (even if empty)
                 if thead is not None or tfoot is not None:
-                    # Remove empty tbody elements first
+                    # Remove empty tbody elements first and count remaining
+                    remaining_tbody_count = 0
                     for tbody in tbody_elements[:]:  # Use slice to avoid modification during iteration
                         if len(tbody) == 0 or not tbody.findall('.//tr'):
-                            tbody_elements.remove(tbody)
                             table.remove(tbody)
                             logger.info(f"Removing empty tbody element from table with thead/tfoot")
+                        else:
+                            remaining_tbody_count += 1
                     
                     # If no tbody remains, we MUST add one for DTD compliance
-                    if len(tbody_elements) == 0:
+                    if remaining_tbody_count == 0:
                         tbody = etree.Element('tbody')
                         
-                        # Add a placeholder comment to make it non-empty (avoids validation issues)
-                        # Actually, let's add a single empty tr to make it valid
+                        # Add a single empty tr to make it valid
                         tr = etree.SubElement(tbody, 'tr')
                         td = etree.SubElement(tr, 'td')
                         td.text = ''  # Empty cell
@@ -953,18 +954,20 @@ class HighFidelityConverter:
                 
                 # Case 2: Table has no thead/tfoot - can have either tbody or direct tr elements
                 else:
+                    # Count non-empty tbody and direct tr elements
+                    original_tbody_count = len(tbody_elements)
+                    
                     # If table has tbody elements, ensure they're not empty
                     for tbody in tbody_elements[:]:
                         if len(tbody) == 0 or not tbody.findall('.//tr'):
-                            # If this is the only tbody, keep it but add an empty tr
-                            if len(tbody_elements) == 1 and len(tr_elements) == 0:
+                            # If this is the only tbody and no direct tr elements, keep it but add an empty tr
+                            if original_tbody_count == 1 and len(tr_elements) == 0:
                                 tr = etree.SubElement(tbody, 'tr')
                                 td = etree.SubElement(tr, 'td')
                                 td.text = ''
                                 logger.info(f"Added empty tr to sole tbody for DTD compliance")
                             else:
                                 # Multiple tbody or we have direct tr elements, safe to remove
-                                tbody_elements.remove(tbody)
                                 table.remove(tbody)
                                 logger.info(f"Removing empty tbody element from table without thead/tfoot")
             
@@ -1031,16 +1034,17 @@ class HighFidelityConverter:
                                     logger.info(f"Updating xref rid from '{rid}' to '{ref_id}' based on alt='{alt}'")
                                     xref.set('rid', ref_id)
             
-            # Comprehensive IDREF validation - collect all valid IDs in the document
+            # Comprehensive IDREF validation - collect all valid IDs and elements with rid/rids in one pass
             valid_ids = set()
+            elements_with_rid = []
+            
             for elem in root.iter():
+                # Collect valid IDs
                 elem_id = elem.get('id')
                 if elem_id:
                     valid_ids.add(elem_id)
-            
-            # Validate all elements with rid or rids attributes
-            elements_with_rid = []
-            for elem in root.iter():
+                
+                # Collect elements with rid or rids attributes
                 rid = elem.get('rid')
                 if rid:
                     elements_with_rid.append((elem, rid, 'rid'))
