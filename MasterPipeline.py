@@ -1521,6 +1521,33 @@ class HighFidelityConverter:
                 xml_declaration=True,
                 encoding='utf-8'
             )
+            
+            # Fix Pandoc JATS-to-HTML conversion issue: Remove namespace declarations from table elements
+            # Pandoc 3.x has issues converting tables that have xmlns declarations on the table element itself
+            # This causes tables to appear empty in HTML output
+            # We need to post-process the serialized XML to remove these declarations
+            with open(self.xml_path, 'r', encoding='utf-8') as f:
+                xml_content = f.read()
+            
+            # Remove xmlns:mml and xmlns:xlink from <table> tags only
+            # Use regex to match <table with any xmlns attributes
+            import re
+            xml_content = re.sub(
+                r'(<table)(\s+xmlns:mml="[^"]*")(\s+xmlns:xlink="[^"]*")?',
+                r'\1',
+                xml_content
+            )
+            xml_content = re.sub(
+                r'(<table)(\s+xmlns:xlink="[^"]*")(\s+xmlns:mml="[^"]*")?',
+                r'\1',
+                xml_content
+            )
+            
+            # Write back the cleaned XML
+            with open(self.xml_path, 'w', encoding='utf-8') as f:
+                f.write(xml_content)
+            
+            logger.info(f"Removed namespace declarations from table elements for Pandoc compatibility")
 
             logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + DTD validation fixes)")
         except Exception as e:
@@ -1599,13 +1626,41 @@ class HighFidelityConverter:
         """
         Fix HTML table structure based on JATS XML table.
         Pandoc sometimes incorrectly converts JATS tables, putting each cell as a separate row.
+        Pandoc 3.x also creates empty tbody elements for thead-only tables.
         This method reconstructs the table structure from the XML.
         """
         try:
             # Get rows from XML table
             xml_rows = xml_table.findall('.//tr')
             
-            # Check if this table needs fixing
+            # Check if HTML table is empty or has wrong structure
+            html_rows = html_table.findall('.//tr')
+            
+            # Case 1: HTML table is completely empty (Pandoc created empty tbody)
+            if len(html_rows) == 0 and len(xml_rows) > 0:
+                logger.info(f"Fixing empty HTML table - rebuilding from XML ({len(xml_rows)} rows)")
+                
+                # Clear existing table content
+                for child in list(html_table):
+                    html_table.remove(child)
+                
+                # Rebuild thead if present in XML
+                xml_thead = xml_table.find('.//thead')
+                if xml_thead is not None:
+                    html_thead = etree.Element('thead')
+                    self._rebuild_table_section(xml_thead, html_thead)
+                    html_table.append(html_thead)
+                
+                # Rebuild tbody if present in XML
+                xml_tbody = xml_table.find('.//tbody')
+                if xml_tbody is not None:
+                    html_tbody = etree.Element('tbody')
+                    self._rebuild_table_section(xml_tbody, html_tbody)
+                    html_table.append(html_tbody)
+                
+                return
+            
+            # Case 2: Check if HTML table has wrong column count
             # If HTML table has only 1 column but XML has multiple, we need to fix it
             html_first_row = html_table.find('.//tr')
             if html_first_row is not None:
