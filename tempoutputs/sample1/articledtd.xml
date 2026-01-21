@@ -1,0 +1,1091 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN" "https://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.3" article-type="other">
+  <front>
+    <journal-meta>
+      <journal-id journal-id-type="publisher-id">unknown-journal</journal-id>
+      <journal-title-group>
+<journal-title>Unknown Journal</journal-title></journal-title-group>
+      <issn pub-type="epub">0000-0000</issn>
+      <publisher>
+        <publisher-name>Unknown Publisher</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>Article</subject>
+        </subj-group>
+      </article-categories>
+      <title-group>
+        <article-title>Article Title</article-title>
+      </title-group>
+      <pub-date date-type="pub" publication-format="electronic">
+        <year>2026</year>
+      </pub-date>
+      <elocation-id>e001</elocation-id>
+      <permissions>
+</permissions>
+    </article-meta>
+  </front>
+  <body>
+    <p>
+      <bold>SYSTEMATIC REVIEW/META ANALYSIS</bold>
+    </p>
+    <p>
+      <bold>Methods of Nursing Shift Handover and Their Outcome in Terms of Patient Safety in Healthcare Systems: A Systematic Review</bold>
+    </p>
+    <p>
+      <bold>Ranjana Verma<sup>1</sup>, Uma Phalswal<sup>2*</sup>, Nipin Kalal<sup>3</sup>, Naseema Shafqat<sup>4</sup>, Mamta Verma<sup>5</sup>,</bold>
+    </p>
+    <p>
+      <bold>Suresh Sharma<sup>6</sup>, Saikat Das<sup>7</sup>, Amit Agrawal<sup>8</sup></bold>
+    </p>
+    <p><sup>1,4,5</sup>Department of College of Nursing, AIIMS, Bhopal, Madhya Pradesh, India</p>
+    <p><sup>2</sup>Department of College of Nursing, AIIMS, Rishikesh, Uttarakhand, India</p>
+    <p><sup>3,6</sup>Department of College of Nursing, AIIMS, Jodhpur, Rajasthan, India</p>
+    <p><sup>7,8</sup>Department of Radiation Oncology, AIIMS, Bhopal, Madhya Pradesh, India</p>
+    <p><bold>DOI:</bold> 10.55489/njcm.161220255599</p>
+    <p>
+      <bold>A B S T R A C T</bold>
+    </p>
+    <p><bold>Introduction:</bold> Patient handover is a critical component of healthcare delivery and directly influences patient safety and quality of care. Incomplete or inaccurate handovers increase the risk of errors and disrupt continuity. This review examines current handover practices and their implications for healthcare quality and safety.</p>
+    <p><bold>Methods:</bold> A systematic review was conducted following PRISMA guidelines. Scopus, ScienceDirect, PubMed, and Cochrane were searched using terms related to nursing and clinical shift handover, patient safety, quality improvement, and patient care. Eligible studies included qualitative, quasi-experimental, and cross-sectional designs that met predefined criteria. Methodological quality was assessed using the JBI appraisal tool.</p>
+    <p><bold>Results:</bold> Of 570 records identified, 11 studies met the inclusion criteria and were analysed. The findings indicated that the absence of standard operating protocols resulted in poor communication, inadequate coordination, ineffective time management, and organisational deficiencies. Communication failure was the most consistently reported challenge affecting handover efficiency and patient safety.</p>
+    <p><bold>Conclusion:</bold> Variation exists in the consistency and completeness of information exchanged during shift handovers. Development and implementation of structured guidelines for shift reporting are recommended to improve reliability and continuity of care. These guidelines should facilitate systematic information transfer and handling of patient data. Accessible SOPs at the point of care may support safer and efficient handover practices.</p>
+    <p><bold>Keywords:</bold> Nursing shift handover, Clinical shift handover, Shift handover, Shift-off report, Handover Procedure, Patient safety, Quality improvement, Patient Care</p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="96%"/>
+          <col width="4%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="2">
+              <bold>A R T I C L E I N F O</bold>
+            </th>
+          </tr>
+          <tr>
+            <th><bold>Financial Support:</bold> None declared</th>
+            <th/>
+          </tr>
+          <tr>
+            <th><bold>Conflict of Interest:</bold> The authors have declared that no conflict of interests exists.</th>
+            <th/>
+          </tr>
+          <tr>
+            <th><bold>Received</bold>: 22-05-2025, <bold>Accepted</bold>: 17-11-2025, <bold>Published</bold>: 01-12-2025</th>
+            <th/>
+          </tr>
+          <tr>
+            <th colspan="2"><bold>*Correspondence:</bold> Uma Phalswal (Email: Phalswaluma2828@gmail.com)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>
+      <bold>INTRODUCTION</bold>
+    </p>
+    <p>The process of exchanging specific patient information between healthcare providers, known as shift handover, indicates that patient care is moved, either permanently or temporarily, to an additional medical practitioner.<xref alt="1" rid="ref1" ref-type="bibr"><sup><underline>1</underline></sup></xref> Shift handover in nursing is a crucial process that involves the transfer of information, responsibility, and accountability from one shift to another. It plays a vital role in maintaining continuity of care and ensuring patient safety. In Indian healthcare systems, as in many other countries, various methods are employed for conducting shift handovers. Patient data can be conveyed during a shift changeover by written, spoken, computer, and phone records, among other techniques. It is not ideal to communicate knowledge orally alone; instead, written documentation of the information must be made.<xref alt="2" rid="ref2" ref-type="bibr"><sup><underline>2</underline></sup></xref> These methods can influence the quality and effectiveness of patient care.<sup><xref alt="3" rid="ref3" ref-type="bibr"><underline>3</underline></xref></sup> Several reasons can interfere with the shift changeover process and result in an ineffective handover, including errors and inadequacies in patient information, poor communication, inexperienced staff, an excessive workload, time limits, weariness, and environmental concerns. An improperly handled shift changeover raises the possibility of patient injury, safety, medical mistakes, and extended hospital stays, all of which raise costs and lower patient satisfaction and quality of treatment.<sup><xref alt="4" rid="ref4" ref-type="bibr"><underline>4</underline></xref></sup> The purpose of this study was to ascertain the different nursing shift handover techniques that are employed in hospitals across the globe, as well as the efficacy of these techniques, patient safety outcomes, and any gaps that may exist between personal and professional factors.</p>
+    <p><bold>Relevance To Clinical Practice:</bold> A systematic review on methods of nursing shift handover techniques is vital for guiding and improving clinical practice in hospital environments. This in-depth review and summary of the literature provide a full overview of the several handover techniques used in healthcare. Through a thorough examination of the current state of evidence, the systematic review enables healthcare professionals to identify the most practical and successful methods for transitioning handover. The effects of disparate nursing handover techniques on patient safety, effective communication, care coordination, knowledge retention, workflow, professional accountability, and flexibility are relevant to clinical practice. A well-designed and standardized handover process contributes to the overall quality of patient care and the effectiveness of healthcare delivery.</p>
+    <p>
+      <bold>METHODOLOGY</bold>
+    </p>
+    <p>This systematic review was registered in PROSPERO. (Registration no- CRD42023449558) This review was structured and reported in accordance with the PRISMA guidelines for systematic reviews and meta-analyses [Figure 1].<sup><xref alt="5" rid="ref5" ref-type="bibr"><underline>5</underline></xref></sup> Reviewers 1 and 2 conducted the initial screening. For the initial screening, the title and abstract of all the articles were reviewed. Duplications of articles and other articles that were not related to relevant topics were excluded. We produced all the potentially relevant articles in full text after initial screening. Articles were included for final review only if they specifically described the methods of nursing shift handover and its outcome in terms of patient care. Three reviewers with expertise in clinical nursing practice reviewed the selected articles and the final result of the study will be formulated based on the included articles.</p>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="/tmp/output_files/media/image1.png"/>
+    <p>
+      <bold>Figure 1: PRISMA Flow diagram of literature search and selection criteria</bold>
+    </p>
+    <p><bold>Information Sources and Search Strategy:</bold> An electronic literature search was carried out using four databases PubMed, SCOPUS, Cochrane, and ScienceDirect. The search strategy, developed jointly by two authors, was based on three key themes aligned with the study’s objectives: (1) approaches to nursing shift handovers, (2) limitations in current handover practices, and (3) benefits of adopting standardized handover formats. The search was restricted to English-language articles published between December 2012 and July 2023. Keywords included "nursing shift handover," "clinical shift handover," "shift handover," "shift-off report," "handover procedure," "patient safety," "quality improvement," and "patient care." Only open-access, free full-text articles were considered in the final search.</p>
+    <p><bold>Eligibility Criteria</bold>: The following inclusion criteria were applied while selecting studies for this review: (1) original, peer-reviewed research articles published in English; (2) full-text papers available free of cost; (3) studies employing appropriate research methodologies; and (4) research addressing different nursing handover approaches in relation to patient safety and existing practice gaps. Articles not meeting any of these criteria were excluded from the review.</p>
+    <p><bold>Assessment of Study Risk of Bias:</bold> The quality of the articles included in this study was assessed using the quality assessment tool released by JBI for qualitative study<xref alt="6" rid="ref6" ref-type="bibr"><sup><underline>6</underline></sup></xref>, quasi-experimental study<xref alt="7" rid="ref7" ref-type="bibr"><sup><underline>7</underline></sup></xref> and cross-sectional study<xref alt="8" rid="ref8" ref-type="bibr"><sup><underline>8</underline></sup></xref> as depicted in Table 1.</p>
+    <p>Two authors separately assessed the quality of the work. There are 10 items in this tool for qualitative studies, 09 items for quasi-experimental studies and 08 items for cross-sectional studies, each of which can be marked as Yes, No, or Not Cleared. Yes, it receives a score of 1, whereas all other responses received a score of 0. The total score, in other words, is the number of affirmative responses.</p>
+    <p>For the qualitative assessment, studies scoring above 8 were rated as good quality, those between 6 and 7 as fair, and those scoring below 5 as poor. In quasi-experimental research, a score above 7 indicated good quality, 5-6 denoted fair quality, and below 5 represented poor quality. In the case of cross-sectional studies, scores greater than 6 were categorized as good, 5-6 as fair, and below 4 as poor. The majority of studies included in this review were found to be of good or moderate quality.</p>
+    <p><bold>Data Extraction:</bold> Data extraction tables (Table 2) was utilized to compile essential information from the selected studies. Table 2 explain about Methodology (Study design, setting, participants, sample size and tool used), Key Result and Conclusion.</p>
+    <p><bold>The condition or domain being studied:</bold> The focus area of this review was clinical handover, defined as the temporary or permanent transfer of patient care responsibilities among healthcare professionals. Nursing shift handover plays a crucial role in ensuring continuity of care and involves a multidimensional exchange of information that contributes to improved patient safety outcomes. Various method of nursing shift handover is being used in various hospital but due to the absence of a structured pattern of nursing shift handover, patient safety is compromised. So, the present study is aimed to evaluate the existing methods of nursing shifts and their effect on patient safety.</p>
+    <p>
+      <bold>Table 1: JBI (Joanna Briggs Institute)</bold>
+      <bold>Quality Assessment Score</bold>
+    </p>
+    <p>
+      <bold>A) JBI quality assessment score qualitative studies<xref alt="6" rid="ref6" ref-type="bibr"><sup><underline>6</underline></sup></xref></bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="15%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="8%"/>
+          <col width="7%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <p>
+                <bold>Study Author</bold>
+              </p>
+              <p>
+                <bold>(Year)</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>1</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>2</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>3</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>4</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>5</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>6</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>7</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>8</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>9</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>10</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Total</bold>
+              </p>
+              <p>
+                <bold>Score</bold>
+              </p>
+            </th>
+            <th>
+              <bold>Bias</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>Mullen A, 2020<sup>13</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>9/10</th>
+            <th>Nil</th>
+          </tr>
+          <tr>
+            <th>Fealy G, 2016<sup>10</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>-</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>7/10</th>
+            <th>Low</th>
+          </tr>
+          <tr>
+            <th>Ernst KM, 2018<sup>19</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>9/10</th>
+            <th>Nil</th>
+          </tr>
+          <tr>
+            <th>Bruton J, 2016<sup>9</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>10/10</th>
+            <th>Nil</th>
+          </tr>
+          <tr>
+            <th>Redley B, 2017<sup>14</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>9/10</th>
+            <th>Nil</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>
+      <bold>B) JBI quality assessment score quasi-experimental study<xref alt="7" rid="ref7" ref-type="bibr"><sup><underline>7</underline></sup></xref></bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="20%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="8%"/>
+          <col width="7%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <bold>Study Author (Year)</bold>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>1</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>2</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>3</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>4</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>5</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>6</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>7</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>8</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>9</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Total</bold>
+              </p>
+              <p>
+                <bold>Score</bold>
+              </p>
+            </th>
+            <th>
+              <bold>Bias</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>Ghonem NME, 2023<sup>17</sup></th>
+            <th>1</th>
+            <th>0</th>
+            <th>0</th>
+            <th>0</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>6/9</th>
+            <th>Low</th>
+          </tr>
+          <tr>
+            <th>Malekzadeh J, 2013<sup>18</sup></th>
+            <th>1</th>
+            <th>0</th>
+            <th>-</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>6/9</th>
+            <th>Low</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>
+      <bold>C) JBI quality assessment score cross-sectional studies<xref alt="8" rid="ref8" ref-type="bibr"><sup><underline>8</underline></sup></xref></bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="26%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="7%"/>
+          <col width="8%"/>
+          <col width="7%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <bold>Study Author (Year)</bold>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>1</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>2</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>3</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>4</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>5</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>6</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>7</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Item</bold>
+              </p>
+              <p>
+                <bold>8</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>Total</bold>
+              </p>
+              <p>
+                <bold>Score</bold>
+              </p>
+            </th>
+            <th>
+              <bold>Bias</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>Chong DWQ, 2020<sup>15</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>6/8</th>
+            <th>Low</th>
+          </tr>
+          <tr>
+            <th>Kowitlawakul Y, 2015<sup>11</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>7/8</th>
+            <th>Nil</th>
+          </tr>
+          <tr>
+            <th>Cornell P, 2013<sup>16</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>-</th>
+            <th>-</th>
+            <th>1</th>
+            <th>1</th>
+            <th>7/8</th>
+            <th>Low</th>
+          </tr>
+          <tr>
+            <th>Kumar P, 2016<sup>12</sup></th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>1</th>
+            <th>8/8</th>
+            <th>Nil</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>Note: Yes: 1, No: 0, Unclear:</p>
+    <p>
+      <bold>Table 2: Methodology and Result of the included studies</bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="10%"/>
+          <col width="43%"/>
+          <col width="47%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <bold>Study Authors,
+        Year, Country</bold>
+            </th>
+            <th>
+              <bold>Methodology
+        (Study design, setting, participants, sample size and tool used)</bold>
+            </th>
+            <th>
+              <bold>Key Result and Conclusion</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>Ghonem NME, 2023 Egypt<sup>17</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>A quasi-experimental study was carried out in non-critical units involving 83 staff nurses.</p>
+                </list-item>
+                <list-item>
+                  <p>Study used 25 multiple-choice questions concerning SBAR shift reports covering communication (7 items), reporting (6 items), and SBAR shift reports (12 items)</p>
+                </list-item>
+                <list-item>
+                  <p>To assess perception regarding handover, the Perception Scale for Nurses was used the tool included two subscales, the Handover Evaluation Scale (HES) and the Nurse Handoff Communication Scale (NHCS).</p>
+                </list-item>
+                <list-item>
+                  <p>The training program consisted of 18 training hours, 12 theoretical and 6 practical and encompassed communication, documentation, shift reporting, and the SBAR shift report, including its definition, benefits, and process.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The adoption of the Situation, Background, Assessment, and Recommendation (SBAR) tool for shift handoff communication showed a significant positive impact on the study participants, helped to enhance their knowledge, practice, and perception of this communication process.</p>
+                </list-item>
+                <list-item>
+                  <p>Following the intervention, there was a substantial increase in knowledge, rising from 4.8% to 92.8% (p &lt; .001), and all participants achieved adequate practice.</p>
+                </list-item>
+                <list-item>
+                  <p>The perception of the shift handoff process showed a significant improvement (p &lt; .001).</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Mullen A,<break/>2020 Australia<sup>13</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>This qualitative research explores the perspectives of nursing staff and managers on nursing handover implementation in five mental health inpatient units in place of local health district covering regional and rural areas of New South Wales Australia.</p>
+                </list-item>
+                <list-item>
+                  <p>The study adhered to the COREQ checklist for quality.</p>
+                </list-item>
+                <list-item>
+                  <p>It involved six focus groups with 22 nursing staff and 11 individual interviews with nursing managers.</p>
+                </list-item>
+                <list-item>
+                  <p>Data analysis was conducted using a thematic approach.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>Result presented in three overarching themes:</p>
+                </list-item>
+                <list-item>
+                  <p>(i) The distinct nature of the mental health context,</p>
+                </list-item>
+                <list-item>
+                  <p>(ii) The importance of safeguarding consumer privacy and confidentiality,</p>
+                </list-item>
+                <list-item>
+                  <p>(iii) Potential negative implications of nursing handover.</p>
+                </list-item>
+                <list-item>
+                  <p>The goal was to understand their views on bedside handover and its impact on nursing practice.</p>
+                </list-item>
+                <list-item>
+                  <p>These findings offer valuable insights into the complexities of involving consumers in mental health nursing handover and guide future implementation efforts.</p>
+                </list-item>
+                <list-item>
+                  <p>It was found that strategies that consider how to maintain consumer confidentiality and privacy in reducing iatrogenic harm while shifting towards recovery-oriented practice are critical.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Chong DWQ,<break/>2020 Malaysia<sup>15</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>A cross-sectional descriptive study included 450 nurses from 37 wards at Hospital Kuala Lumpur, selected conveniently from the Medical, Surgery, Obstetrics &amp; Gynaecology, Orthopaedic, and Paediatric units.</p>
+                </list-item>
+                <list-item>
+                  <p>They used the Handover Evaluation Scale, a validated questionnaire, to self-assess their perceptions on a 7-point scale and provided open-ended responses detailing strengths and challenges.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>Nurses, on average, had a perception score of 5.01 with a standard deviation of 0.56. They reported positive experiences in terms of interaction and support during handovers, scoring an average of 5.54 (SD 0.79), and also expressed satisfaction with the quality of information they received, scoring an average of 5.19 (SD 0.69). Notably, there was a significant association between the departments where nurses were employed and their overall perceptions of nursing handovers (p&lt;0.001).</p>
+                </list-item>
+                <list-item>
+                  <p>Despite the substantial interaction and support observed among nurses, there were still areas identified for potential improvement.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Ernst KM,<break/>2018 USA<sup>19</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>In this research, a qualitative research design was adopted. Semi-structured focus groups discussion was held to explore nurses' views on the ideal handoff process, variations from this ideal, including frequent and notable deviations, and the resulting impacts on subsequent patient care.</p>
+                </list-item>
+                <list-item>
+                  <p>A total of 21 medical-surgical nurses took part in one of five audio-recorded focus group discussions. Three sessions were conducted at Hospital A, while two sessions occurred at an unaffiliated hospital, hospital B. The research involved employing the general inductive approach to analyze verbatim transcripts, focusing on transcript segments relevant to addressing the research inquiries.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>Two main themes emerged: teamwork and creating and sharing a collective understanding of patient conditions. The study highlighted the significance of nurse preparatory actions, such as incoming nurses reviewing patient records and outgoing nurses visiting patients. The importance of shared expectations among the team, which includes nurses, the electronic health record, hospital staff, and patients/families during bedside handoffs, was also identified.</p>
+                </list-item>
+                <list-item>
+                  <p>Evaluating handoffs based on their impact on nursing performance during and after the handoff provides a fresh framework for objectively assessing handoff effectiveness.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Redley B,<break/>2017 Australia<sup>14</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The research involved the observation of 66 change-of-shift handovers at two emergency departments (EDs) in Victoria, Australia.</p>
+                </list-item>
+                <list-item>
+                  <p>In addition to the observations, focus groups discussions were conducted with 34 participating nurses. Qualitative data analysis was carried out using both content and thematic methods.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The ED handover process revealed four key structural components, ABCD: Antecedents, Behaviours and Interactions, Content, and Delegation of Ongoing Care.</p>
+                </list-item>
+                <list-item>
+                  <p>Three themes (standard processes and practices, teamwork and interactions and communication activities and practices) related to risky and effective practices to support interprofessional communications across the four stages of ED hand overs emerged.</p>
+                </list-item>
+                <list-item>
+                  <p>The study concluded that unreliable interprofessional communication can impact the quality of change-of-shift handovers in EDs and poses risk to patient safety.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Bruton J,<break/>2016<break/>United Kingdom<sup>9</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>This study is a qualitative and observational investigation conducted in a large urban hospital in the UK, focusing on two acute wards.</p>
+                </list-item>
+                <list-item>
+                  <p>The research involves interviews with both patients and staff, as well as observations of various aspects such as handovers, ward rounds, and interactions between patients and staff...</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>Various forms of nurse handover were identified, such as office-based, nurse in charge (NIC) to NIC, and bedside handover.</p>
+                </list-item>
+                <list-item>
+                  <p>Opinions on the purpose and value of office handover varied. Bedside handover differed in style, content, and location due to concerns about patient confidentiality. There were also differing views on involving patients in bedside handover.</p>
+                </list-item>
+                <list-item>
+                  <p>Both staff and patients recognized communication issues within the clinical team.</p>
+                </list-item>
+                <list-item>
+                  <p>To address these concerns, it was recommended that nurses receive training for bedside handover, and patients are educated about its purpose and their role in the process, which would be beneficial.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Fealy G,<break/>2016 Ireland<sup>10</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The study was qualitative research which was structured to include interviews and focus group discussions with a carefully selected group of healthcare practitioners employed in Irish maternity services.</p>
+                </list-item>
+                <list-item>
+                  <p>This group encompassed midwives, obstetricians, as well as other healthcare professionals, such as physiotherapists and radiologists, in addition to midwifery students and healthcare assistants. Participants were recruited from a total of 19 maternity hospitals (05 maternity hospitals and 14 maternity units) located in proximity to these hospitals.</p>
+                </list-item>
+                <list-item>
+                  <p>A total of 95 healthcare professionals participated in 30 data collection events.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The study participants offered detailed and varied descriptions of clinical handover procedures. These accounts suggested a notable lack of established policies and training for clinical handovers.</p>
+                </list-item>
+                <list-item>
+                  <p>It was observed that midwifery and medical teams conducted separate clinical handovers, tailored to their distinct information transfer and clinical responsibility requirements.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Kumar P,<break/>2016 India<sup>12</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>This descriptive and cross-sectional study was conducted in a 200 bedded Neurosciences Centre of an apex public sector Tertiary Care Referral Hospital in New Delhi, India from January 2014 to April 2014.</p>
+                </list-item>
+                <list-item>
+                  <p>To achieve this, a pretested checklist was utilized to observe ten specific elements categorized under time, duration, process, nurse interaction, and patient communication.</p>
+                </list-item>
+                <list-item>
+                  <p>Totally, 525 nursing handovers were included in study</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>Among 525 nursing handovers, compliance levels varied for time (63%), place (76%), process (82%), staff interaction (53%), and patient communication (44%).</p>
+                </list-item>
+                <list-item>
+                  <p>Lower compliance was observed during morning shifts and on weekends. Bedside handovers were more frequent during weekends and night shifts, correlating with increased staff interaction and patient communication while reducing handover duration.</p>
+                </list-item>
+                <list-item>
+                  <p>The study highlights the necessity for system improvements and standardization of handovers, calling for administrative commitment, technology utilization, training, and leadership development to enhance patient safety and care continuity for better outcomes.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Kowitlawakul Y, 2015 Singapore<sup>11</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>In a descriptive cross-sectional study conducted at a 1000-bed tertiary hospital in Singapore, the handover process between nurses and doctors during patient transitions in and out of the intensive care unit was observed.</p>
+                </list-item>
+                <list-item>
+                  <p>This observational study involved 180 participants, comprising 100 nurses involved in 50 nurse-to-nurse handovers and 80 doctors involved in 40 doctor-to-doctor handovers.</p>
+                </list-item>
+                <list-item>
+                  <p>The observations were conducted in real-time during both morning and evening shifts on weekdays.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>In the study it was found that there were 1.26 (±1.75) distractions per handover. In 45 (50%) handovers, no distraction occurred. Human factors were the primary sources of distraction during handovers.</p>
+                </list-item>
+                <list-item>
+                  <p>Information regarding 'do not resuscitate' (DNR) orders was infrequently mentioned. Nurses took more time during handovers compared to doctors.</p>
+                </list-item>
+                <list-item>
+                  <p>These findings offer insights for enhancing the patient transfer process in the intensive care unit, highlighting the prevalence of distractions and their association with longer handover durations.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Cornell P,<break/>2013<break/>Dallas, Texas<sup>16</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>In a tertiary care hospital setting, nurses received training on SBAR in 04 medical-surgical units on the SBAR protocol, including simulated encounters.</p>
+                </list-item>
+                <list-item>
+                  <p>Observations were conducted to record nurse activities, and the tools they used.</p>
+                </list-item>
+                <list-item>
+                  <p>Each unit had 48 beds and 8 to 9 nurses per shift, with an average nurse-to-patient ratio of 1:6.</p>
+                </list-item>
+                <list-item>
+                  <p>All nurses in the hospital received classroom training.</p>
+                </list-item>
+                <list-item>
+                  <p>The paper-based report tool that included SBAR information on each patient and the reports were available during shift reports and rounds.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The adoption of SBAR did not lead to a reduction in the average time required for shift reports. However, nurses did allocate significantly more time to tasks related to the report.</p>
+                </list-item>
+                <list-item>
+                  <p>Notably, there was a significant increase in dialogue and a decrease in the amount of writing when using SBAR.</p>
+                </list-item>
+                <list-item>
+                  <p>The SBAR protocol offers a structured and prioritized format that facilitates the delivery of consistent, thorough, and patient-centered reports.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+          <tr>
+            <th>Malekzadeh J, 2013 Iran<sup>18</sup></th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>In this quasi-experimental study, a convenience sample of 56 ICU nurses was recruited to participate.</p>
+                </list-item>
+                <list-item>
+                  <p>Data collection was facilitated through the use of the Nurses' Safe Practice Evaluation Checklist.</p>
+                </list-item>
+              </list>
+            </th>
+            <th>
+              <list list-type="bullet">
+                <list-item>
+                  <p>The study's results indicated a substantial improvement in nurses' mean score on the Safe Practice Evaluation Checklist, which increased from 11.6 (2.7) to 17.0 (1.8) with a significance level of P &lt; 0.001.</p>
+                </list-item>
+                <list-item>
+                  <p>This demonstrates that employing a standardized handover protocol to convey patient needs and information enhances nurses' safe practice in the fundamental nursing care.</p>
+                </list-item>
+              </list>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>
+      <bold>RESULTS</bold>
+    </p>
+    <p><bold>Search Result:</bold> In total, 570 publications were identified. Of those, 514 articles were included in the initial screening after duplication removal. Further, 478 articles were excluded based on the screening of titles and abstracts. The eligibility of the 36-remaining full-text articles was determined. There were 10 articles were excluded for not describing the main outcome of this study, 7 articles were excluded for being commentary or review reports, 03 articles were excluded as tool and app development study, 03 articles were excluded as not used standard methodology in study, and 02 Article were written other than English.</p>
+    <p><bold>Study Characteristics</bold><bold>and Setting:</bold> The details of the study designs and their key findings are presented in Table 2. This review comprises five qualitative studies, two quasi-experimental studies, and four cross-sectional studies, with the eleven selected studies originating from ten different countries, including United Kingdom (<italic>n</italic> = 1)<xref alt="9" rid="ref9" ref-type="bibr"><sup><underline>9</underline></sup></xref>, Ireland (<italic>n</italic> = 1)<xref alt="10" rid="ref10" ref-type="bibr"><sup><underline>10</underline></sup></xref>, Singapore (n=1)<sup>11</sup>, India (n=1)<sup>12</sup>, Australia (<italic>n</italic> = 2)<sup>13,14</sup>, Malaysia (<italic>n</italic> = 1)<sup>15</sup>, Texas (n=1)<sup>16</sup>, Egypt (<italic>n</italic> = 1)<sup>17</sup>, Iran (n=1)<sup>18</sup>, and USA (<italic>n</italic> = 1)<sup>19</sup>.</p>
+    <p><bold>Handover result:</bold> The review described various existing methods of nursing shift handover and their outcomes. A study revealed that a lack of standard operating procedures resulted in major variances in practice; Issues with privacy, secrecy, and time limits were raised as concerns. Patients expressed concerns about a communication gap between doctors and nurses, but overall, they reported feeling informed and involved throughout their visits.<xref alt="9" rid="ref9" ref-type="bibr"><sup><underline>9</underline></sup></xref> Another study focused on limited policies and training related to handover practices. Barriers to effective handover practices included interruptions, overlong reports, large caseloads, and resistance to using technology.<xref alt="10" rid="ref10" ref-type="bibr"><sup><underline>10</underline></sup></xref> In another study, handovers between nurses took longer than those between doctors. Evening shift handovers were longer than morning shift handovers, with distractions more common for nurses, especially during the nighttime shift.<sup>11</sup></p>
+    <p>A study reported notable variations in weekend and weekday adherence to time constraints, with an overall adherence rate of 63%. Most handovers between nursing staff members occurred at the patient's bedside. Staff members typically transferred tasks in person. It was also found that with an overall adherence rate of 82%, the SBAR (Situation, Background, Assessment, and Recommendation) process aspects were adhered to effectively, with a significant positive association between patient information and staff contact.<sup>12</sup> In another study highlighting difficulties in handover practices in mental healthcare settings, practical obstacles impeding consistent deployment included protecting patient privacy and arranging for different nurses to communicate. Nurses expressed concerns about compromising people's privacy by doing handovers in public areas, and limiting access to private rooms made execution more difficult. Major concerns expressed by nurses included the potential detrimental effect on patients' well-being by including them in handover conversations due to private information causing anxiety or unfavorable emotions. Participants thought that not all information should be disclosed during consumer handovers, requiring information to be filtered.<sup>13</sup></p>
+    <p>Another study described various clinician behaviors of interprofessional communication activities during handover practices. The study found that the accuracy and completeness of information given were affected by the quality of interprofessional communication, identifying communication gaps, ambiguity, and unrelated content as problems. Positive actions during bedside handover included making eye contact, communicating clearly, and actively participating. The bedside handover also discussed how to assign duties for continuing patient care using delegation procedures.<sup>14</sup> In a study regarding nurses' perceptions of inter-shift handover practices, reported challenges in effective handover practices included work interruptions, concurrent doctor ward rounds, irrelevant discussions, and lengthy handover times. The strengths of bedside handover practices included teamwork, mutual support, and the use of comprehensible language. Involving patients in the handover was considered valuable.<sup>15</sup></p>
+    <p>Furthermore, there are studies included in the review that has assessed the method of handover practices using standard operating procedures.<sup>16-18</sup> A study revealed that using the SBAR (Situation, Background, Assessment, Recommendation) protocol, there were significant increases in the percentage of time spent on verbal communication and shift report activities after SBAR was implemented. With paper SBAR, writing was reduced, but with electronic SBAR, it was increased, and more reporting took place in patient rooms during the SBAR conditions.<sup>16</sup> Similarly, another study using the SBAR protocol showed that both knowledge and practice showed notable increases, with knowledge rising to 92.8% and practice to 100%. Also, the study found favorable associations between nurses' perceptions of the handover procedure and associated communication, as well as their knowledge and SBAR practice. The study intervention had a positive impact on the way nurses perceived the handover process and enhanced their understanding and application of SBAR.<sup>17</sup> A study done using another SOP for nursing shift handover called NSPEC (Nursing Safe Practice Evaluation Checklist) described the effectiveness of the intervention in terms of enhancing nurses' safe practices in the ICU setting.<sup>18</sup> Communication between nurses during the handover process has the highest importance among reported challenges. According to this study, one of the key factors lowering service quality and safety as well as patient dissatisfaction is poor communication between onboarding and departing shift nurses during the handover.<sup>19</sup></p>
+    <p>
+      <bold>DISCUSSION</bold>
+    </p>
+    <p>Clinical handover is a critical and often complex exchange of patient care responsibility between healthcare professionals, essential for ensuring continuity and safety in the delivery of nursing care. Nursing shift handovers are particularly vital as they involve the transfer of multidimensional clinical information that directly impacts patient safety outcomes. Despite this importance, there is significant variation in how nursing shift handovers are conducted globally. The present systematic review, encompassing 11 studies, demonstrated that the absence of standardized procedures leads to inconsistent handover practices that compromise patient safety. Key barriers identified include concerns about privacy and confidentiality breaches, time limitations, overly lengthy handovers, heavy caseloads, and technological resistance.</p>
+    <p>The review findings align with those of Anshasi H et al<sup>20</sup> who reported that both nurses and patients perceive confidentiality and privacy breaches as major obstacles during bedside handovers. Nurses additionally highlighted fatigue from overtime, repetitive information transfer, and a reduced sense of teamwork and security during handover processes. Similarly, Muller M et al<sup>21</sup> supported these observations and emphasized that the use of structured communication tools, especially SBAR (Situation-Background-Assessment-Recommendation), effectively improves patient safety during shift changes.</p>
+    <p>Further corroborating these conclusions, Ghosh S et al<sup>22</sup> conducted an interventional study that demonstrated significant improvements in handover effectiveness following the implementation of the SBAR framework. This study found enhanced communication clarity, improved coordination, and higher patient satisfaction post-intervention, highlighting the value of standardized protocols in reducing errors and optimizing clinical workflows. Likewise, Kumar P et al<sup>12</sup> observed that in settings lacking structured handover processes, inconsistencies in clinical information exchange correlated with increased risks to patient safety, further supporting the need for standardized practices.</p>
+    <p>Malfait S et al<sup>23</sup> research also sheds light on the nuanced issue of privacy during bedside handovers. While privacy concerns are often cited as barriers, their findings suggest that these issues may stem more from healthcare staff apprehensions and discomfort with open communication rather than from patients themselves, who generally support transparent information sharing when done respectfully. This insight points to a need for targeted training to address staff concerns and to develop strategies for maintaining confidentiality without compromising patient engagement.</p>
+    <p>In resource-limited settings, challenges such as overburdened staff and infrastructure deficits intensify the difficulty of maintaining high-quality handovers. Seid A study<sup>24</sup> in Ethiopian public hospitals revealed that nurse handover practices were suboptimal due to excessive workloads and ambiguous procedural guidelines, underscoring that contextual adaptations of handover protocols like SBAR are critical for ensuring successful implementation in diverse environments. Additionally, Soed N et al<sup>25</sup> highlighted the positive impact of SBAR on nursing handover quality in Malaysian healthcare, demonstrating measurable reductions in communication errors and improved team collaboration, though they acknowledged ongoing barriers related to resistance in technology adoption and training gaps.</p>
+    <p>Overall, these studies consistently indicate that structured handover protocols such as SBAR improve communication efficiency, enhance patient safety, and boost healthcare team cohesion. However, the persistent barriers identified ranging from privacy concerns to organizational resistance and logistical constraints suggest the need for multifaceted approaches. Healthcare institutions should emphasize developing clear standard operating procedures (SOPs), integrating handover training into professional development, and fostering a culture that values transparency and teamwork. In particular, tailoring protocols to fit local resource capacities, while addressing privacy through patient-inclusive models, may enhance acceptance and efficacy.</p>
+    <p>Implementation of structured communication tools has direct relevance for clinical practice, such as recommending hospital policies for mandatory SBAR training to reduce errors and boost coordination, particularly in resource-limited systems like India’s. Adopting SBAR can enhance clarity in patient handovers, minimize misinterpretation, and improve multidisciplinary teamwork. These measures are especially valuable for optimizing patient safety and streamlining workflows where staffing and infrastructure challenges impact the quality of care.</p>
+    <p>Since the review included only English-language and freely accessible studies, it may have excluded significant research published in other languages or subscription-based journals. This restriction could limit the comprehensiveness and global applicability of the findings, potentially affecting the overall generalizability of the conclusions.</p>
+    <p>
+      <bold>CONCLUSION</bold>
+    </p>
+    <p>Shift handover is essential for patient safety and quality care. Research shows that lack of standardized procedures leads to communication gaps, confidentiality issues, and errors. Challenges include time constraints, unscheduled handovers, and resistance to technology, especially in mental health settings. Using protocols like SBAR and NSPEC improves communication, enhances nursing knowledge, and promotes safe practices. Standardized handovers ensure clear, concise information transfer, reducing errors and improving patient outcomes. Implementing these protocols is crucial for consistent, effective nursing handovers across healthcare settings.</p>
+    <p>
+      <bold>RECOMMENDATIONS</bold>
+    </p>
+    <p>Future studies should propose research directions like RCTs on digital tools or studies in underrepresented regions to strengthen evidence on communication training effectiveness. Exploring technology-driven SBAR interventions and evaluating their long-term impact on patient safety, teamwork, and clinical efficiency across diverse healthcare settings can provide a more comprehensive understanding for broader implementation.</p>
+    <p>Future research should focus on longitudinal studies to evaluate the sustainability of structured handover frameworks, explore digital innovations in communication tools, and investigate handover practices across underrepresented regions to inform wider implementation strategies.</p>
+    <p><bold>Individual Authors’ Contributions:</bold> The conception of the study was carried out by <bold>RV</bold> and <bold>UP</bold>, while the design was developed by <bold>RV</bold>, <bold>NK</bold>, and <bold>UP</bold>. Supervision was provided by <bold>SS</bold>, <bold>SD</bold>, and <bold>AA</bold>. No external funding was received. Materials were contributed by <bold>RV</bold>, <bold>UP</bold>, and <bold>MV</bold>. Data collection and/or processing were performed by <bold>RV</bold>, <bold>NS</bold>, and <bold>NK</bold>, and the analysis and interpretation were conducted by <bold>NS</bold>, <bold>UP</bold>, and <bold>RV</bold>. The literature review was completed by <bold>MV</bold>, <bold>UP</bold>, and <bold>RV</bold>. Writing of the manuscript involved <bold>RV</bold>, <bold>NK</bold>, and <bold>UP</bold>, and critical review was undertaken by <bold>SS</bold>, <bold>SD</bold>, <bold>AA</bold>, and <bold>MV</bold>.</p>
+    <p><bold>Availability of Data:</bold> Data is available upon reasonable request to the corresponding author.</p>
+    <p><bold>Declaration of No use of generative AI tools:</bold> This article was prepared without the use of generative AI tools for content creation, analysis or data generation. All findings and interpretations are based solely on the authors’ independent work and expertise.</p>
+    <p>
+      <bold>REFERENCES</bold>
+    </p>
+    <list list-type="order">
+      <list-item>
+        <p>Hwang JI, Kim SW. Using an Early Warning Score for Nurse Shift Patient Handover: Before-and-after Study. Asian Nurs Res (Korean Soc Nurs Sci). 2022;16(1):18-24. DOI: https:// doi.org/10.1016/j.anr.2021.12.005 PMid:34974179</p>
+      </list-item>
+      <list-item>
+        <p>Pothier D, Monteiro P, Mooktiar M, Shaw A. Pilot study to show the loss of important data in nursing handover. Br J Nurs. 2005 Nov10-23;14(20):1090-1093. DOI: https://doi. org/10.12968/bjon.2005.14.20.20053 PMid:16301940</p>
+      </list-item>
+      <list-item>
+        <p>Smeulers M, Lucas C, Vermeulen H. Effectiveness of different nursing handover styles for ensuring continuity of information in hospitalised patients. Cochrane Database Syst Rev. 2014; 2014(6):CD009979. DOI: https://doi.org/10.1002/14651858. CD009979.pub2. PMID: 24957503 PMCID: PMC8483264</p>
+      </list-item>
+      <list-item>
+        <p>Taskiran N, Sari D. An important problem for patient safety: nursing handover/Hasta guvenligi acisindan onemli bir sorun: hasta teslimi. Journal of Education and Research in Nursing. 2017;14(1):93-98.</p>
+      </list-item>
+      <list-item>
+        <p>Page MJ, McKenzie JE, Bossuyt PM, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021 Mar 29;372:n71. DOI: https://doi.org/ 10.1136/bmj.n71 PMid:33782057 PMCid:PMC8005924</p>
+      </list-item>
+      <list-item>
+        <p>Lockwood C, Munn Z, Porritt K. Qualitative research synthesis: methodological guidance for systematic reviewers utilizing meta-aggregation. Int J Evid Based Healthc. 2015 Sep;13(3):179-187. DOI: https://doi.org/10.1097/XEB.00000 00000000062 PMid:26262565</p>
+      </list-item>
+      <list-item>
+        <p>Tufanaru C, Munn Z, Aromataris E, Campbell J, Hopp L. Chapter 3: Systematic reviews of effectiveness. In: Aromataris E, Munn Z, eds. JBI Manual for Evidence Synthesis. JBI; 2020. DOI: https://doi.org/10.46658/JBIRM-17-03</p>
+      </list-item>
+      <list-item>
+        <p>Moola S, Munn Z, Tufanaru C, et al. Chapter 7: Systematic reviews of etiology and risk. In: Aromataris E, Munn Z, eds. JBI Manual for Evidence Synthesis. JBI; 2020. DOI: https:// doi.org/10.46658/JBIRM-17-06</p>
+      </list-item>
+      <list-item>
+        <p>Bruton J, Norton C, Smyth N, Ward H, Day S. Nurse handover: patient and staff experiences. Br J Nurs. 2016;25(7): 386-390, 392-383. DOI: https://doi.org/10.12968/bjon.2016.25.7.386 PMid:27081733</p>
+      </list-item>
+      <list-item>
+        <p>Fealy G, Munroe D, Riordan F, et al. Clinical handover practices in maternity services in Ireland: A qualitative descriptive study. Midwifery. 2016;39:20-26. DOI: https://doi.org/ 10.1016/j.midw.2016.04.011 PMid:27321716</p>
+      </list-item>
+      <list-item>
+        <p>Kowitlawakul Y, Leong BS, Lua A, Aroos R, Wong JJ, Koh N, Goh N, See KC, Phua J, Mukhopadhyay A. Observation of handover process in an intensive care unit (ICU): barriers and quality improvement strategy. Int J Qual Health Care. 2015 Apr;27(2):99-104. DOI: https://doi.org/10.1093/intqhc/ mzv002 PMid:25644706</p>
+      </list-item>
+      <list-item>
+        <p>Kumar P, Jithesh V, Vij A, Gupta SK. Need for a hands-on approach to hand-offs: A study of nursing handovers in an Indian Neurosciences Center. Asian J Neurosurg. 2016 Jan-Mar; 11 (1):54-59. DOI: https://doi.org/10.4103/1793-5482.165776 PMid:26889281 PMCid:PMC4732244</p>
+      </list-item>
+      <list-item>
+        <p>Mullen A, Harman K, Flanagan K, O'Brien B, Isobel S. Involving mental health consumers in nursing handover: A qualitative study of nursing views of the practice and its implementation. Int J Ment Health Nurs. 2020;29(6): 1157-1167. DOI: https://doi.org/10.1111/inm.12756 PMid:32677320</p>
+      </list-item>
+      <list-item>
+        <p>Redley B, Botti M, Wood B, Bucknall T. Interprofessional communication supporting clinical handover in emergency departments: An observation study. Australas Emerg Nurs J. 2017 Aug;20(3):122-130. DOI: https://doi.org/10.1016/j.aenj. 2017.05.003 PMid:28595847</p>
+      </list-item>
+      <list-item>
+        <p>Chong DWQ, Iqbal AR, Kaur Jaj B, Zainab A, Nordin A, Abd Majid ND, Jusoh A. Perceptions of nurses on inter-shift handover: A descriptive study in Hospital Kuala Lumpur, Malaysia. Med J Malaysia. 2020 Nov;75(6):691-697. PMID: 33219179</p>
+      </list-item>
+      <list-item>
+        <p>Cornell P, Gervis MT, Yates L, Vardaman JM. Improving shift report focus and consistency with the situation, background, assessment, recommendation protocol. J Nurs Adm. 2013 Jul-Aug;43(7-8):422-428. DOI: https://doi.org/10.1097/NNA.0b0 13e31829d6303 PMid:23892308</p>
+      </list-item>
+      <list-item>
+        <p>Ghonem NME, El-Husany WA. SBAR Shift Report Training Program and its Effect on Nurses' Knowledge and Practice and Their Perception of Shift Handoff Communication. SAGE Open Nurs. 2023 Feb ;9:23779608231159340. DOI: https://doi.org/ 10.1177/23779608231159340 PMid:36861055</p>
+      </list-item>
+      <list-item>
+        <p>Malekzadeh J, Mazluom SR, Etezadi T, Tasseri A. A standardized shift handover protocol: improving nurses' safe practice in intensive care units. J Caring Sci. 2013 Aug 27;2(3):177-185. DOI: https://doi.org/10.5681/jcs.2013.022 PMID: 25276725 PMCID: PMC4134157</p>
+      </list-item>
+      <list-item>
+        <p>Ernst KM, McComb SA, Ley C. Nurse-to-nurse shift handoffs on medical-surgical units: A process within the flow of nursing care. J Clin Nurs. 2018 Mar;27(5-6):e1189-e1201. DOI: https://doi.org/10.1111/jocn.14254 PMid:29314328</p>
+      </list-item>
+      <list-item>
+        <p>Anshasi H, Almayasi ZA. Perceptions of Patients and Nurses about Bedside Nursing Handover: A Qualitative Systematic Review and Meta-Synthesis. Nurs Res Pract. 2024 Apr 29; 2024:3208747. DOI: https://doi.org/10.1155/2024/3208747 PMid:38716049 PMCid:PMC11074774</p>
+      </list-item>
+      <list-item>
+        <p>Müller M, Jürgens J, Redaèlli M, Klingberg K, Hautz WE, Stock S. Impact of the communication and patient hand-off tool SBAR on patient safety: a systematic review. BMJ Open. 2018 Aug;8(8):e022202. DOI: https://doi.org/10.1136/bmjopen-2018-022202 PMid:30139905 PMCid:PMC6112409</p>
+      </list-item>
+      <list-item>
+        <p>Ghosh S, Ramamoorthy L, Pottakat B. Impact of Structured Clinical Handover Protocol on Communication and Patient Satisfaction. J Patient Exp. 2021 Mar 3; 8:2374373521997733. DOI: https://doi.org/10.1177/2374373521997733</p>
+      </list-item>
+      <list-item>
+        <p>Malfait S, Van Hecke A, Van Biesen W, Eeckloo K. Is privacy a problem during bedside handovers? A practice-oriented discussion paper. Nurs Ethics. 2019;26(7-8):2288-97. DOI: https://doi.org/10.1177/0969733018791348 PMid:30134750 PMCid:PMC7323750</p>
+      </list-item>
+      <list-item>
+        <p>Seid A, Hussien WY, Bahru JM, Ahmed A, Semanew Y. Patient handover practice of nurses and associated factors in South Wollo Zone Public Hospitals, Ethiopia. Sci Rep. 2025;15(1): 13194. DOI: https://doi.org/10.1038/s41598-025-87968-8</p>
+      </list-item>
+      <list-item>
+        <p>Soed N, Ludin SM, Syed Abdullah SN, Al-Zahrawi R. Exploring the Impact of the SBAR on Nursing Handover: A Scoping Review. The Malaysian Journal of Nursing 2025;17(1):233-245. DOI: https://doi.org/10.31674/mjn.2025.v17i01.024</p>
+      </list-item>
+    </list>
+  </body>
+  <back>
+<ref-list><ref id="ref1"><mixed-citation>Reference 1</mixed-citation></ref><ref id="ref2"><mixed-citation>Reference 2</mixed-citation></ref><ref id="ref3"><mixed-citation>Reference 3</mixed-citation></ref><ref id="ref4"><mixed-citation>Reference 4</mixed-citation></ref><ref id="ref5"><mixed-citation>Reference 5</mixed-citation></ref><ref id="ref6"><mixed-citation>Reference 6</mixed-citation></ref><ref id="ref7"><mixed-citation>Reference 7</mixed-citation></ref><ref id="ref8"><mixed-citation>Reference 8</mixed-citation></ref><ref id="ref9"><mixed-citation>Reference 9</mixed-citation></ref><ref id="ref10"><mixed-citation>Reference 10</mixed-citation></ref></ref-list></back>
+</article>

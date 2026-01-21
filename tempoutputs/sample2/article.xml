@@ -1,0 +1,678 @@
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.3" article-type="other">
+  <front>
+    <journal-meta>
+      <journal-id journal-id-type="publisher-id">unknown-journal</journal-id>
+      <journal-title-group>
+        <journal-title>Unknown Journal</journal-title>
+      </journal-title-group>
+      <issn pub-type="epub">0000-0000</issn>
+      <publisher>
+        <publisher-name>Unknown Publisher</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>Article</subject>
+        </subj-group>
+      </article-categories>
+      <title-group>
+        <article-title>Article Title</article-title>
+      </title-group>
+      <pub-date date-type="pub" publication-format="electronic">
+        <year>2026</year>
+      </pub-date>
+      <elocation-id>e001</elocation-id>
+      <permissions>
+</permissions>
+    </article-meta>
+  </front>
+  <body>
+    <p>
+      <bold>ORIGINAL RESEARCH ARTICLE</bold>
+    </p>
+    <p>
+      <bold>Multimorbidity and Antiretroviral Therapy Failure: Dose-Response Relationship in a Large Indian Public-Sector Cohort</bold>
+    </p>
+    <p>
+      <bold>Nikhil P Hawal<sup>1*</sup>, Padmaja R Walvekar<sup>2</sup>, Sonam Bhandurge<sup>3</sup></bold>
+    </p>
+    <p><sup>1</sup>Department of Community medicine, USM KLE International Medical Program and, Belagavi, Karnataka, India</p>
+    <p><sup>2</sup>Department of Community medicine, J.N. Medical College, Belagavi, Karnataka, India</p>
+    <p><sup>3</sup>Department of Computer Sciences, Angadi Institute of Technology and Management, Belagavi, Karnataka, India</p>
+    <p><bold>DOI:</bold> 10.55489/njcm.170120266013</p>
+    <p>
+      <bold>A B S T R A C T</bold>
+    </p>
+    <p><bold>Background</bold>: The increasing burden of multimorbidity among people living with HIV (PLHIV) threatens the effectiveness of antiretroviral therapy (ART). Very few studies have been published on the predictors of treatment outcome with concurrent medical conditions in resource-poor setting. In this study; we assessed the relationship of multimorbidity with ART failure among HIV-infected adults in Karnataka, India.</p>
+    <p><bold>Methods:</bold> A retrospective study of 2,709 HIV-positive adults started on antiretroviral therapy (ART) from 2019-2023 in a district treatment center in Belgaum. Data gathered were demographic, clinical data like comorbidities (tuberculosis, diabetes and hepatitis B/C) and treatment outcomes. Multivariate logistic regression found independent predictors of treatment failure according to virological, immunological, or clinical definitions.</p>
+    <p><bold>Results:</bold> In total, 542 (19.54%) participants failed treatment. A strong dose-response pattern was observed in treatment failure: 16.3% among patients without comorbidities increased to 22.0% with one co-morbidity condition, 51.6% with two, and 52.0% with all three comorbidities. Tuberculosis showed the highest independent risk (adjusted OR 1.88; 95% CI: 1.44-2.45), and individuals with ≥2 comorbidities had more than double the odds of failure (adjusted OR 2.54; 95% CI: 1.88-3.42). Hepatitis B/C coinfection was also strongly associated with failure (adjusted OR 1.67; 95% CI: 1.11-2.52). Increasing multimorbidity corresponded with poorer CD4 recovery, lower viral suppression, and reduced adherence.</p>
+    <p><bold>Conclusions:</bold> Multimorbidity undermines ART efficacy with a combined impact on immune recovery and treatment adherence. These data support the design of integrated care models for HIV and comorbidities in settings with high burdens. Resource allocation and risk stratification based on the comorbidity burden might be optimized and improve treatment outcomes.</p>
+    <p><bold>Keywords:</bold> HIV/AIDS, Antiretroviral Therapy (ART), Multimorbidity, Adherence, HIV Treatment Outcomes</p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="96%"/>
+          <col width="4%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="2">
+              <bold>A R T I C L E I N F O</bold>
+            </th>
+          </tr>
+          <tr>
+            <th><bold>Financial Support:</bold> None declared</th>
+            <th/>
+          </tr>
+          <tr>
+            <th><bold>Conflict of Interest:</bold> The authors have declared that no conflict of interest exists.</th>
+            <th/>
+          </tr>
+          <tr>
+            <th><bold>Received</bold>: 16-09-2025, <bold>Accepted</bold>: 09-12-2025, <bold>Published</bold>: 01-01-2026</th>
+            <th/>
+          </tr>
+          <tr>
+            <th colspan="2"><bold>*Correspondence:</bold> Dr. Nikhil P Hawal (Email: hawalnikhil@gmail.com)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>
+      <bold>INTRODUCTION</bold>
+    </p>
+    <p>Human immunodeficiency virus (HIV) continues to be a major global health concern, with nearly ~40.8 million people living with HIV worldwide in 2024.<sup>1</sup> More than 28 million people currently receive antiretroviral therapy worldwide, and life expectancy among treated PLHIV now approaches that of the general population. Yet this success has transitioned the clinical landscape toward an emerging burden of multimorbidity-particularly in LMICs where infectious conditions like tuberculosis, and metabolic disorders such as diabetes and viral hepatitis, remain highly prevalent. Recent cohort and modeling studies predict that as people living with HIV age on long-term ART, multimorbidity is becoming increasingly common, leading to a growing burden of non-AIDS comorbidities that will complicate long-term care and require integrated management beyond viral suppression.<sup>2</sup> However, treatment failure remains common among patients on standard first-line ART, with studies reporting virological failure rates around 10-15%, and some cohorts documenting rates as high as 25-30%.<sup>3</sup></p>
+    <p>Recent data from ageing cohorts of people living with HIV indicate a rising burden of non-HIV comorbidities, especially cardiovascular, renal and metabolic diseases, which increases medical complexity, risk of polypharmacy and underscores the need for integrated, long-term care models beyond simply achieving viral suppression.<sup>4,5</sup> In the Swiss HIV Cohort (2005-2022) the profile of mortality among people living with HIV shifted: AIDS-related and liver-related deaths declined, while non-AIDS causes including non-AIDS cancers and cardiovascular disease became more common, especially as the population aged.<sup>6</sup> In contrast, evidence remains limited, fragmented, and largely restricted to small single-center studies or disease-specific analyses from India and other LMICs. Indian programme data and registry-based studies such as the Odisha study document tuberculosis and diabetes co-occurrence, and occasionally HIV coinfection among TB patients. However, very few studies have evaluated the combined impact of TB, diabetes, and HIV within ART-programme cohorts, and almost none have included hepatitis B or C coinfection or assessed all these conditions together under routine ART care.<sup>7</sup></p>
+    <p>Despite the rapidly growing awareness of multimorbidity among PLHIV, there remains a key gap in the evidence base. No large cohort derived from the NACO programme has measured the cumulative effect of tuberculosis, diabetes, and hepatitis B/C singly and in combination on antiretroviral therapy outcomes using the nationally defined criteria for ART failure. Community-based studies to date typically consider single comorbidities in isolation, or have not accounted for time-varying conditions like tuberculosis, or have used nonstandard definitions of virological, immunological, and clinical failure. Consequently, the programme lacks robust estimates with which to underpin risk stratification, differentiated service delivery, and integrated chronic disease management for patients with multiple conditions concurrently. Coinfection with tuberculosis is a special concern, where people living with HIV have approximately 14-fold higher risk of developing active TB compared to HIV-negative individuals; TB remains a leading cause of death among PLHIV, and HIV-TB coinfection continues to be associated with poorer TB outcomes in many settings.<sup>8</sup> Meanwhile, metabolic disorders including liver, kidney and other non-AIDS comorbidities along with coinfections, have become increasingly common in aging people living with HIV. This growing multimorbidity adds complexity to clinical management and highlights the need for integrated, holistic care beyond viral suppression.<sup>9</sup> Poor adherence and emergence of HIV-drug resistance remain critical threats to long-term ART effectiveness and virological failure, as highlighted by WHO.<sup>10</sup></p>
+    <p>The presence of multiple morbidities in people living with HIV often leads to complex clinical scenarios (polypharmacy, potential drug-drug interactions) which may theoretically affect adherence, immune recovery, and long-term treatment success. In fact, some studies show impaired immunological recovery among older patients with comorbidities.<sup>11</sup> Despite this acknowledgment having largely remained, strong scientific evidence on the impact of multimorbid conditions on ART failure is limited, especially in a country like India where infective comorbid illnesses are still highly prevalent. Knowing these associations is important in developing individualized therapeutic strategies to achieve better patient outcomes. Accordingly, this study aimed to evaluate whether multimorbidity involving tuberculosis, diabetes, and hepatitis B/C is associated with antiretroviral therapy failure in a large public-sector cohort in Karnataka, India. Specifically, our primary objective was to determine the impact of accumulating comorbidities on NACO-defined ART failure. The secondary objectives were to assess how individual comorbidities influence immunological recovery, viral suppression, and adherence; and to identify independent predictors of treatment failure using multivariable regression models within a routine programme setting.</p>
+    <p>
+      <bold>METHODOLOGY</bold>
+    </p>
+    <p><bold>Study design and setting:</bold> This research used a retrospective cohort design analyzing data obtained from clinical records of patients at the Belgaum district ART center, located in Karnataka, India. Primary sources of information were clinical notes and therapeutic monitoring databases. A completed Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) checklist has been provided as Supplementary File 1, in accordance with recommended reporting standards for observational cohort studies.</p>
+    <p><bold>Cohort Composition and Enrollment Parameters:</bold> Study enrollment comprised 2709 adults with confirmed HIV seropositivity, aged 18 years and above, who initiated antiretroviral therapy between 2019 and 2023. Using a simple random sampling method, eligible participants were selected from the ART center registry. Only patients with comprehensive clinical documentation from treatment initiation through follow-up were included. Patients were included only if they had a minimum follow-up duration of at least six months after ART initiation, ensuring adequate time to assess virological, immunological, and clinical treatment outcomes. Records with missing data on medication adherence, immunological markers, comorbid conditions, or treatment outcomes were excluded from the analysis.</p>
+    <p><bold>Sample size and sampling methods:</bold> "We estimated the required sample size to reliably estimate the ART failure rate in our cohort. Based on previous literature, we assumed a failure proportion of 15.3%.<sup>12</sup> With a 95% confidence level and a margin of error of ±1.5%, the minimum sample size required was calculated as ≈2,213. To account for expected attrition or missing data, we inflated the sample size by 20%, yielding a sample size of ≈2,655 participants which was rounded to nearest hundreds. So, the final sample size was 2700."</p>
+    <p><bold>Data Acquisition and Parameter Classification:</bold> Historical record review employed systematic data abstraction protocols. Socioeconomic parameters included chronological age, biological gender (including gender and sexual minority status), formal education completion, household economic status, partnership arrangements, and vocational categories. Clinical parameters encompassed antiretroviral pharmaceutical protocols, baseline and serial CD4+ T-lymphocyte quantification, and therapeutic compliance measurements. Co-existing medical conditions investigated included mycobacterial pulmonary infection, Diabetes Mellitus and chronic viral hepatitis (types B and C), diagnosed per established national healthcare protocols. Primary analytical endpoints included therapeutic non-response, plasma viral suppression achievement, and immunological recovery patterns.</p>
+    <p><bold>Definitions and Classification:</bold> Medical and Clinical non-response status was defined based on the National AIDS Control Organization (NACO) standardized criteria. A virological non-responder was defined as a patient with a plasma HIV RNA level of more than 1000 copies per ml after initiation of ARV drugs for 6 months. Immunological non-response included relapses of T-lymphocyte CD4+&gt;or= to pre-treatment levels, decrease below baseline and persistently &lt;100 cells/µl. Clinical non-response was defined as occurrence or recurrence of WHO Stage III or IV disease beyond six months from therapeutic treatment. Co-morbid multi-pathologies; being, the concurrent presence of two or more evaluated: mycobacterial pulmonary infection(s), glucose metabolism abnormalities and chronic viral hepatitis B or C. Tuberculosis was defined as sputum GeneXpert-positive or culture-positive disease, or clinician-diagnosed TB based on compatible radiological findings and clinical symptoms in accordance with RNTCP/NTEP national guidelines. Diabetes mellitus was defined as a fasting plasma glucose ≥126 mg/dL on two separate occasions or current use of anti-diabetic medication. Hepatitis B infection was defined as seropositivity for hepatitis B surface antigen (HBsAg). Hepatitis C infection was defined as positivity for anti-HCV antibody with detectable HCV RNA, or documented history of treated HCV infection.</p>
+    <p><bold>Analytical Approach and Statistical Procedures:</bold> For electronic data entry, Microsoft Excel was used although the analysis took place in Statistical Package for Social Sciences (SPSS) software version 25. Descriptive analysis was used to summaries the characteristics of the cohort - using mean and standard deviation for quantitative variables, and proportions or percentage frequencies for qualitative variables. For comparisons of categorical variable, chi-square test was used and for quantitative variables independent samples t-test were performed. Independent risk factors for lack of response to therapy were analyzed using multivariable logistic regression models. Two multivariable logistic regression models were constructed: Model 1 included adherence, while Model 2 excluded it to assess the extent to which adherence mediated the association between multimorbidity and ART failure. Factors with p &lt;0.20 in the initial univariate screening were retained for inclusion in final models. Odd ratios adjusted by 95% confidence intervals were computed and comparisons were considered as statistically significant when p-values were less than 0.05.</p>
+    <p><bold>Regulatory Compliance and Institutional Approvals:</bold> Ethical oversight approval was obtained from the Institutional Review Board of KLE Academy of Higher Education and Research as part of the researcher’s PhD program (Ref no- KAHER/EC/24-25/362). Operational permissions were secured from Karnataka State AIDS Prevention Society (KSAPS) and District AIDS Prevention and Control Office (DAPCO) under National AIDS Control Organization (NACO) administrative structure. Complete data de-identification protocols were implemented throughout the investigation.</p>
+    <p>
+      <bold>RESULTS</bold>
+    </p>
+    <p><bold>Demographic and Clinical Characteristics of Study Population:</bold> A total of 3,148 patient records were screened from the ART centre database for the period 2019-2023. Of these, 439 records were excluded due to missing adherence data (n=152), missing CD4 or viral load measurements (n=174), incomplete comorbidity information for tuberculosis, diabetes, or hepatitis B/C (n=68), or incomplete treatment outcome status (n=45). The final analytical cohort comprised 2,709 adults who met all eligibility criteria (Figure 1).</p>
+    <p>
+      <bold>Figure 1: Selection of Adults Included in the ART Cohort (2019-2023)</bold>
+    </p>
+    <p>Out of these 2709 antiretroviral-treated adults, 542 (19.54%) failure cases and 2167 (81.46 %) success patients were included in the study. Results of age stratification showed a noteworthy difference, with the treatment-failure group presenting a mean age of
+41.8±11.3 years and that for the adequate participant (p=0.003) (Table 1).</p>
+    <p>Gender data showed 58.1% of treatment inadequate cases compared to 61.4% of those with adequate treatment (p = 0.128) (Table 1). Education level proportions indicated statistically significant differences; uneducated individuals accounted for 39.2% versus 33.6% of treatment-inadequate and treatment-adequate subjects, respectively (p=0.021). University-level education was more frequent among treatment-adequate participants (16.6%) than treatment-inadequate cases (13.2%) (Table 1).</p>
+    <p>Financial stratification was associated with treatment outcomes significantly. Households with monthly income less than ₹5000 were 65.3% in treatment inadequate category compared to 59.7% in treatment adequate (p=0.019) (Table 1). Status of profession has an inconsistent pattern and was statistically insignificant (p=0.318) too, while relationship status showed equivalent distributions between groups (p=0.411) (Table 1).</p>
+    <p>
+      <bold>Table 1: Sociodemographic Characteristics of Participants (N = 2709)</bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="29%"/>
+          <col width="30%"/>
+          <col width="30%"/>
+          <col width="11%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <bold>Variable</bold>
+            </th>
+            <th>
+              <bold>ART Failure (n = 542)(%)</bold>
+            </th>
+            <th>
+              <bold>No Failure (n = 2167) (%)</bold>
+            </th>
+            <th>
+              <bold>p-value</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <bold>Age (mean ± SD)</bold>
+            </th>
+            <th>41.8 ± 11.3</th>
+            <th>38.9 ± 10.7</th>
+            <th>0.003</th>
+          </tr>
+          <tr>
+            <th>
+              <bold>Gender</bold>
+            </th>
+            <th/>
+            <th/>
+            <th/>
+          </tr>
+          <tr>
+            <th>Male</th>
+            <th>315 (58.1)</th>
+            <th>1330 (61.4)</th>
+            <th>0.128</th>
+          </tr>
+          <tr>
+            <th>Female</th>
+            <th>224 (41.3)</th>
+            <th>832 (38.4)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>Transgender (TG/TS)</th>
+            <th>3 (0.6)</th>
+            <th>5 (0.2)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>
+              <bold>Education</bold>
+            </th>
+            <th/>
+            <th/>
+            <th/>
+          </tr>
+          <tr>
+            <th>Illiterate</th>
+            <th>212 (39.2)</th>
+            <th>728 (33.6)</th>
+            <th>0.021</th>
+          </tr>
+          <tr>
+            <th>Primary/Secondary</th>
+            <th>258 (47.6)</th>
+            <th>1079 (49.8)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>Graduate &amp; above</th>
+            <th>72 (13.2)</th>
+            <th>360 (16.6)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>
+              <bold>Monthly Income</bold>
+            </th>
+            <th/>
+            <th/>
+            <th/>
+          </tr>
+          <tr>
+            <th>&lt;₹5000</th>
+            <th>354 (65.3)</th>
+            <th>1294 (59.7)</th>
+            <th>0.019</th>
+          </tr>
+          <tr>
+            <th>≥₹5000</th>
+            <th>188 (34.7)</th>
+            <th>873 (40.3)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>
+              <bold>Occupation</bold>
+            </th>
+            <th/>
+            <th/>
+            <th/>
+          </tr>
+          <tr>
+            <th>Unskilled labor</th>
+            <th>178 (32.8)</th>
+            <th>653 (30.1)</th>
+            <th>0.318</th>
+          </tr>
+          <tr>
+            <th>Housewife</th>
+            <th>159 (29.3)</th>
+            <th>596 (27.5)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>Govt/Private Service</th>
+            <th>76 (14.1)</th>
+            <th>410 (18.9)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>Others (student, retired)</th>
+            <th>129 (23.8)</th>
+            <th>508 (23.5)</th>
+            <th/>
+          </tr>
+          <tr>
+            <th>
+              <bold>Marital Status</bold>
+            </th>
+            <th/>
+            <th/>
+            <th/>
+          </tr>
+          <tr>
+            <th>Married</th>
+            <th>370 (68.2)</th>
+            <th>1535 (70.8)</th>
+            <th>0.411</th>
+          </tr>
+          <tr>
+            <th>Single/Divorced/Widowed</th>
+            <th>172 (31.8)</th>
+            <th>632 (29.2)</th>
+            <th/>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>Note: Values are presented as number (%), unless otherwise indicated. <italic>p</italic>-values are based on the Chi-square test for categorical variables and independent samples <italic>t</italic>-test for continuous variables. Comparison of gender includes only male and female categories. TG/TS (Transgender/Transsexual) group was excluded from statistical testing due to small sample size.</p>
+    <p>
+      <bold>Table 2: Frequency of Comorbidities by ART Failure</bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="26%"/>
+          <col width="28%"/>
+          <col width="30%"/>
+          <col width="16%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <bold>Comorbidity</bold>
+            </th>
+            <th>
+              <p>
+                <bold>ART Failure</bold>
+              </p>
+              <p>
+                <bold>(n = 542) (%)</bold>
+              </p>
+            </th>
+            <th>
+              <p>
+                <bold>No Failure</bold>
+              </p>
+              <p>
+                <bold>(n = 2167)(%)</bold>
+              </p>
+            </th>
+            <th>
+              <bold>p-value</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>Tuberculosis</th>
+            <th>133 (24.5)</th>
+            <th>306 (14.1)</th>
+            <th>&lt;0.001</th>
+          </tr>
+          <tr>
+            <th>Diabetes</th>
+            <th>71 (13.1)</th>
+            <th>161 (7.4)</th>
+            <th>0.071</th>
+          </tr>
+          <tr>
+            <th>Hepatitis B/C</th>
+            <th>48 (8.9)</th>
+            <th>93 (4.3)</th>
+            <th>0.012</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p><bold>Concurrent Disease Burden and Antiretroviral Response:</bold> Co-occurring infectious pathologies displayed strong correlations with treatment effectiveness (Table 2). Pulmonary tuberculosis prevalence was substantially higher among treatment-inadequate participants (24.5%) versus treatment-adequate individuals (14.1%, p&lt;0.001). Diabetic conditions showed increased occurrence in treatment-inadequate cases (13.1%) compared to treatment-adequate participants (7.4%, p=0.071), nearing significance thresholds. Hepatitis B/C viral coinfections occurred more frequently among treatment-failure participants (8.9%) than treatment-adequate cases (4.3%, p=0.012) (Table 2).</p>
+    <p>
+      <bold>Table 3: ART Failure Rates Across Multimorbidity Categories</bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="17%"/>
+          <col width="7%"/>
+          <col width="18%"/>
+          <col width="20%"/>
+          <col width="20%"/>
+          <col width="19%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <p>
+                <bold>Multimorbidity</bold>
+              </p>
+              <p>
+                <bold>Category</bold>
+              </p>
+            </th>
+            <th>
+              <bold>n</bold>
+            </th>
+            <th>
+              <bold>ART Failure (%)</bold>
+            </th>
+            <th>
+              <p>
+                <bold>Mean CD4 Change</bold>
+              </p>
+              <p>
+                <bold>(cells/mm³)</bold>
+              </p>
+            </th>
+            <th>
+              <bold>Viral Suppression</bold>
+            </th>
+            <th>
+              <bold>Mean Adherence</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>None</th>
+            <th>1854</th>
+            <th>302 (16.3)</th>
+            <th>+182</th>
+            <th>88.3%</th>
+            <th>90.1%</th>
+          </tr>
+          <tr>
+            <th>1 condition</th>
+            <th>582</th>
+            <th>128 (22.0)</th>
+            <th>+142</th>
+            <th>84.5%</th>
+            <th>87.6%</th>
+          </tr>
+          <tr>
+            <th>2 conditions</th>
+            <th>223</th>
+            <th>115 (51.6)</th>
+            <th>+98</th>
+            <th>78.2%</th>
+            <th>84.4%</th>
+          </tr>
+          <tr>
+            <th>All 3 conditions</th>
+            <th>50</th>
+            <th>26 (52.0)</th>
+            <th>+76</th>
+            <th>61.0%</th>
+            <th>81.2%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>
+      <bold>Table 4: Multivariable Logistic Regression Analysis of Factors Associated with ART Failure in HIV-Positive Patients (N = 2709)</bold>
+    </p>
+    <table-wrap position="float">
+      <table>
+        <colgroup>
+          <col width="20%"/>
+          <col width="6%"/>
+          <col width="23%"/>
+          <col width="19%"/>
+          <col width="23%"/>
+          <col width="9%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <bold>Variable</bold>
+            </th>
+            <th>
+              <bold>uOR</bold>
+            </th>
+            <th>
+              <p>
+                <bold>Model 1: aOR (95% CI)</bold>
+              </p>
+              <p>
+                <bold>(With Adherence)</bold>
+              </p>
+            </th>
+            <th>
+              <bold>P-value (Model 1)</bold>
+            </th>
+            <th>
+              <p>
+                <bold>Model 2: aOR (95% CI)</bold>
+              </p>
+              <p>
+                <bold>(Without Adherence)</bold>
+              </p>
+            </th>
+            <th>
+              <bold>p-value</bold>
+            </th>
+          </tr>
+          <tr>
+            <th>Tuberculosis</th>
+            <th>2.14</th>
+            <th>1.88 (1.44-2.45)</th>
+            <th>
+              <bold>&lt;0.001</bold>
+            </th>
+            <th>1.99 (1.52-2.60)</th>
+            <th>&lt;0.001</th>
+          </tr>
+          <tr>
+            <th>Diabetes Mellitus</th>
+            <th>1.45</th>
+            <th>1.21 (0.92-1.58)</th>
+            <th>
+              <bold>0.154</bold>
+            </th>
+            <th>1.28 (0.98-1.67)</th>
+            <th>0.075</th>
+          </tr>
+          <tr>
+            <th>Hepatitis B/C</th>
+            <th>1.93</th>
+            <th>1.67 (1.11-2.52)</th>
+            <th>
+              <bold>0.012</bold>
+            </th>
+            <th>1.78 (1.18-2.68)</th>
+            <th>0.006</th>
+          </tr>
+          <tr>
+            <th>≥2 Comorbidities</th>
+            <th>2.98</th>
+            <th>
+              <bold>2.54 (1.88-3.42)</bold>
+            </th>
+            <th>
+              <bold>&lt;0.001</bold>
+            </th>
+            <th>2.75 (2.05-3.70)</th>
+            <th>&lt;0.001</th>
+          </tr>
+          <tr>
+            <th>Age (per year)</th>
+            <th>1.03</th>
+            <th>1.02 (1.01-1.03)</th>
+            <th>
+              <bold>0.001</bold>
+            </th>
+            <th>1.02 (1.01-1.03)</th>
+            <th>0.001</th>
+          </tr>
+          <tr>
+            <th>CD4 count (per 100)</th>
+            <th>0.82</th>
+            <th>0.87 (0.81-0.93)</th>
+            <th>
+              <bold>&lt;0.001</bold>
+            </th>
+            <th>0.86 (0.80-0.92)</th>
+            <th>&lt;0.001</th>
+          </tr>
+          <tr>
+            <th>Adherence (per 1%)</th>
+            <th>0.94</th>
+            <th>0.96 (0.95-0.97)</th>
+            <th>
+              <bold>&lt;0.001</bold>
+            </th>
+            <th/>
+            <th/>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td/>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>our – Unadjusted Odds Ration ; aOR – Adjusted Odds Ratio</p>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="/tmp/output_files/media/image3.png">
+      <alt-text>A graph of blue squares AI-generated content may be incorrect.</alt-text>
+    </graphic>
+    <p>
+      <bold>Figure 2: ART Failure Rates Across Multimorbidity Categories Among People Living with HIV (N = 2709)</bold>
+    </p>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="/tmp/output_files/media/image2.png">
+      <alt-text>A graph with a green line AI-generated content may be incorrect.</alt-text>
+    </graphic>
+    <p>
+      <bold>Figure 3: Viral Suppression and Mean CD4 Recovery by Multimorbidity Category</bold>
+    </p>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="/tmp/output_files/media/image1.png">
+      <alt-text>A graph with numbers and lines AI-generated content may be incorrect.</alt-text>
+    </graphic>
+    <p>
+      <bold>Figure 4: Multivariate Analysis of Factors Associated with ART Failure in HIV-Positive Individuals</bold>
+    </p>
+    <p><bold>Multi-morbidity Spectrum and Treatment Effectiveness:</bold> Increasing comorbidities disease burden correlated with declining therapeutic success (Table 3, Figure 2). Participants with no comorbidity had the least amount of treatment inadequacy at 16.3% (302/1854 cases). Inadequacy rates rose to 22.0% (128/582 participants) with single-comorbidity presence. Dual-comorbidity prevalence significantly increased inadequacy to 51.6% (115/223). Participants with triple-comorbidity showed the highest sub-optimal level (52.0% [26/50 cases]) (Table 3, Figure 2).</p>
+    <p>Immune system recovery correlated inversely with disease multiplicity (Table 3, Figure 3). Average CD4+ cell gains were greatest among disease-free participants (+182 cells/mm³), declining progressively: single-disease (+142 cells/mm³), dual-disease (+98 cells/mm³), triple-disease (+76 cells/mm³) (Table 3, Figure 3).</p>
+    <p>Viral elimination success showed similar trends as the immunological patterns (Table 3). Patients without other comorbidities achieved 88.3% viral clearance, decreasing sequentially to 84.5% (single-disease), 78.2% (dual-disease), and 61.0% (triple-disease). Medication compliance showed similar reductions: 90.1% (disease-free), 87.6% (single-disease), 84.4% (dual-disease), 81.2% (triple-disease) (Table 3, Figure 2).</p>
+    <p>Comparison of the two multivariable models demonstrated partial mediation by adherence. When adherence was excluded (Model 2), the effect estimates for tuberculosis (aOR 1.88 to 1.99), hepatitis B/C (1.67 to 1.78), and multimorbidity (2.54 to 2.75) increased, indicating that part of their association with ART failure operates through reduced adherence. Diabetes showed a borderline increase (aOR 1.21 to 1.28; p=0.075). Age and CD4 count remained stable across both models, suggesting independence from adherence-related pathways. (Table 4)</p>
+    <p><bold>Autonomous Risk Determinant Assessment:</bold> Multivariate regression identified independent treatment inadequacy predictors (Table 4, Figure 4). Pulmonary tuberculosis coinfection constituted significant risk with adjusted odds ratio 1.88 (95% CI: 1.44-2.45, p&lt;0.001). Hepatitis B/C coinfections showed adjusted odds ratio 1.67 (95% CI: 1.11-2.52, p=0.012). Diabetic conditions exhibited risk elevation without significance (adjusted odds ratio 1.21, 95% CI: 0.92-1.58, p=0.154) (Table 4, Figure 4).</p>
+    <p>Dual-plus comorbidity presence represented the strongest autonomous predictor with adjusted odds ratio 2.54 (95% CI: 1.88-3.42, p&lt;0.001) (Table 4, Figure 4). Increasing age elevated inadequacy probability 2% annually (adjusted odds ratio 1.02, 95% CI: 1.01-1.03, p=0.001) (Table 4).</p>
+    <p>Protective elements included higher initial CD4+ concentrations, with each 100-cell/mm³ elevation reducing inadequacy risk 13% (adjusted odds ratio 0.87, 95% CI: 0.81-0.93, p&lt;0.001). Superior medication compliance provided protection, with each 1% compliance improvement reducing inadequacy risk 4% (adjusted odds ratio 0.96, 95% CI: 0.95-0.97, p&lt;0.001) (Table 4, Figure 4).</p>
+    <p><bold>Dose-Response Relationship Observations:</bold> Comorbidity accumulation demonstrated consistent inverse relationships with therapeutic effectiveness across all measured parameters (Figures 1, 2, 3). Multiple-disease participants exhibited not only increased treatment inadequacy frequencies but also impaired immune reconstitution, reduced viral clearance rates, and diminished medication adherence behaviors. These findings indicate complex pathophysiological mechanisms linking concurrent pathologies with antiretroviral effectiveness, underscoring the necessity for integrated multidisciplinary therapeutic strategies in HIV management protocols. The time-weighted cumulative incidence of ART failure was calculated within each comorbidity stratum, and adjusted for the competing events of LTFU and death. There was a clear gradient with dose-response effect, as cumulative incidence gradually rose from 15·2% in patients without comorbidities to 22·5% in those with one comorbidity and 35·0% in those with two or more comorbidities. Mortality and LTFU also rose in a stepwise fashion with increasing comorbidity burden, highest combined death/LTFU proportions being observed among patients with more than 1 comorbidities.</p>
+    <p>
+      <bold>DISCUSSION</bold>
+    </p>
+    <p>The present study examining 2,709 HIV-positive individuals demonstrates a compelling association between concurrent medical conditions and antiretroviral therapy outcomes. Our observed treatment-failure prevalence of 19.5% is similar to rates reported in regional meta-analyses from Eastern Africa, where immunological failure among ART-treated adults was estimated at ~22%, (95% CI 15-29%) reported by Dessie et al., 2021. This suggests that our cohort’s failure rate is within the range observed in comparable resource-limited settings, supporting the representativeness of our findings.<sup>13</sup></p>
+    <p><bold>Multimorbid Disease Patterns and Cumulative Effects:</bold> Our study provides robust evidence of cumulative morbidity effect on ART efficacy. Patients with a greater number of simultaneous comorbidities showed exponentially higher odds of failure; for those with dual-plus comorbidity, the odds were 154% higher (aOR: 2.54, 95% CI: 1.88-3.42). The increase from 16.3% in disease free to 52.0% for triple comorbid people demonstrates pathological action beyond mere additive effects. The comparison of models with and without adherence demonstrated that a substantial proportion of the effect of tuberculosis, hepatitis B/C, and multimorbidity on ART failure is mediated through reduced adherence.</p>
+    <p>Our results are consistent with new evidence from LMICs on the rising impact of multimorbidity on HIV care outcomes. Emerging evidence from low- and middle-income countries indicates that people living with HIV (PLHIV) who have age-associated comorbidities for example, cardiovascular, renal, metabolic or other chronic non-communicable diseases (NCDs) are more likely to experience sub-optimal HIV treatment outcomes, such as virological or immunological failure. This growing burden of multimorbidity underscores the need for integrated care models that address comorbid conditions alongside HIV.<sup>11,14</sup> More recent analyses from India also highlight a growing burden of metabolic and non-communicable comorbidities among people living with HIV; this evolving multimorbidity may compromise long-term HIV care and underscores the need for integrated HIV-NCD services.<sup>15,16</sup> In line with these findings, our results highlight that multimorbidity significantly compromises the impact of first-line ART regimes in programme settings.</p>
+    <p><bold>Individual Comorbid Conditions and Therapeutic Outcomes:</bold> There are a number of possible biological and behavioural mechanisms that can account for why multimorbidity is associated with an increased risk of ART failure. Tuberculosis coinfection our best predictor of failure (aOR 1.88) leads to chronic immune activation, parallel disease progression between dual infections and kinetic alterations between antitubercular and antiretroviral agents as previously outlined by Tiberi et al<sup>17</sup> and Meintjes et al<sup>18</sup>. Concomitantly, chronic viral hepatitis also contributes to liver metabolic dysfunction and continued inflammation that together reduce the effectiveness of ART as reported by Griensven et al<sup>19</sup>. Patients with multiple comorbidities also receive a higher number of medications being used at the same time, which can make compliance difficult. The small attenuation of effect sizes on adjusting for adherence from our multivariable model also provides indirect evidence that adherence may be a partial mediator in these pathways.</p>
+    <p>Socio-demographic factors such as younger age, lower education, and low income/unstable earning have been shown to drive ART non-adherence in urban HIV care settings as posited by Sangeda et al.<sup>20</sup> The growing prevalence of comorbidities and multimorbidity among people living with HIV (PLHIV) forecast to reach around 70% by 2030 in the United States underscores that health systems will increasingly be required to manage more complex patients, as previously reported by Althoff and co-workers<sup>2</sup>. Adherence continued to be an important modifiable factor with failure risk decreasing by 4% per percentage point improved adherence; however, it decreased with increasing multimorbidity suggesting that a one-size-fits-all approach may not be appropriate. Innovative, patient-centred interventions such as digital adherence tools and peer mentoring approach need to be scaled up, in conjunction with simplified regimens although effective early diagnosis of HIV infection and prompt ART initiation are also important, with evidence that higher baseline CD4+ counts translated to improved outcome.</p>
+    <p>
+      <bold>STUDY LIMITATIONS</bold>
+    </p>
+    <p>Several methodological limitations constrain the interpretation of our results: the retrospective design does not permit establishment of causal inferences, and unmeasured confounding factors cannot be excluded. Single-center recruitment means that our results are potentially not generalizable across different types of healthcare settings and study populations. Furthermore, limitations of our data did not enable adjustment for antiretroviral regimen differences, treatment duration differences and detailed adherence measures.</p>
+    <p>
+      <bold>CONCLUSION</bold>
+    </p>
+    <p>In this large Indian public-sector cohort, we demonstrate a strong, dose-dependent increase in ART failure with accumulating tuberculosis, diabetes, and chronic viral hepatitis. Individuals with two or more of these comorbidities represent a high-risk group who need priority attention within national HIV programmes. Strengthened adherence counselling, routine screening and treatment for hepatitis, and differentiated service delivery models are essential in efforts to improve outcomes and deal with an increasing burden of multimorbidity among people living with HIV.</p>
+    <p>Future research should target prospective cohort design to assess longitudinal associations of comorbidity onset with treatment outcome. Prospective randomized controlled trials testing integrated care interventions for multimorbid patients with HIV are of high research concern and of considerable interest to the community in order for observational results to be translated into evidence-based practice.</p>
+    <p>
+      <bold>POLICY IMPLICATIONS</bold>
+    </p>
+    <p>These results have significant implications for the national HIV programme and health system planning in India. Given the rising prevalence of multimorbidity in people living with HIV, incorporation of comorbidity assessment into routine risk stratification at ART centres may help identify individuals likely to require intensified, comprehensive care a need underscored by recent reviews on HIV-multimorbidity, as per intensified service models proposed by Sukumaran et al.<sup>21</sup> Patients with two or more comorbidities would require priority of adherence reinforcement, the use of digital tools, and differentiated service delivery; systematic screening for hepatitis and diabetes at the time of ART initiation and follow-up should be promoted. Harmonized care cascade for PLHIV specially impacted by multi-morbidity, ageing and institutionalization should be promoted. Age-associated non-communicable diseases be added to the care cascade as they become part of routine longitudinal treatment monitoring.<sup>22</sup> Comprehensive researcher‐provider and policy discussions might help determine how best researchers can contribute to such programme efforts. The implications for future policy and service delivery initiatives are that holistic, patient-centred care pathways targeting the range of chronic conditions simultaneously to improve long-term outcomes.</p>
+    <p><bold>Individual Authors’ Contributions: NPH</bold> was responsible for conceptualization, methodology, investigation, data curation, formal analysis, and drafting the original manuscript. <bold>PRW</bold> provided supervision, validation, resources, project administration, and contributed to reviewing and editing the manuscript. <bold>SB</bold> contributed to software development, data curation, formal analysis, visualization, and modelling.</p>
+    <p><bold>Availability of Data:</bold> De-identified data collected and analysed during this study are available from the corresponding author on reasonable request.</p>
+    <p><bold>Declaration of Non-use of Generative AI Tools:</bold> This article was prepared without the use of generative AI tools for content creation, analysis, or data generation. All findings and interpretations are based solely on the authors' independent work and expertise.</p>
+    <p>
+      <bold>REFERENCES</bold>
+    </p>
+    <list list-type="order">
+      <list-item>
+        <p>UNAIDS. Global HIV &amp; AIDS statistics Fact sheet 2024. Geneva: Joint United Nations Programme on HIV/AIDS; 2024. Available from: https://www.unaids.org/en/resources/fact-sheet [Accessed on December 01, 2025]</p>
+      </list-item>
+      <list-item>
+        <p>Althoff KN, Stewart C, Humes E, Gerace L, Boyd C, Gebo K, Justice AC, . The forecasted prevalence of comorbidities and multimorbidity in people with HIV in the United States through the year 2030: A modeling study. PLoS Med. 2024 Jan 12;21(1):e1004325. DOI: https://doi.org/10.1371/journal. pmed.1004325 PMID: 38215160 PMCID: PMC10833859</p>
+      </list-item>
+      <list-item>
+        <p>Zerihun E, Tesema K, Abera F. Virological treatment failure and associated factors among adults on first-line antiretroviral therapy in West Hararghe, Ethiopia. Front Public Health. 2025 Jun 2;13:1440504. DOI: https://doi.org/10.3389/fpubh.2025. 1440504 PMid:40529669 PMCid:PMC12171124</p>
+      </list-item>
+      <list-item>
+        <p>Ross JL, Rupasinghe D, Chanyachukul T, Crabtree Ramírez B, Murenzi G, Kwobah E, et al. Comorbidities and HIV-related factors associated with mental health symptoms and unhealthy substance use among older adults living with HIV in low- and middle-income countries: a cross-sectional study. J Int AIDS Soc. 2025;28(3):e26434. DOI: https://doi.org/10.1002/ jia2.26434 PMid:40045453 PMCid:PMC11882396</p>
+      </list-item>
+      <list-item>
+        <p>McCutcheon K, Nqebelele U, Murray L, Thomas TS, Mpanya D, Tsabedze N. Cardiac and Renal Comorbidities in Aging People Living With HIV. Circ Res. 2024 May 24;134(11):1636-1660. DOI: https://doi.org/10.1161/CIRCRESAHA.124.323948</p>
+      </list-item>
+      <list-item>
+        <p>Weber MSR, Duran Ramirez JJ, Hentzien M, Cavassini M, Bernasconi E, Hofmann E, et. al; Swiss HIV Cohort Study. Time trends in causes of death in people with HIV: insights from the Swiss HIV Cohort Study. Clin Infect Dis. 2024;79(1):177-188. DOI: https://doi.org/10.1093/cid/ciae014 PMid:38214897 PMCid:PMC11259222</p>
+      </list-item>
+      <list-item>
+        <p>Giri S, Sahu P, Kanungo S, Bal HB, Kumar S, Kar S, Mohanty T, Turuk J, Das D, Hota PK, Pati S. Diabetes mellitus and human immunodeficiency virus (HIV) infection in people with tuberculosis in Odisha, India. Indian J Tuberc. 2024;71(2):147-152. DOI: https://doi.org/10.1016/j.ijtb.2023.04.021</p>
+      </list-item>
+      <list-item>
+        <p>World Health Organization. Module 6: Tuberculosis and comorbidities [Internet]. Geneva: World Health Organization; 2024. Available from: https://www.who.int/publications/i/ item/9789240087002. [Accessed on December 05, 2025]</p>
+      </list-item>
+      <list-item>
+        <p>Prakoeswa FRS, Maharani F, Bestari RS, et al. Aging and HIV: Recent Findings in Contributing Factors. AIDS Res Treat. 2025 Apr 11;2025:8814760. DOI: https://doi.org/10.1155/arat/ 8814760 PMID: 40255985 PMCID: PMC12008487</p>
+      </list-item>
+      <list-item>
+        <p>World Health Organization. Fact Sheet: HIV Drug Resistance. 2025. Available from: https://www.who.int/news-room/fact-sheets/detail/hiv-drug-resistance [Accessed on December 01, 2025]</p>
+      </list-item>
+      <list-item>
+        <p>Ahn MY, Jiamsakul A, Khusuwan S, Khol V, Pham TT, Chaiwarith R, et. Al, The influence of age-associated comorbidities on responses to combination antiretroviral therapy in older people living with HIV. J Int AIDS Soc. 2019 Feb;22(2):e25228. DOI: https://doi.org/10.1002/jia2.25228 PMid:30803162 PMCid:PMC6389354</p>
+      </list-item>
+      <list-item>
+        <p>Assemie MA, Alene M, Ketema DB, Mulatu S. Treatment failure and associated factors among first line patients on highly active antiretroviral therapy in Ethiopia: a systematic review and meta-analysis. Glob Health Res Policy. 2019;4:32. DOI: https://doi.org/10.1186/s41256-019-0120-4 PMid:31687474 PMCid:PMC6820995</p>
+      </list-item>
+      <list-item>
+        <p>Dessie G, Mulugeta H, Wagnew F, Zegeye A, Kiross D, et al. Immunological treatment failure among adult patients receiving highly active antiretroviral therapy in East Africa: a systematic review and meta-analysis. Curr Ther Res Clin Exp. 2021;94:100621. DOI: https://doi.org/10.1016/j.curtheres. 2020.100621 PMid:34306262 PMCid:PMC8296083</p>
+      </list-item>
+      <list-item>
+        <p>Abie A, Damessa M. The influence of age-associated comorbidities on responses to combination antiretroviral therapy among people living with HIV at the ART clinic of Jimma Medical Center, Ethiopia: A hospital-based nested case-control study. HIV AIDS (Auckl). 2023;15:457-475. DOI: https://doi. org/10.2147/HIV.S421523 PMid:37583543</p>
+      </list-item>
+      <list-item>
+        <p>Hamid S, Badyal A, Sumberia V. Point prevalence of metabolic syndrome in HIV positive patients. J Family Med Prim Care. 2024 Apr;13(4):1328-1332. DOI: https://doi.org/10.4103/ jfmpc.jfmpc_1237_23 PMID: 38827683 PMCID: PMC11141984</p>
+      </list-item>
+      <list-item>
+        <p>Sakthivel M, Jayaseelan V, Chinnakali P, Hamide A, Surendran G, Krishnamoorthy Y. Prevalence of Selected Cardiovascular Risk Factors and Their Associated Factors among People Living with HIV/AIDS in India. Indian J Community Med. 2024 Mar-Apr;49(2):308-315. DOI: https://doi.org/10.4103/ijcm. ijcm_583_22 PMID: 38665444 PMCID: PMC11042137</p>
+      </list-item>
+      <list-item>
+        <p>Tiberi S, du Plessis N, Walzl G, Vjecha MJ, et al. Tuberculosis: progress and advances in development of new drugs, treatment regimens, and host-directed therapies. Lancet Infect Dis. 2018 Jul;18(7):e183-e198. DOI: https://doi.org/10.1016/ S1473-3099(18)30110-5. Erratum in: Lancet Infect Dis. 2018 Jun;18(6):598. DOI: https://doi.org/10.1016/S1473-3099(18)30283-4. PMID: 29580819.</p>
+      </list-item>
+      <list-item>
+        <p>Meintjes G, Stek C, Blumenthal L, Thienemann F, Schutz C, Buyze J, Ravinetto R, van Loen H, Nair A, Jackson A, Colebunders R, Maartens G, Wilkinson RJ, Lynen L; PredART Trial Team. Prednisone for the Prevention of Paradoxical Tuberculosis-Associated IRIS. N Engl J Med. 2018 Nov 15;379(20): 1915-1925. DOI: https://doi.org/10.1056/NEJMoa1800762 PMid:30428290</p>
+      </list-item>
+      <list-item>
+        <p>van Griensven J, Phirum L, Choun K, Thai S, De Weggheleire A, Lynen L. Hepatitis B virus and Hepatitis C virus co-infection among HIV-infected adults on antiretroviral treatment: long-term survival, CD4 cell count recovery and ART-related hepatotoxicity in Cambodia. PLoS One. 2014;9(2):e88552. DOI: https://doi.org/10.1371/journal.pone.0088552 PMid:24533106 PMCid:PMC3922870</p>
+      </list-item>
+      <list-item>
+        <p>Sangeda RZ, Mosha F, Aboud S, Kamuhabwa A, Chalamilla G, Vercauteren J, et al. Predictors of non-adherence to antiretroviral therapy at an urban HIV care and treatment center in Tanzania. Drug Healthc Patient Saf. 2018;10:79-88. DOI: https://doi.org/10.2147/DHPS.S143178 PMid:30174460</p>
+      </list-item>
+      <list-item>
+        <p>Sukumaran L, Sabin CA. Defining multimorbidity in people with HIV what matters most? Curr Opin HIV AIDS. 2023;18(2): 59-67. DOI: 10.1097/COH.0000000000000778</p>
+      </list-item>
+      <list-item>
+        <p>McCombe G, Lim J, Van Hout MC, Lazarus JV, Bachmann M, Jaffar S, et al. Integrating Care for Diabetes and Hypertension with HIV Care in Sub-Saharan Africa: A Scoping Review. Int J Integr Care. 2022;22(1):6. DOI: https://doi.org/10.5334/ ijic.5839 PMid:35136387 PMCid:PMC8815447</p>
+      </list-item>
+    </list>
+  </body>
+  <back>
+</back>
+</article>
