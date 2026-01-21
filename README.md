@@ -1,72 +1,667 @@
-# OmniJAX - JATS 1.4 Publishing DTD Converter
+# OmniJAX - Document Converter for Scientific Publications
 
-Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM compliance.
+## What is OmniJAX?
 
-## Official Standards Compliance
+OmniJAX is a tool that converts your Microsoft Word documents into professional formats required for publishing scientific articles in academic journals and digital libraries. Think of it as a translator that takes your familiar Word document and converts it into specialized formats that publishers need, while ensuring everything meets strict formatting standards.
+
+**In simple terms:** Upload your Word document → Get publication-ready files that meet journal requirements.
+
+## Who Should Use This Tool?
+
+- **Researchers & Authors**: Submit manuscripts to journals without worrying about complex formatting requirements
+- **Publishers**: Convert submitted manuscripts to standardized formats for your digital library
+- **Academic Institutions**: Prepare research papers and dissertations for institutional repositories
+- **Students**: Format thesis and research papers according to publication standards
+
+## Glossary - Understanding the Technical Terms
+
+Before diving into the details, here are the key terms you'll encounter:
+
+| Term | Simple Explanation |
+|------|-------------------|
+| **JATS** (Journal Article Tag Suite) | A standardized format for scientific articles. Think of it like HTML but specifically designed for research papers. It ensures your article can be properly displayed and searched in digital libraries. |
+| **PMC** (PubMed Central) | A free digital library run by the US National Institutes of Health that hosts biomedical and life sciences research. It requires articles to be submitted in specific formats. |
+| **XML** (eXtensible Markup Language) | A structured format for organizing information, similar to HTML. It uses tags like `<title>` and `<author>` to mark up different parts of your document. |
+| **DTD** (Document Type Definition) | A set of rules that define what's allowed in an XML document, like a grammar book for documents. |
+| **XSD** (XML Schema Definition) | Another way to define rules for XML documents, more modern than DTD. |
+| **PDF** (Portable Document Format) | The familiar format that looks the same on any device. OmniJAX creates publication-quality PDFs from your document. |
+| **Validation** | The process of checking if your document follows all the required rules and standards. |
+| **Metadata** | Information about your article (like title, authors, publication date) that helps people find and cite it. |
+
+## Why Use OmniJAX?
+
+### For Non-Technical Users
+- ✅ **Easy to Use**: Simply upload your Word document and download the converted files
+- ✅ **No Formatting Expertise Needed**: The tool automatically handles complex formatting requirements
+- ✅ **Time Saving**: No manual reformatting or learning complex XML editors
+- ✅ **Error Prevention**: Automatic validation ensures your submission meets journal requirements
+- ✅ **Multiple Outputs**: Get several versions of your document for different purposes
+
+### For Technical Users
+- ✅ **Standards Compliant**: Full JATS 1.4 and PMC compliance
+- ✅ **Automated Validation**: Built-in validation against official schemas
+- ✅ **Extensible Pipeline**: Modular Python architecture for customization
+- ✅ **Multiple Output Formats**: XML, PDF, and HTML generation
+- ✅ **API Access**: RESTful API for integration with other systems
+
+## Quick Start Guide
+
+### Step 1: Access the Tool
+
+**Using the Web Interface** (Easiest for most users):
+1. Open your web browser
+2. Navigate to the OmniJAX website (URL provided by your administrator)
+3. You'll see a simple upload interface
+
+**Using the Command Line** (For technical users):
+```bash
+python app.py
+# Then open http://localhost:8080 in your browser
+```
+
+### Step 2: Upload Your Document
+
+1. Click the "Choose File" button or drag-and-drop your Word document onto the page
+2. Supported format: Microsoft Word (.docx) files
+3. Maximum file size: 50 MB
+4. Click "Convert & Download Package"
+
+### Step 3: Monitor Progress
+
+The tool will show you a progress bar with updates like:
+- "Processing document..." (0-20%)
+- "Converting to JATS XML..." (20-40%)
+- "Generating PDFs..." (40-80%)
+- "Validating output..." (80-100%)
+
+This usually takes 30 seconds to 2 minutes depending on document size.
+
+### Step 4: Download Your Results
+
+Once complete (100%), click "Download Package" to get a ZIP file containing:
+
+#### What You Get (For Non-Technical Users)
+- 📄 **published_article.pdf** - A professionally formatted PDF ready for publication
+- 📄 **direct_from_word.pdf** - A PDF that looks like your original Word document
+- 📄 **README.txt** - Explains what each file is for
+
+#### What You Get (For Technical Users)
+- 📄 **article.xml** - JATS XML for schema validation (XSD-compliant)
+- 📄 **articledtd.xml** - JATS XML for PMC submission (DTD-compliant)
+- 📄 **published_article.pdf** - PDF generated from JATS XML with PMC styling
+- 📄 **direct_from_word.pdf** - Direct DOCX to PDF conversion
+- 📄 **article.html** - HTML version with embedded images
+- 📁 **media/** - All extracted images from your document
+- 📄 **validation_report.json** - Detailed validation results
+- 📄 **README.txt** - Package documentation
+
+## Visual Workflow
+
+```
+┌─────────────────────┐
+│  Your Word Document │
+│    (article.docx)   │
+└──────────┬──────────┘
+           │
+           │ Upload to OmniJAX
+           ▼
+┌──────────────────────┐
+│   OmniJAX Converter  │
+│                      │
+│  • Reads content     │
+│  • Structures data   │
+│  • Applies standards │
+│  • Validates format  │
+└──────────┬───────────┘
+           │
+           │ Generates multiple outputs
+           ▼
+┌──────────────────────────────────────────────┐
+│           Publication-Ready Files             │
+├──────────────────────────────────────────────┤
+│                                               │
+│  ├─ published_article.pdf (Main PDF)         │
+│  │  Professional, journal-ready format       │
+│  │                                            │
+│  ├─ direct_from_word.pdf (Original look)     │
+│  │  Preserves your Word formatting           │
+│  │                                            │
+│  ├─ article.xml (For validation)             │
+│  │  Technical format for quality checks      │
+│  │                                            │
+│  ├─ articledtd.xml (For PMC submission)      │
+│  │  Format required by PubMed Central        │
+│  │                                            │
+│  └─ validation_report.json (Quality report)  │
+│     Shows what passed and what needs review  │
+│                                               │
+└───────────────────────────────────────────────┘
+```
+
+## Common Use Cases
+
+### Use Case 1: Submitting to PubMed Central (PMC)
+**Goal**: Submit your biomedical research article to PMC
+
+**Steps**:
+1. Upload your Word manuscript to OmniJAX
+2. Download the converted package
+3. Review the `validation_report.json` to see if any issues were found
+4. Upload `articledtd.xml` to the [PMC Style Checker](https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/)
+5. If validation passes, submit to PMC
+6. If there are warnings, review and fix them in your original Word document, then re-convert
+
+### Use Case 2: Creating a Publication-Ready PDF
+**Goal**: Get a professionally formatted PDF of your article
+
+**Steps**:
+1. Upload your Word document to OmniJAX
+2. Download the converted package
+3. Use `published_article.pdf` - this has professional styling with proper tables, figures, and formatting
+4. This PDF follows publication standards and looks great for sharing or printing
+
+### Use Case 3: Preparing for Journal Submission
+**Goal**: Submit to a journal that requires JATS XML format
+
+**Steps**:
+1. Upload your manuscript to OmniJAX
+2. Download the package
+3. Submit `article.xml` to your journal's submission system
+4. Include `published_article.pdf` as a preview version
+5. The journal can validate your XML against their requirements
+
+## Features Overview
+
+### What OmniJAX Does Automatically
+
+#### 1. **Document Structure Analysis**
+The tool reads your Word document and identifies:
+- Title and authors
+- Abstract and keywords
+- Main sections (Introduction, Methods, Results, etc.)
+- Tables and figures
+- References
+- Acknowledgments
+
+#### 2. **Format Conversion**
+Converts your document into multiple professional formats:
+- **JATS XML**: The standard format for scientific articles
+- **PDF**: Two versions - one publication-ready, one that looks like your original
+- **HTML**: Web-friendly version with images
+
+#### 3. **Quality Checking**
+Automatically validates that your converted document:
+- Meets JATS 1.4 standards (the current version of the scientific article format)
+- Follows PMC requirements (if you're submitting to PubMed Central)
+- Has proper structure (sections, metadata, citations)
+- Contains all required elements
+
+#### 4. **Smart Formatting**
+The tool enhances your document with:
+- Professional table styling (borders, colors, spacing)
+- Proper figure sizing and alignment
+- Correct reference formatting
+- Standardized metadata (author info, publication details)
+
+#### 5. **Transparency Highlighting**
+Any content added by the tool for compliance is highlighted in yellow with a 📋 icon, so you can:
+- See exactly what was added versus what was in your original document
+- Review and update these sections with your specific information
+- Understand why certain elements were added
+
+### What Makes OmniJAX Special
+
+#### Smart Content Repair
+If your document is missing required elements (like an abstract or specific metadata), OmniJAX can:
+- Detect what's missing
+- Add placeholder content that meets requirements
+- Highlight these additions so you can review them
+- Ensure your document passes validation
+
+#### Multiple Output Versions
+Different users need different things:
+- **Researchers**: Get publication-ready PDFs
+- **Publishers**: Get validated JATS XML
+- **Reviewers**: Get easy-to-read HTML versions
+- **Archives**: Get properly structured XML for long-term preservation
+
+#### Real-Time Progress Tracking
+Watch the conversion happen:
+- See exactly what step is running
+- Know how long it will take
+- Get immediate feedback if something goes wrong
+
+## Understanding Your Output Files
+
+### For Non-Technical Users - Which File Should I Use?
+
+| File Name | What It's For | When to Use It |
+|-----------|---------------|----------------|
+| `published_article.pdf` | Main publication-ready PDF | Sharing with colleagues, submitting to journals, posting online |
+| `direct_from_word.pdf` | PDF that looks like your Word doc | Quick preview, informal sharing |
+| `validation_report.json` | Quality check results | See if there are any issues to fix |
+| `README.txt` | File descriptions | Learn what each file does |
+
+### For Technical Users - File Specifications
+
+| File Name | Format | Purpose | Standards |
+|-----------|--------|---------|-----------|
+| `article.xml` | JATS XML 1.4 | Schema validation, XSD tools | No DOCTYPE, includes xsi:schemaLocation |
+| `articledtd.xml` | JATS XML 1.4 | PMC submission, DTD validation | Includes DOCTYPE declaration |
+| `published_article.pdf` | PDF | Publication output | PMC-compliant styling |
+| `direct_from_word.pdf` | PDF | Format preservation | LibreOffice/Pandoc conversion |
+| `article.html` | HTML5 | Web display | W3C compliant |
+| `media/` | Images | Extracted figures | Referenced from HTML/XML |
+| `validation_report.json` | JSON | Validation results | JATS/PMC compliance report |
+
+## Advanced Usage
+
+### For Developers: Using the API
+
+OmniJAX provides a RESTful API for integration with other systems:
+
+#### Start a Conversion
+```bash
+curl -X POST -F "file=@document.docx" http://localhost:8080/convert
+```
+
+Response:
+```json
+{
+  "conversion_id": "20260120_103000_abcd1234",
+  "status": "queued",
+  "message": "Conversion started"
+}
+```
+
+#### Check Progress
+```bash
+curl http://localhost:8080/status/20260120_103000_abcd1234
+```
+
+Response:
+```json
+{
+  "status": "processing",
+  "progress": 40,
+  "message": "Validating JATS XML",
+  "filename": "document.docx"
+}
+```
+
+#### Download Results
+```bash
+curl -O http://localhost:8080/download/20260120_103000_abcd1234
+```
+
+### For Programmers: Using the Python Library
+
+```python
+from MasterPipeline import HighFidelityConverter
+
+# Initialize with your Word document
+converter = HighFidelityConverter('path/to/document.docx')
+
+# Run the complete conversion
+converter.run()
+
+# All outputs are saved in the output directory
+print(f"Files generated in: {converter.output_dir}")
+```
+
+#### Step-by-Step Processing
+
+```python
+from MasterPipeline import HighFidelityConverter
+
+converter = HighFidelityConverter('document.docx')
+
+# Step 1: Convert to JATS XML
+converter.convert_to_jats()  # Creates article.xml
+
+# Step 2: Validate the XML
+converter.validate_jats()     # Checks against JATS schema
+
+# Step 3: Add PMC compliance
+converter.add_doctype()       # Creates articledtd.xml
+
+# Step 4: Generate HTML
+converter.convert_to_html()   # Creates article.html + media/
+
+# Step 5: Generate PDFs
+converter.convert_to_pdf()    # Creates published_article.pdf
+converter.direct_pdf()        # Creates direct_from_word.pdf
+
+# Step 6: Run all validations
+converter.validate_all()      # Creates validation_report.json
+```
+
+## Troubleshooting Common Issues
+
+### Issue 1: "Conversion Failed" Error
+**Possible Causes:**
+- Word document is corrupted
+- File is too large (>50 MB)
+- Document contains unsupported elements
+
+**Solutions:**
+1. Try opening and re-saving your Word document
+2. Reduce file size by compressing images
+3. Remove any embedded objects that might cause issues
+4. Check the error message for specific details
+
+### Issue 2: "Validation Warnings" in Report
+**What It Means:**
+Your document converted successfully, but some elements don't perfectly match publication standards.
+
+**Solutions:**
+1. Open `validation_report.json` to see specific warnings
+2. Most warnings are minor and don't prevent submission
+3. For critical issues, update your Word document and re-convert
+4. Consult your target journal's submission guidelines
+
+### Issue 3: Yellow Highlighted Content in PDF
+**What It Means:**
+The tool added these elements to meet formatting requirements.
+
+**Solutions:**
+1. Review each highlighted section
+2. Replace placeholder text with your actual information
+3. If an element isn't needed, note it in your submission
+4. This is normal and helps ensure compliance
+
+### Issue 4: Progress Bar Stuck
+**Possible Causes:**
+- Very large document taking time to process
+- Server is busy
+- Network connection issue
+
+**Solutions:**
+1. Wait a few more minutes (large documents can take 2-5 minutes)
+2. Refresh the page and check if conversion completed
+3. Try uploading again
+4. Check your internet connection
+
+### Issue 5: Downloaded ZIP File is Empty
+**Possible Causes:**
+- Conversion hasn't finished yet
+- Download interrupted
+
+**Solutions:**
+1. Wait for progress to reach 100% before downloading
+2. Try downloading again
+3. Check your downloads folder for previous attempts
+4. Disable download managers that might interfere
+
+## Technical Requirements
+
+### For Running OmniJAX Yourself
+
+If you want to install and run OmniJAX on your own system:
+
+**System Requirements:**
+- Operating System: Linux, macOS, or Windows with WSL2
+- RAM: At least 4GB (8GB recommended)
+- Disk Space: 2GB free
+- Internet connection for initial setup
+
+**Software Requirements:**
+- Python 3.11 or newer
+- Pandoc 3.x (document converter)
+- WeasyPrint (PDF generator)
+- LibreOffice (optional, for better PDF conversion)
+
+**Detailed Setup:**
+See [SETUP.md](SETUP.md) for complete installation instructions.
+
+## Understanding Validation Reports
+
+When you convert a document, OmniJAX generates a `validation_report.json` file. Here's what it tells you:
+
+### Report Structure (Simplified)
+
+```json
+{
+  "jats_validation": {
+    "status": "PASS",
+    "message": "Your XML meets JATS 1.4 standards ✓"
+  },
+  "pmc_compliance": {
+    "status": "PASS",
+    "message": "Ready for PMC submission ✓",
+    "warnings": [
+      "Consider adding keywords for better searchability"
+    ]
+  },
+  "document_structure": {
+    "tables": 3,
+    "figures": 5,
+    "references": 25,
+    "sections": 6
+  }
+}
+```
+
+### What Each Status Means
+
+- **PASS**: Everything is good! Your document meets all requirements.
+- **WARNING**: Document converted successfully, but there are suggestions for improvement. Usually safe to proceed.
+- **FAIL**: There are critical issues that need to be fixed before submission.
+
+### Common Warnings (And What to Do)
+
+| Warning | What It Means | Action Needed |
+|---------|---------------|---------------|
+| "Missing keywords" | Your article should have keywords for searchability | Add keywords to your Word document |
+| "Author affiliation incomplete" | Author institution info is partial | Add full institution details |
+| "Figure caption needs alt text" | Figures need descriptions for accessibility | Add descriptive captions |
+| "Reference formatting inconsistent" | Citations aren't uniform | Check reference list formatting |
+| "DOI placeholder detected" | Article needs a real DOI | Get DOI from publisher or leave for now |
+
+## Submitting to Publishers
+
+### PMC (PubMed Central) Submission Workflow
+
+1. **Convert your document** with OmniJAX
+2. **Review validation report** - Open `validation_report.json` and check for any critical issues
+3. **Test with PMC Style Checker**:
+   - Go to: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+   - Upload `articledtd.xml` (not article.xml)
+   - Review results
+4. **Fix any errors** in your original Word document and re-convert
+5. **Submit to PMC** using their online system
+6. **Include both**:
+   - `articledtd.xml` (the XML file)
+   - `published_article.pdf` (for preview)
+
+### General Journal Submission
+
+Different journals have different requirements:
+
+1. **Check journal guidelines** - See what format they want (XML, PDF, or both)
+2. **Use the appropriate file**:
+   - JATS XML required? → Use `article.xml`
+   - PDF only? → Use `published_article.pdf`
+   - PMC/NLM compliance needed? → Use `articledtd.xml`
+3. **Include supplementary materials**:
+   - Upload images from `media/` folder if requested
+   - Attach `validation_report.json` if journal wants proof of validation
+
+## Frequently Asked Questions (FAQ)
+
+### General Questions
+
+**Q: Is OmniJAX free to use?**
+A: OmniJAX is open-source software. Your institution or organization may provide access, or you can install it on your own server.
+
+**Q: What types of documents work best?**
+A: Research articles, review papers, case studies, and technical reports. The document should have a clear structure with sections like Introduction, Methods, Results, etc.
+
+**Q: Can I convert multiple documents at once?**
+A: Currently, you need to convert one document at a time. For batch processing, use the API or Python library.
+
+**Q: How long does conversion take?**
+A: Usually 30 seconds to 2 minutes, depending on document size and complexity. Large documents with many images may take up to 5 minutes.
+
+**Q: Is my document data kept private?**
+A: Check with your system administrator. In a self-hosted setup, all data stays on your server.
+
+### Compatibility Questions
+
+**Q: Does it work with older Word formats (.doc)?**
+A: OmniJAX requires .docx format (Word 2007 and newer). To convert .doc files:
+1. Open in Microsoft Word
+2. Save As → Word Document (.docx)
+3. Then use OmniJAX
+
+**Q: Can I convert Google Docs?**
+A: Yes, but you need to download first:
+1. In Google Docs: File → Download → Microsoft Word (.docx)
+2. Upload the downloaded .docx file to OmniJAX
+
+**Q: What about LibreOffice or OpenOffice documents?**
+A: Save your document as .docx format first, then use OmniJAX.
+
+### Output Questions
+
+**Q: Why are there two PDF files?**
+A: 
+- `published_article.pdf` - Professional format following publication standards
+- `direct_from_word.pdf` - Looks like your original Word document
+
+Use whichever suits your needs!
+
+**Q: What's the difference between article.xml and articledtd.xml?**
+A: Both have the same content, but:
+- `article.xml` - For general XML validation and modern tools
+- `articledtd.xml` - Required for PMC Style Checker and PMC submission
+
+**Q: Can I edit the XML files?**
+A: Yes, but you'll need an XML editor. For most users, it's easier to edit the Word document and re-convert.
+
+### Problem-Solving Questions
+
+**Q: The PDF doesn't look right. What should I do?**
+A: 
+1. Check `direct_from_word.pdf` - does it look better?
+2. If the Word doc looks wrong, fix formatting there first
+3. Re-upload and convert again
+4. If issues persist, check if your Word doc has unusual formatting
+
+**Q: Validation failed. Can I still submit?**
+A: Depends on the error:
+- **Warnings**: Usually okay to proceed, but review them
+- **Critical errors**: Need to fix before submission
+- Check your target journal's requirements
+
+**Q: Why is some text highlighted in yellow?**
+A: This shows content that OmniJAX added to meet formatting standards. Review and update these sections with your actual information.
+
+## Getting Help
+
+### Documentation Resources
+- **This README**: Overview and user guide
+- **SETUP.md**: Installation instructions
+- **TESTING_GUIDE.md**: For developers and testers
+
+### External Resources
+- **JATS Website**: https://jats.nlm.nih.gov/ - Learn about the JATS standard
+- **PMC Guidelines**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/ - PMC formatting requirements
+- **PMC Style Checker**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/ - Validate your XML
+
+### Support
+For technical support:
+1. Check the troubleshooting section above
+2. Review the validation report for specific errors
+3. Contact your system administrator
+4. For development issues, check the project repository
+
+## Contributing and Development
+
+Interested in improving OmniJAX or adapting it for your needs?
+
+### For Developers
+- **Repository**: View the source code and contribute
+- **Testing**: See TESTING_GUIDE.md for how to run tests
+- **Architecture**: The tool is built in Python with a modular pipeline
+
+### Feature Requests
+If you need additional features:
+1. Check if there's an existing issue
+2. Create a new feature request with use case
+3. Consider contributing code if you have the skills
+
+---
+
+## Technical Details Section
+
+*The following sections contain detailed technical information for advanced users, developers, and system administrators.*
+
+### Official Standards Compliance
 
 - **JATS 1.4 Publishing DTD**: https://public.nlm.nih.gov/projects/jats/publishing/1.4/
 - **PMC Tagging Guidelines**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
 - **PMC Style Checker**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
 
-## Features
+### Detailed Feature List
 
-1. **JATS 1.4 Publishing DTD Compliance**
-   - Validates against official NLM XSD schemas
-   - Full PMC/NLM Style Checker compatibility
-   - Proper namespace declarations (XLink, MathML)
-   - xsi:schemaLocation injection for external validators
-   - MathML 2.0/3.0 support
+#### 1. JATS 1.4 Publishing DTD Compliance
+- Validates against official NLM XSD schemas
+- Full PMC/NLM Style Checker compatibility
+- Proper namespace declarations (XLink, MathML)
+- xsi:schemaLocation injection for external validators
+- MathML 2.0/3.0 support
 
-2. **PMC-Specific Validation**
-   - Automated PMC requirements checking
-   - Integrated PMC Style Checker XSLT validation
-   - DOI and metadata validation
-   - Author affiliation structure verification
-   - Table positioning (float/anchor)
-   - Figure and caption compliance
-   - Reference formatting validation
+#### 2. PMC-Specific Validation
+- Automated PMC requirements checking
+- Integrated PMC Style Checker XSLT validation
+- DOI and metadata validation
+- Author affiliation structure verification
+- Table positioning (float/anchor)
+- Figure and caption compliance
+- Reference formatting validation
 
-3. **Enhanced Professional PDF Styling**
-   - **Professional Table Styles**: Enhanced borders, colors, and spacing for better readability
-     - Alternating row colors for improved visual clarity
-     - Professional header styling with subtle blue accents
-     - Optimized padding and spacing for clean presentation
-     - Smaller table font size (10pt) for better content fit
-   - **Optimized Margins**: Further reduced left/right margins (0.5in) for better space utilization
-   - **Enhanced Font Handling**: CSS variables for consistent font usage across document
-     - Primary font stack: Liberation Serif, Times New Roman, DejaVu Serif
-     - Header font stack: Liberation Sans, Arial, Helvetica
-   - **Enhanced Image Handling**: Proper sizing and alignment with automatic aspect ratio preservation
-   - **Compliance Text Highlighting**: Visual indicators for DTD/PMC compliance additions
+#### 3. Enhanced Professional PDF Styling
+- **Professional Table Styles**: Enhanced borders, colors, and spacing for better readability
+  - Alternating row colors for improved visual clarity
+  - Professional header styling with subtle blue accents
+  - Optimized padding and spacing for clean presentation
+  - Smaller table font size (10pt) for better content fit
+- **Optimized Margins**: Further reduced left/right margins (0.5in) for better space utilization
+- **Enhanced Font Handling**: CSS variables for consistent font usage across document
+  - Primary font stack: Liberation Serif, Times New Roman, DejaVu Serif
+  - Header font stack: Liberation Sans, Arial, Helvetica
+- **Enhanced Image Handling**: Proper sizing and alignment with automatic aspect ratio preservation
+- **Compliance Text Highlighting**: Visual indicators for DTD/PMC compliance additions
 
-4. **Asynchronous Conversion with Progress Tracking**
-   - Real-time progress updates during conversion
-   - Non-blocking file uploads
-   - Status polling via REST API
-   - Separate download endpoint for completed conversions
-   - Modern drag-and-drop UI with progress bar
+#### 4. Asynchronous Conversion with Progress Tracking
+- Real-time progress updates during conversion
+- Non-blocking file uploads
+- Status polling via REST API
+- Separate download endpoint for completed conversions
+- Modern drag-and-drop UI with progress bar
 
-5. **Dual PDF Generation**
-   - PDF from JATS XML (semantic, PMC-ready)
-   - Direct DOCX→PDF (format preserving)
+#### 5. Dual PDF Generation
+- PDF from JATS XML (semantic, PMC-ready)
+- Direct DOCX→PDF (format preserving)
 
-6. **AI-Powered Content Repair and Formatting**
-   - Fixes truncated headers
-   - Ensures PMC metadata requirements
-   - Validates accessibility compliance
-   - Proper author formatting with affiliations
-   - Special character encoding
-   - Professional content formatting for consistency
-   - **Compliance Text Marking**: AI-added content for compliance is automatically marked
+#### 6. AI-Powered Content Repair and Formatting
+- Fixes truncated headers
+- Ensures PMC metadata requirements
+- Validates accessibility compliance
+- Proper author formatting with affiliations
+- Special character encoding
+- Professional content formatting for consistency
+- **Compliance Text Marking**: AI-added content for compliance is automatically marked
 
-7. **Automatic Features**
-   - Table captions with proper positioning
-   - Media extraction to `/media` folder
-   - Superscript/subscript preservation
-   - Section ID generation
-   - Comprehensive validation reporting
+#### 7. Automatic Features
+- Table captions with proper positioning
+- Media extraction to `/media` folder
+- Superscript/subscript preservation
+- Section ID generation
+- Comprehensive validation reporting
 
-## Project Structure
+### Project Structure
 
 ```
 .
@@ -90,9 +685,9 @@ Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM
     └── direct_pdf_converter.py # Direct PDF conversion utility
 ```
 
-## JATS 1.4 and PMC Compliance Features
+### JATS 1.4 and PMC Compliance Features
 
-### Required Elements for PMC Submission
+#### Required Elements for PMC Submission
 
 The converter ensures all PMC-required elements are present:
 
@@ -123,7 +718,7 @@ The converter ensures all PMC-required elements are present:
    - Author contributions
    - Funding information
 
-### PMC Validation Checks
+#### PMC Validation Checks
 
 The pipeline performs comprehensive PMC compliance checks:
 
@@ -136,7 +731,7 @@ The pipeline performs comprehensive PMC compliance checks:
 - Section ID attributes
 - Special character encoding
 
-### Table Formatting
+#### Table Formatting
 
 Tables are formatted according to PMC requirements with enhanced professional styling:
 
@@ -156,7 +751,7 @@ Tables are formatted according to PMC requirements with enhanced professional st
 - Word-wrap handling for long content
 - All styling preserves PMC/DTD compliance and does not alter content
 
-### Figure Formatting
+#### Figure Formatting
 
 Figures include enhanced sizing and alignment:
 - Unique ID attributes
@@ -167,12 +762,12 @@ Figures include enhanced sizing and alignment:
 - **Aspect Ratio Preservation**: `object-fit: contain` ensures proper proportions
 - **Professional Alignment**: Centered with optimized margins for clean presentation
 
-## Compliance Text Highlighting
+### Compliance Text Highlighting
 
-### Overview
+#### Overview
 To ensure transparency and facilitate review, any text or elements added by the AI system specifically for DTD/PMC compliance are automatically highlighted in the generated PDF output.
 
-### How It Works
+#### How It Works
 1. **AI Marking**: When the AI repair system adds content for compliance (e.g., mandatory DOI elements, journal metadata), it marks them with `data-compliance="true"` attribute
 2. **Visual Highlighting**: Marked content appears with:
    - Light yellow background (#fff9e6 / #ffeecc in print)
@@ -180,7 +775,7 @@ To ensure transparency and facilitate review, any text or elements added by the 
    - Compliance icon (📋) prefix
    - Special print color adjustment to ensure visibility in printed PDFs
 
-### Examples of Highlighted Content
+#### Examples of Highlighted Content
 Compliance text may include:
 - Journal metadata elements added for PMC requirements
 - DOI placeholders when not present in source document
@@ -188,7 +783,7 @@ Compliance text may include:
 - Required front matter elements
 - Structural elements needed for DTD validation
 
-### Reviewing Highlighted Content
+#### Reviewing Highlighted Content
 When reviewing the generated PDF:
 - ✅ **Yellow highlighted sections** = Content added for DTD/PMC compliance
 - ⚠️ **Original content** = Remains unhighlighted and unmodified
@@ -200,7 +795,7 @@ This feature allows you to:
 3. Update highlighted sections with actual document-specific information
 4. Maintain transparency in the conversion process
 
-## Output Package
+### Output Package Details
 
 Each conversion generates a complete package with enhanced professional styling:
 
@@ -224,7 +819,7 @@ Each conversion generates a complete package with enhanced professional styling:
    - PMC submission checklist
 8. **README.txt** - Package documentation
 
-## Validation Report
+### Validation Report Format
 
 The validation report includes:
 
@@ -270,127 +865,7 @@ The validation report includes:
 }
 ```
 
-## Usage
-
-### Web Interface
-
-1. **Upload File**
-   - Navigate to the web interface
-   - Click or drag-and-drop a DOCX file (max 50 MB)
-   - Click "Convert & Download Package"
-
-2. **Monitor Progress**
-   - Real-time progress bar shows conversion status
-   - Progress updates from 0% to 100%
-   - Status messages indicate current step
-
-3. **Download Results**
-   - Once conversion completes (100%), click "Download Package"
-   - Receive complete ZIP package with all outputs
-
-### API Endpoints
-
-#### POST /convert
-Start asynchronous conversion
-```bash
-curl -X POST -F "file=@document.docx" http://localhost:8080/convert
-```
-Returns:
-```json
-{
-  "conversion_id": "20260120_103000_abcd1234",
-  "status": "queued",
-  "message": "Conversion started"
-}
-```
-
-#### GET /status/<conversion_id>
-Check conversion status
-```bash
-curl http://localhost:8080/status/20260120_103000_abcd1234
-```
-Returns:
-```json
-{
-  "status": "processing",
-  "progress": 40,
-  "message": "Validating JATS XML",
-  "filename": "document.docx"
-}
-```
-
-#### GET /download/<conversion_id>
-Download completed conversion
-```bash
-curl -O http://localhost:8080/download/20260120_103000_abcd1234
-```
-
-#### GET /health
-Health check endpoint
-```bash
-curl http://localhost:8080/health
-```
-
-## Running the Enhanced Output Pipeline
-
-### Quick Start
-
-For detailed environment setup instructions, see [SETUP.md](SETUP.md).
-
-#### 1. Command-Line Pipeline Execution
-
-Run the complete pipeline programmatically:
-
-```python
-from MasterPipeline import HighFidelityConverter
-
-# Initialize converter with DOCX file
-converter = HighFidelityConverter('path/to/document.docx')
-
-# Run the complete pipeline
-# This generates all outputs:
-# - article.xml (XSD-compliant JATS XML)
-# - articledtd.xml (PMC-compliant JATS XML with DOCTYPE)
-# - published_article.pdf (PDF from JATS XML)
-# - direct_from_word.pdf (Direct DOCX to PDF)
-# - article.html (HTML with embedded media)
-# - media/ (extracted images)
-# - validation_report.json (validation results)
-converter.run()
-
-print(f"All outputs generated in: {converter.output_dir}")
-```
-
-#### 2. Step-by-Step Pipeline Execution
-
-Run individual pipeline steps:
-
-```python
-from MasterPipeline import HighFidelityConverter
-
-converter = HighFidelityConverter('document.docx')
-
-# Step 1: Generate XSD-compliant JATS XML
-converter.convert_to_jats()  # Creates article.xml
-converter.validate_jats()     # Validates against XSD schema
-
-# Step 2: Generate PMC-compliant JATS XML
-converter.add_doctype()      # Creates articledtd.xml with DOCTYPE
-
-# Step 3: Generate HTML with embedded media
-converter.convert_to_html()  # Creates article.html + media/
-
-# Step 4: Generate PDF from JATS XML
-converter.convert_to_pdf()   # Creates published_article.pdf
-
-# Step 5: Generate direct DOCX to PDF
-converter.direct_pdf()       # Creates direct_from_word.pdf
-
-# Step 6: Run validations
-converter.validate_all()     # Creates validation_report.json
-```
-
-#### 3. Running Tests
+### Running Tests
 
 ```bash
 # Run all unit tests
@@ -406,7 +881,7 @@ pytest tests/ --cov=. --cov-report=html
 open htmlcov/index.html
 ```
 
-#### 4. Validation and Compliance Checking
+### Validation and Compliance Checking
 
 ```bash
 # Validate JATS XML against XSD schema
@@ -487,44 +962,11 @@ xsltproc --path . nlm-style-5-0.xsl /tmp/output_files/articledtd.xml
 ls -lah /tmp/output_files/
 ```
 
-## PMC Submission Workflow
+### Async Conversion Progress UI
 
-1. Convert document using OmniJAX
-2. Review `validation_report.json`
-3. Fix any critical issues identified
-4. **Use articledtd.xml for PMC Style Checker validation**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
-   - articledtd.xml includes the DOCTYPE declaration required by PMC Style Checker
-   - Upload this file to avoid "Validation failed: no DTD found" errors
-5. **Use article.xml for XSD validation** and other schema-based validators
-   - article.xml is optimized for XSD validation (without DOCTYPE declaration)
-6. Review warnings and recommendations
-7. Submit to PMC
+#### New Features (v1.4)
 
-## Technical Requirements
-
-- Python 3.11+
-- Pandoc 3.x with JATS support
-- WeasyPrint for PDF generation
-- lxml for XML processing
-- Google Vertex AI (optional, for AI repair)
-
-## References
-
-- **JATS Official Site**: https://jats.nlm.nih.gov/
-- **JATS 1.4 Publishing DTD**: https://public.nlm.nih.gov/projects/jats/publishing/1.4/
-- **PMC Tagging Guidelines**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
-- **PMC Style Checker**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
-- **NLM PMC**: https://pmc.ncbi.nlm.nih.gov/
-
-## License
-
-Proprietary - OmniJAX Professional JATS Converter
-
-## Async Conversion Progress UI
-
-### New Features (v1.4)
-
-#### Asynchronous Conversion with Progress Tracking
+##### Asynchronous Conversion with Progress Tracking
 
 The web interface now supports asynchronous conversions with real-time progress updates:
 
@@ -561,7 +1003,7 @@ const status = await statusResponse.json();
 window.location.href = `/download/${conversion_id}`;
 ```
 
-#### Schema Resolution for External Validators
+##### Schema Resolution for External Validators
 
 Generated JATS XML now includes `xsi:schemaLocation` attribute pointing to the public JATS XSD:
 
@@ -574,7 +1016,7 @@ Generated JATS XML now includes `xsi:schemaLocation` attribute pointing to the p
 
 This allows external PMC Style Checker and other validators to resolve the schema without "DTD not found" errors.
 
-#### PMC Style-Check Integration
+##### PMC Style-Check Integration
 
 The pipeline now integrates the PMC Style Checker XSLT bundle (nlm-style-5.47):
 
@@ -674,7 +1116,7 @@ class ConversionJob(db.Model):
 - Use Cloud Storage for output files
 - Set appropriate timeouts for long-running conversions
 
-### Testing
+### Testing Async Features
 
 To test the new async UI and PMC style check:
 
@@ -701,7 +1143,7 @@ To test the new async UI and PMC style check:
    - Should not see "DTD not found" errors
    - Should validate successfully
 
-### Troubleshooting
+### Troubleshooting Technical Issues
 
 **Progress bar not updating:**
 - Check browser console for JavaScript errors
@@ -719,7 +1161,7 @@ To test the new async UI and PMC style check:
 - Check that namespace declarations are present
 - Validate XML is well-formed: `xmllint --noout article.xml`
 
-## DOCTYPE Utility Script
+### DOCTYPE Utility Script
 
 The `tools/add_doctype.py` utility script can be used to add DOCTYPE declarations to existing JATS XML files:
 
@@ -743,3 +1185,21 @@ python tools/add_doctype.py input/article.xml --output output/articledtd.xml --v
 - When you need a specific JATS version DOCTYPE (supports 1.0-1.4)
 
 **Note:** The MasterPipeline automatically generates both article.xml (without DOCTYPE) and articledtd.xml (with DOCTYPE) during conversion, so you typically don't need to run this script manually.
+
+### References
+
+- **JATS Official Site**: https://jats.nlm.nih.gov/
+- **JATS 1.4 Publishing DTD**: https://public.nlm.nih.gov/projects/jats/publishing/1.4/
+- **PMC Tagging Guidelines**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
+- **PMC Style Checker**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
+- **NLM PMC**: https://pmc.ncbi.nlm.nih.gov/
+
+## License
+
+Proprietary - OmniJAX Professional JATS Converter
+
+---
+
+**Document Version**: 2.0 - Improved for accessibility
+**Last Updated**: January 2024
+**Target Audience**: Non-technical and technical users
