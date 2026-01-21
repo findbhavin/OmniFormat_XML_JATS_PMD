@@ -62,6 +62,11 @@ tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
+/* Ensure empty cells have proper height */
+td:empty::after, th:empty::after {
+    content: '\00a0';  /* Non-breaking space ensures proper cell height */
+}
+
 /* Hover effect for screen viewing only with improved contrast */
 @media screen {
     tbody tr:hover {
@@ -96,6 +101,11 @@ math[mode="display"] {
 }
 
 /* Professional PDF Layout - Optimized Margins */
+@page {
+    size: letter;  /* US Letter: 8.5in x 11in (instead of A4) */
+    margin: 0.75in 0.5in;  /* Further reduced left/right margins for better space utilization */
+}
+
 body {
     font-family: var(--primary-font);
     font-size: 11pt;
@@ -248,6 +258,11 @@ fig caption {
 
 /* Page breaks for printing */
 @media print {
+    @page {
+        size: letter;  /* US Letter: 8.5in x 11in */
+        margin: 0.75in 0.5in;  /* Consistent with main @page rule */
+    }
+    
     body {
         margin: 0.75in 0.5in;  /* Consistent reduced margins for print */
     }
