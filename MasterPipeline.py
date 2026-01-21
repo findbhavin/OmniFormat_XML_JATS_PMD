@@ -1825,19 +1825,27 @@ class HighFidelityConverter:
             # Create a temporary HTML file from DOCX
             temp_html = os.path.join(self.output_dir, "direct_temp.html")
             
+            # Enhanced Pandoc options for better format preservation
             self._run_pandoc_command([
                 self.docx_path,
-                "-s",
+                "-s",  # Standalone HTML
+                "-t", "html5",  # Use HTML5 for better styling support
                 "--css", self.css_path,
                 "--extract-media=" + self.output_dir,
+                "--embed-resources",  # Embed images and resources (replaces deprecated --self-contained)
                 "-o", temp_html
             ], "DOCX to HTML (direct)")
             
-            # Convert HTML to PDF with font configuration
-            HTML(filename=temp_html, base_url=self.output_dir).write_pdf(
-                target=self.direct_pdf_path,
-                font_config=font_config
-            )
+            # Convert HTML to PDF with CSS applied
+            from weasyprint import HTML, CSS
+            html_doc = HTML(filename=temp_html, base_url=self.output_dir)
+            
+            # Apply CSS for consistent styling
+            if os.path.exists(self.css_path):
+                css_obj = CSS(filename=self.css_path)
+                html_doc.write_pdf(target=self.direct_pdf_path, stylesheets=[css_obj])
+            else:
+                html_doc.write_pdf(target=self.direct_pdf_path)
             
             # Clean up temp file
             if os.path.exists(temp_html):

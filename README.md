@@ -31,7 +31,11 @@ Professional DOCX to JATS XML and dual-PDF conversion pipeline with full PMC/NLM
      - Alternating row colors for improved visual clarity
      - Professional header styling with subtle blue accents
      - Optimized padding and spacing for clean presentation
-   - **Optimized Margins**: Reduced left/right margins (0.65in) for better space utilization
+     - Smaller table font size (10pt) for better content fit
+   - **Optimized Margins**: Further reduced left/right margins (0.5in) for better space utilization
+   - **Enhanced Font Handling**: CSS variables for consistent font usage across document
+     - Primary font stack: Liberation Serif, Times New Roman, DejaVu Serif
+     - Header font stack: Liberation Sans, Arial, Helvetica
    - **Enhanced Image Handling**: Proper sizing and alignment with automatic aspect ratio preservation
    - **Compliance Text Highlighting**: Visual indicators for DTD/PMC compliance additions
 
@@ -147,7 +151,9 @@ Tables are formatted according to PMC requirements with enhanced professional st
 - Header row styling with light blue background (#e8f0f7) and accent border (#4a90d9)
 - Alternating row colors (#f9f9f9) for improved readability
 - Hover effects for interactive viewing
-- Optimized padding (10px 12px) for clean presentation
+- Optimized padding (8px-10px) and tighter line-height (1.3) for clean presentation
+- Smaller table font size (10pt) for better content fit
+- Word-wrap handling for long content
 - All styling preserves PMC/DTD compliance and does not alter content
 
 ### Figure Formatting
