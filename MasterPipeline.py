@@ -975,6 +975,49 @@ class HighFidelityConverter:
             # Fix article-meta content order - ensure required elements exist before permissions
             front = root.find('.//front')
             if front is not None:
+                # Fix journal-meta
+                journal_meta = front.find('.//journal-meta')
+                if journal_meta is not None:
+                    # Fix journal-id
+                    journal_id = journal_meta.find('.//journal-id')
+                    if journal_id is not None and (journal_id.text is None or journal_id.text.strip() == ''):
+                        journal_id.set('journal-id-type', 'publisher-id')
+                        journal_id.text = 'unknown-journal'
+                        logger.info("Added default journal-id value")
+                    elif journal_id is not None and 'journal-id-type' not in journal_id.attrib:
+                        journal_id.set('journal-id-type', 'publisher-id')
+                        logger.info("Added journal-id-type attribute")
+                    
+                    # Fix journal-title-group
+                    journal_title_group = journal_meta.find('.//journal-title-group')
+                    if journal_title_group is not None:
+                        journal_title = journal_title_group.find('.//journal-title')
+                        if journal_title is None:
+                            journal_title = etree.SubElement(journal_title_group, 'journal-title')
+                            journal_title.text = 'Unknown Journal'
+                            logger.info("Added default journal-title")
+                        elif journal_title.text is None or journal_title.text.strip() == '':
+                            journal_title.text = 'Unknown Journal'
+                            logger.info("Updated empty journal-title")
+                    
+                    # Fix ISSN
+                    issn = journal_meta.find('.//issn')
+                    if issn is not None:
+                        if issn.text is None or issn.text.strip() == '':
+                            issn.text = '0000-0000'
+                            logger.info("Added default ISSN value")
+                        if 'pub-type' not in issn.attrib and 'publication-format' not in issn.attrib:
+                            issn.set('pub-type', 'epub')
+                            logger.info("Added pub-type attribute to ISSN")
+                    
+                    # Fix publisher-name
+                    publisher = journal_meta.find('.//publisher')
+                    if publisher is not None:
+                        publisher_name = publisher.find('.//publisher-name')
+                        if publisher_name is not None and (publisher_name.text is None or publisher_name.text.strip() == ''):
+                            publisher_name.text = 'Unknown Publisher'
+                            logger.info("Added default publisher-name")
+                
                 article_meta = front.find('.//article-meta')
                 if article_meta is not None:
                     # Check if we have permissions but missing required elements
@@ -991,6 +1034,88 @@ class HighFidelityConverter:
                         # Insert title-group before permissions
                         perm_index = list(article_meta).index(permissions)
                         article_meta.insert(perm_index, title_group)
+                    
+                    # Add article-categories if missing (PMC requirement)
+                    # article-categories must be FIRST in article-meta
+                    article_categories = article_meta.find('.//article-categories')
+                    if article_categories is None:
+                        logger.info("Adding article-categories to article-meta")
+                        article_categories = etree.Element('article-categories')
+                        subj_group = etree.SubElement(article_categories, 'subj-group')
+                        subj_group.set('subj-group-type', 'heading')
+                        subject = etree.SubElement(subj_group, 'subject')
+                        
+                        # Use article-type to determine category
+                        article_type = root.get('article-type', 'research-article')
+                        if article_type == 'research-article':
+                            subject.text = 'Research Article'
+                        elif article_type == 'review-article':
+                            subject.text = 'Review Article'
+                        else:
+                            subject.text = 'Article'
+                        
+                        # Insert article-categories as first child of article-meta
+                        article_meta.insert(0, article_categories)
+                    
+                    # Standard article-meta element order per JATS DTD:
+                    # article-categories, title-group, contrib-group, aff*, author-notes?,
+                    # pub-date*, volume?, issue?, fpage?, lpage?, elocation-id?, ...
+                    
+                    # Find position after title-group for inserting pagination elements
+                    title_group = article_meta.find('.//title-group')
+                    insert_base_idx = 0
+                    if title_group is not None and title_group in list(article_meta):
+                        insert_base_idx = list(article_meta).index(title_group) + 1
+                    elif article_categories is not None and article_categories in list(article_meta):
+                        insert_base_idx = list(article_meta).index(article_categories) + 1
+                    
+                    # Look for contrib-group, aff, author-notes - pagination comes after these
+                    for i in range(insert_base_idx, len(article_meta)):
+                        elem = article_meta[i]
+                        if elem.tag in ['contrib-group', 'aff', 'author-notes']:
+                            insert_base_idx = i + 1
+                        else:
+                            break
+                    
+                    # Add pub-date if missing (PMC requirement)
+                    # pub-date comes before volume/issue/pagination
+                    pub_date = article_meta.find('.//pub-date')
+                    if pub_date is None:
+                        logger.info("Adding pub-date to article-meta")
+                        pub_date_elem = etree.Element('pub-date')
+                        pub_date_elem.set('date-type', 'pub')
+                        pub_date_elem.set('publication-format', 'electronic')
+                        
+                        # Use simple year-only format to avoid schema issues
+                        import datetime
+                        current_date = datetime.datetime.now()
+                        
+                        year_elem = etree.SubElement(pub_date_elem, 'year')
+                        year_elem.text = str(current_date.year)
+                        
+                        # Insert pub-date at correct position (after contrib-group/aff/author-notes)
+                        article_meta.insert(insert_base_idx, pub_date_elem)
+                        insert_base_idx += 1
+                    
+                    # Look for volume, issue - pagination comes after these
+                    for i in range(insert_base_idx, len(article_meta)):
+                        elem = article_meta[i]
+                        if elem.tag in ['volume', 'issue']:
+                            insert_base_idx = i + 1
+                        else:
+                            break
+                    
+                    # Add fpage or elocation-id if missing (PMC requirement)
+                    # fpage/lpage/elocation-id come after pub-date and volume/issue
+                    fpage = article_meta.find('.//fpage')
+                    elocation_id = article_meta.find('.//elocation-id')
+                    if fpage is None and elocation_id is None:
+                        logger.info("Adding elocation-id to article-meta")
+                        elocation_id_elem = etree.Element('elocation-id')
+                        elocation_id_elem.text = 'e001'
+                        
+                        # Insert at correct position (after pub-date/volume/issue)
+                        article_meta.insert(insert_base_idx, elocation_id_elem)
             
             # Fix missing reference IDs - add id attributes to ref elements
             back = root.find('.//back')
@@ -1034,6 +1159,43 @@ class HighFidelityConverter:
                                 if existing_ref is None:
                                     logger.info(f"Updating xref rid from '{rid}' to '{ref_id}' based on alt='{alt}'")
                                     xref.set('rid', ref_id)
+            
+            # Fix xref elements missing required attributes (PMC requirement)
+            # PMC requires xref elements to have both @ref-type and @rid
+            for xref in xrefs:
+                # Add ref-type if missing
+                if 'ref-type' not in xref.attrib:
+                    # Try to determine ref-type based on context
+                    alt = xref.get('alt')
+                    rid = xref.get('rid')
+                    
+                    # If it looks like a reference citation, set to bibr
+                    if alt and alt.isdigit():
+                        xref.set('ref-type', 'bibr')
+                        logger.info(f"Added ref-type='bibr' to xref with alt='{alt}'")
+                    elif rid and rid.startswith('ref'):
+                        xref.set('ref-type', 'bibr')
+                        logger.info(f"Added ref-type='bibr' to xref with rid='{rid}'")
+                    else:
+                        # Default to bibr for unknown types
+                        xref.set('ref-type', 'bibr')
+                        logger.info(f"Added default ref-type='bibr' to xref")
+                
+                # Add rid if missing (but only if we have enough info to generate one)
+                if 'rid' not in xref.attrib:
+                    alt = xref.get('alt')
+                    if alt and alt.isdigit():
+                        # Generate rid from alt attribute
+                        ref_num = int(alt)
+                        if back is not None:
+                            ref_list = back.find('.//ref-list')
+                            if ref_list is not None:
+                                refs = ref_list.findall('.//ref')
+                                if 1 <= ref_num <= len(refs):
+                                    target_ref = refs[ref_num - 1]
+                                    target_id = target_ref.get('id', f'ref{ref_num}')
+                                    xref.set('rid', target_id)
+                                    logger.info(f"Added rid='{target_id}' to xref based on alt='{alt}'")
             
             # Comprehensive IDREF validation - collect all valid IDs and elements with rid/rids in one pass
             valid_ids = set()
