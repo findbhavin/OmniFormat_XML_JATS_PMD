@@ -3,9 +3,9 @@ import logging
 import subprocess
 import shutil
 import traceback
+import re
 from lxml import etree
 import json
-import re
 import html
 import datetime
 from docx import Document
@@ -1521,13 +1521,15 @@ class HighFidelityConverter:
             # Fix Pandoc JATS-to-HTML conversion issue: Remove namespace declarations from table elements
             # Pandoc 3.x has issues converting tables that have xmlns declarations on the table element itself
             # This causes tables to appear empty in HTML output
-            # We need to post-process the serialized XML to remove these declarations
+            # Note: lxml serializes inherited namespace declarations, so we use regex post-processing
+            # This is a targeted fix for a known Pandoc limitation with JATS tables
             with open(self.xml_path, 'r', encoding='utf-8') as f:
                 xml_content = f.read()
             
-            # Remove xmlns:mml and xmlns:xlink from <table> tags only
-            # Use regex to match <table with any xmlns attributes
-            import re
+            # Remove xmlns:mml and xmlns:xlink from <table> tags only (not from root <article>)
+            # Pattern matches: <table followed by one or both xmlns declarations
+            # This handles the most common namespace ordering from lxml serialization
+            original_content = xml_content
             xml_content = re.sub(
                 r'(<table)(\s+xmlns:mml="[^"]*")(\s+xmlns:xlink="[^"]*")?',
                 r'\1',
@@ -1539,11 +1541,12 @@ class HighFidelityConverter:
                 xml_content
             )
             
-            # Write back the cleaned XML
-            with open(self.xml_path, 'w', encoding='utf-8') as f:
-                f.write(xml_content)
-            
-            logger.info(f"Removed namespace declarations from table elements for Pandoc compatibility")
+            # Only write back if changes were made
+            if xml_content != original_content:
+                with open(self.xml_path, 'w', encoding='utf-8') as f:
+                    f.write(xml_content)
+                logger.info("Removed namespace declarations from table elements for Pandoc compatibility")
+
 
             logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + DTD validation fixes)")
         except Exception as e:
