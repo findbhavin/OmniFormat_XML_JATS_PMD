@@ -19,7 +19,9 @@ def sample_docx():
     sample_files = list(repo_root.glob("*.docx"))
     
     if sample_files:
-        return str(sample_files[0])
+        # Real DOCX found, no cleanup needed
+        yield str(sample_files[0])
+        return
     
     # Create a minimal DOCX-like file for testing
     temp_dir = tempfile.mkdtemp()
@@ -35,7 +37,10 @@ def sample_docx():
     yield temp_docx
     
     # Cleanup
-    shutil.rmtree(temp_dir)
+    try:
+        shutil.rmtree(temp_dir)
+    except:
+        pass
 
 
 @pytest.fixture
@@ -112,17 +117,17 @@ def temp_output_dir():
 
 
 @pytest.fixture
-def mock_converter(sample_docx, temp_output_dir, monkeypatch):
+def mock_converter(sample_docx, temp_output_dir):
     """
     Creates a HighFidelityConverter instance with mocked output directory.
     """
     # Import here to avoid issues if MasterPipeline has initialization side effects
     from MasterPipeline import HighFidelityConverter
     
-    # Mock the output directory to use temp directory
-    monkeypatch.setattr('MasterPipeline.HighFidelityConverter.output_dir', temp_output_dir)
-    
+    # Create converter - don't mock class attributes, just create instance
     converter = HighFidelityConverter(sample_docx)
+    
+    # Override instance attributes to use temp directory
     converter.output_dir = temp_output_dir
     converter.media_dir = os.path.join(temp_output_dir, "media")
     converter.xml_path = os.path.join(temp_output_dir, "article.xml")
