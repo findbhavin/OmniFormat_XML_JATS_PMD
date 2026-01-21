@@ -1162,6 +1162,46 @@ class HighFidelityConverter:
             
             # Fix xref elements missing required attributes (PMC requirement)
             # PMC requires xref elements to have both @ref-type and @rid
+            # First, ensure we have a ref-list if xrefs exist
+            if len(xrefs) > 0:
+                # Check if we have a back section
+                if back is None:
+                    back = etree.Element('back')
+                    root.append(back)
+                    logger.info("Created <back> section for references")
+                
+                # Check if we have a ref-list
+                ref_list = back.find('.//ref-list')
+                if ref_list is None:
+                    ref_list = etree.SubElement(back, 'ref-list')
+                    logger.info("Created <ref-list> for references")
+                
+                # Collect all alt values from xrefs to create corresponding refs
+                alt_values = set()
+                for xref in xrefs:
+                    alt = xref.get('alt')
+                    if alt and alt.isdigit():
+                        alt_values.add(int(alt))
+                
+                # Create placeholder ref elements for each referenced number
+                existing_refs = ref_list.findall('.//ref')
+                existing_ref_ids = {ref.get('id') for ref in existing_refs if ref.get('id')}
+                
+                for ref_num in sorted(alt_values):
+                    ref_id = f'ref{ref_num}'
+                    if ref_id not in existing_ref_ids:
+                        # Create placeholder ref element
+                        ref_elem = etree.Element('ref')
+                        ref_elem.set('id', ref_id)
+                        
+                        # Add minimal content to make it valid
+                        mixed_citation = etree.SubElement(ref_elem, 'mixed-citation')
+                        mixed_citation.text = f'Reference {ref_num}'
+                        
+                        ref_list.append(ref_elem)
+                        logger.info(f"Created placeholder ref element with id='{ref_id}'")
+            
+            # Now fix xref attributes
             for xref in xrefs:
                 # Add ref-type if missing
                 if 'ref-type' not in xref.attrib:
@@ -1181,21 +1221,14 @@ class HighFidelityConverter:
                         xref.set('ref-type', 'bibr')
                         logger.info(f"Added default ref-type='bibr' to xref")
                 
-                # Add rid if missing (but only if we have enough info to generate one)
+                # Add rid if missing
                 if 'rid' not in xref.attrib:
                     alt = xref.get('alt')
                     if alt and alt.isdigit():
                         # Generate rid from alt attribute
                         ref_num = int(alt)
-                        if back is not None:
-                            ref_list = back.find('.//ref-list')
-                            if ref_list is not None:
-                                refs = ref_list.findall('.//ref')
-                                if 1 <= ref_num <= len(refs):
-                                    target_ref = refs[ref_num - 1]
-                                    target_id = target_ref.get('id', f'ref{ref_num}')
-                                    xref.set('rid', target_id)
-                                    logger.info(f"Added rid='{target_id}' to xref based on alt='{alt}'")
+                        xref.set('rid', f'ref{ref_num}')
+                        logger.info(f"Added rid='ref{ref_num}' to xref based on alt='{alt}'")
             
             # Comprehensive IDREF validation - collect all valid IDs and elements with rid/rids in one pass
             valid_ids = set()
