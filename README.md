@@ -1201,5 +1201,5 @@ Proprietary - OmniJAX Professional JATS Converter
 ---
 
 **Document Version**: 2.0 - Improved for accessibility
-**Last Updated**: January 2026
+**Last Updated**: January 2024
 **Target Audience**: Non-technical and technical users
