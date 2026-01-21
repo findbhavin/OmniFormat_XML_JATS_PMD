@@ -1815,6 +1815,7 @@ class HighFidelityConverter:
         # STEP 6: Direct DOCX to PDF Conversion
         logger.info("Step 6: Creating direct DOCX→PDF (preserving Word formatting)...")
         try:
+            # Import WeasyPrint components (may be redundant with Step 5, but needed if Step 5 fails)
             from weasyprint import HTML
             from weasyprint.text.fonts import FontConfiguration
             

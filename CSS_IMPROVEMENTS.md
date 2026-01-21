@@ -55,10 +55,8 @@ th, td {
 
 **Solutions**:
 - Added `FontConfiguration` from WeasyPrint for proper font embedding
-- Added font rendering optimizations:
+- Added font rendering optimization:
   - `text-rendering: optimizeLegibility`
-  - `-webkit-font-smoothing: antialiased`
-  - `-moz-osx-font-smoothing: grayscale`
 
 **MasterPipeline.py Changes**:
 ```python
