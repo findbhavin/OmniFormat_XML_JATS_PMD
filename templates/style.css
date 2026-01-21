@@ -1,6 +1,11 @@
 /* OmniJAX Professional JATS-to-PDF Stylesheet */
 /* Compliant with PMC/NLM requirements */
 
+/* CSS Custom Properties for maintainability */
+:root {
+    --max-image-height: 500pt;  /* Maximum image height to prevent page overflow */
+}
+
 /* Requirement 1: Force table captions to the top */
 table caption,
 table-wrap-heading,
@@ -24,7 +29,13 @@ table {
     margin-top: 15pt;
     margin-bottom: 20pt;
     page-break-inside: avoid;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Add subtle shadow for screen viewing only */
+@media screen {
+    table {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 }
 
 th, td {
@@ -46,8 +57,11 @@ tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-tbody tr:hover {
-    background-color: #f0f7ff;
+/* Hover effect for screen viewing only with improved contrast */
+@media screen {
+    tbody tr:hover {
+        background-color: #e3f2fd;  /* Improved contrast from #f0f7ff */
+    }
 }
 
 /* Requirement 4: Maintain superscripts and subscripts */
@@ -167,7 +181,7 @@ fig caption {
 
 .graphic, img {
     max-width: 100%;
-    max-height: 500pt;  /* Limit maximum height to prevent page overflow */
+    max-height: var(--max-image-height);  /* Use CSS variable for maintainability */
     height: auto;
     margin: 10pt auto;
     display: block;
@@ -246,6 +260,7 @@ pre {
 
 /* PMC Compliance Text Highlighting */
 /* Styles for text added to ensure DTD/PMC compliance */
+/* Note: Compliance icon removed to avoid accessibility issues with screen readers */
 .pmc-compliance-text, 
 .compliance-added,
 [data-compliance="true"] {
@@ -254,11 +269,6 @@ pre {
     padding: 4px 8px;
     margin: 4px 0;
     display: inline-block;
-}
-
-.pmc-compliance-text::before {
-    content: "📋 ";  /* Compliance icon */
-    font-size: 0.9em;
 }
 
 /* Compliance warning style */

@@ -176,6 +176,7 @@ class HighFidelityConverter:
             - Wrap added paragraphs in: <p data-compliance="true">Added text here</p>
             - Mark added elements with: data-compliance="true" attribute
             - This will highlight them in yellow in the PDF output for review
+            - NOTE: The data-compliance attribute is for PDF rendering only and will be stripped during final validation
             
             Examples:
             - <journal-id data-compliance="true">journal-id</journal-id>
