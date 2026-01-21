@@ -1821,8 +1821,7 @@ class HighFidelityConverter:
                 "-t", "html5",  # Use HTML5 for better styling support
                 "--css", self.css_path,
                 "--extract-media=" + self.output_dir,
-                "--embed-resources",  # Embed images and resources
-                "--self-contained",  # Make HTML self-contained
+                "--embed-resources",  # Embed images and resources (replaces deprecated --self-contained)
                 "-o", temp_html
             ], "DOCX to HTML (direct)")
             

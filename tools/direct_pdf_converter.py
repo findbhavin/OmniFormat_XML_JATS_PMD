@@ -106,8 +106,7 @@ def convert_docx_to_pdf(docx_path, pdf_path, css_path=None):
                 docx_path,
                 '-s',  # Standalone HTML
                 '-t', 'html5',  # Use HTML5 for better styling support
-                '--self-contained',  # Embed resources
-                '--embed-resources',  # Embed images and resources
+                '--embed-resources',  # Embed resources (replaces deprecated --self-contained in Pandoc 3.0+)
                 '-o', temp_html_path
             ]
             
