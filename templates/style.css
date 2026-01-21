@@ -60,10 +60,9 @@ tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-/* Better handling for empty cells */
+/* Ensure empty cells have proper height */
 td:empty::after, th:empty::after {
-    content: '\00a0';  /* Non-breaking space for empty cells */
-    visibility: hidden;
+    content: '\00a0';  /* Non-breaking space ensures proper cell height */
 }
 
 /* Hover effect for screen viewing only with improved contrast */
@@ -113,8 +112,6 @@ body {
     color: #000;
     background: white;
     text-rendering: optimizeLegibility;  /* Better font rendering */
-    -webkit-font-smoothing: antialiased;  /* Smooth font rendering */
-    -moz-osx-font-smoothing: grayscale;  /* Smooth font rendering on macOS */
 }
 
 /* Headers */
