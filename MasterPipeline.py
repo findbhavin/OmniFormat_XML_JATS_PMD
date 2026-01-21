@@ -908,14 +908,65 @@ class HighFidelityConverter:
                 elif position == 'top':
                     table_wrap.set('position', 'float')
             
-            # Fix empty tbody elements - remove them as they violate DTD
-            for tbody in root.findall('.//tbody'):
-                # Check if tbody is empty or has no tr children
-                if len(tbody) == 0 or not tbody.findall('.//tr'):
-                    parent = tbody.getparent()
-                    if parent is not None:
-                        logger.info(f"Removing empty tbody element")
-                        parent.remove(tbody)
+            # Fix table structure to comply with DTD: (col* | colgroup*), ((thead?, tfoot?, tbody+) | tr+)
+            # The DTD requires: after col/colgroup, we must have EITHER (thead?, tfoot?, tbody+) OR (tr+)
+            for table in root.findall('.//table'):
+                thead = table.find('thead')
+                tfoot = table.find('tfoot')
+                tbody_elements = table.findall('tbody')
+                tr_elements = [child for child in table if child.tag == 'tr']
+                
+                # Case 1: Table has thead or tfoot - MUST have at least one tbody (even if empty)
+                if thead is not None or tfoot is not None:
+                    # Remove empty tbody elements first
+                    for tbody in tbody_elements[:]:  # Use slice to avoid modification during iteration
+                        if len(tbody) == 0 or not tbody.findall('.//tr'):
+                            tbody_elements.remove(tbody)
+                            table.remove(tbody)
+                            logger.info(f"Removing empty tbody element from table with thead/tfoot")
+                    
+                    # If no tbody remains, we MUST add one for DTD compliance
+                    if len(tbody_elements) == 0:
+                        tbody = etree.Element('tbody')
+                        
+                        # Add a placeholder comment to make it non-empty (avoids validation issues)
+                        # Actually, let's add a single empty tr to make it valid
+                        tr = etree.SubElement(tbody, 'tr')
+                        td = etree.SubElement(tr, 'td')
+                        td.text = ''  # Empty cell
+                        
+                        # Find where to insert tbody (after thead and tfoot)
+                        insert_index = len(list(table))
+                        if tfoot is not None:
+                            insert_index = list(table).index(tfoot) + 1
+                        elif thead is not None:
+                            insert_index = list(table).index(thead) + 1
+                        else:
+                            # Find position after colgroup/col elements
+                            for i, child in enumerate(table):
+                                if child.tag not in ['col', 'colgroup']:
+                                    insert_index = i
+                                    break
+                        
+                        table.insert(insert_index, tbody)
+                        logger.info(f"Added tbody with empty tr to table for DTD compliance")
+                
+                # Case 2: Table has no thead/tfoot - can have either tbody or direct tr elements
+                else:
+                    # If table has tbody elements, ensure they're not empty
+                    for tbody in tbody_elements[:]:
+                        if len(tbody) == 0 or not tbody.findall('.//tr'):
+                            # If this is the only tbody, keep it but add an empty tr
+                            if len(tbody_elements) == 1 and len(tr_elements) == 0:
+                                tr = etree.SubElement(tbody, 'tr')
+                                td = etree.SubElement(tr, 'td')
+                                td.text = ''
+                                logger.info(f"Added empty tr to sole tbody for DTD compliance")
+                            else:
+                                # Multiple tbody or we have direct tr elements, safe to remove
+                                tbody_elements.remove(tbody)
+                                table.remove(tbody)
+                                logger.info(f"Removing empty tbody element from table without thead/tfoot")
             
             # Fix article-meta content order - ensure required elements exist before permissions
             front = root.find('.//front')
@@ -979,6 +1030,72 @@ class HighFidelityConverter:
                                 if existing_ref is None:
                                     logger.info(f"Updating xref rid from '{rid}' to '{ref_id}' based on alt='{alt}'")
                                     xref.set('rid', ref_id)
+            
+            # Comprehensive IDREF validation - collect all valid IDs in the document
+            valid_ids = set()
+            for elem in root.iter():
+                elem_id = elem.get('id')
+                if elem_id:
+                    valid_ids.add(elem_id)
+            
+            # Validate all elements with rid or rids attributes
+            elements_with_rid = []
+            for elem in root.iter():
+                rid = elem.get('rid')
+                if rid:
+                    elements_with_rid.append((elem, rid, 'rid'))
+                
+                # Handle IDREFS attributes (space-separated list of IDs)
+                rids = elem.get('rids')
+                if rids:
+                    elements_with_rid.append((elem, rids, 'rids'))
+            
+            # Fix or remove invalid rid/rids references
+            for elem, rid_value, attr_name in elements_with_rid:
+                if attr_name == 'rid':
+                    # Single IDREF - validate it exists
+                    if rid_value not in valid_ids:
+                        logger.warning(f"Invalid {elem.tag} rid='{rid_value}' - ID not found in document")
+                        
+                        # Try to fix by matching with alt attribute for xref elements
+                        if elem.tag == 'xref':
+                            alt = elem.get('alt')
+                            if alt and alt.isdigit():
+                                # Try to find ref by index
+                                if back is not None:
+                                    ref_list = back.find('.//ref-list')
+                                    if ref_list is not None:
+                                        refs = ref_list.findall('.//ref')
+                                        ref_index = int(alt)
+                                        if 1 <= ref_index <= len(refs):
+                                            correct_id = refs[ref_index - 1].get('id')
+                                            if correct_id and correct_id in valid_ids:
+                                                elem.set('rid', correct_id)
+                                                logger.info(f"Fixed xref rid to '{correct_id}' based on alt='{alt}'")
+                                                continue
+                        
+                        # If we can't fix it, remove the rid attribute to avoid DTD validation error
+                        del elem.attrib['rid']
+                        logger.warning(f"Removed invalid rid attribute from {elem.tag}")
+                
+                elif attr_name == 'rids':
+                    # IDREFS (space-separated) - validate each ID
+                    rid_list = rid_value.split()
+                    valid_rid_list = [rid for rid in rid_list if rid in valid_ids]
+                    invalid_rids = [rid for rid in rid_list if rid not in valid_ids]
+                    
+                    if invalid_rids:
+                        logger.warning(f"Invalid {elem.tag} rids: {invalid_rids} - IDs not found in document")
+                    
+                    if valid_rid_list:
+                        # Update with only valid IDs
+                        elem.set('rids', ' '.join(valid_rid_list))
+                        if invalid_rids:
+                            logger.info(f"Updated {elem.tag} rids to only include valid IDs: {valid_rid_list}")
+                    else:
+                        # No valid IDs, remove the attribute
+                        del elem.attrib['rids']
+                        logger.warning(f"Removed invalid rids attribute from {elem.tag}")
             
             # Build the desired namespace map
             # Keep existing namespaces and add missing ones
