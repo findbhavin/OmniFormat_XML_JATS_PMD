@@ -918,13 +918,14 @@ class HighFidelityConverter:
                 
                 # Case 1: Table has thead or tfoot - MUST have at least one tbody (even if empty)
                 if thead is not None or tfoot is not None:
-                    # Remove empty tbody elements first and count remaining
+                    # Remove empty tbody elements and count non-empty tbody that remain
                     remaining_tbody_count = 0
                     for tbody in tbody_elements[:]:  # Use slice to avoid modification during iteration
                         if len(tbody) == 0 or not tbody.findall('.//tr'):
                             table.remove(tbody)
                             logger.info(f"Removing empty tbody element from table with thead/tfoot")
                         else:
+                            # This tbody has content, count it as remaining
                             remaining_tbody_count += 1
                     
                     # If no tbody remains, we MUST add one for DTD compliance
@@ -954,13 +955,13 @@ class HighFidelityConverter:
                 
                 # Case 2: Table has no thead/tfoot - can have either tbody or direct tr elements
                 else:
-                    # Count non-empty tbody and direct tr elements
+                    # Capture original count before any modifications for checking if sole tbody
                     original_tbody_count = len(tbody_elements)
                     
                     # If table has tbody elements, ensure they're not empty
                     for tbody in tbody_elements[:]:
                         if len(tbody) == 0 or not tbody.findall('.//tr'):
-                            # If this is the only tbody and no direct tr elements, keep it but add an empty tr
+                            # If this was the only tbody and no direct tr elements, keep it but add an empty tr
                             if original_tbody_count == 1 and len(tr_elements) == 0:
                                 tr = etree.SubElement(tbody, 'tr')
                                 td = etree.SubElement(tr, 'td')
@@ -1065,9 +1066,10 @@ class HighFidelityConverter:
                         if elem.tag == 'xref':
                             alt = elem.get('alt')
                             if alt and alt.isdigit():
-                                # Try to find ref by index
-                                if back is not None:
-                                    ref_list = back.find('.//ref-list')
+                                # Try to find ref by index - back is defined earlier at line 995
+                                back_elem = root.find('.//back')
+                                if back_elem is not None:
+                                    ref_list = back_elem.find('.//ref-list')
                                     if ref_list is not None:
                                         refs = ref_list.findall('.//ref')
                                         ref_index = int(alt)
