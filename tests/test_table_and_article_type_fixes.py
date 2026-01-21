@@ -148,12 +148,18 @@ class TestArticleTypeDuplicationFix:
             # Common article type markers that should NOT be in body
             article_type_markers = [
                 'SYSTEMATIC REVIEW/META ANALYSIS',
+                'SYSTEMATIC REVIEW',
+                'META ANALYSIS',
                 'RESEARCH ARTICLE',
                 'REVIEW ARTICLE',
                 'CASE REPORT',
                 'ORIGINAL ARTICLE',
-                'META ANALYSIS',
-                'SYSTEMATIC REVIEW'
+                'ORIGINAL RESEARCH ARTICLE',
+                'CASE STUDY',
+                'SHORT COMMUNICATION',
+                'EDITORIAL',
+                'COMMENTARY',
+                'LETTER TO THE EDITOR'
             ]
             
             # Check if first paragraph is ONLY an article type marker

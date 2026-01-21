@@ -1418,34 +1418,69 @@ class HighFidelityConverter:
             if 'article-type' not in root.attrib:
                 root.set('article-type', 'research-article')
             
-            # Remove duplicate article type from body if it appears as the first paragraph
+            # Remove duplicate article type from body if it appears in the first few paragraphs
             # This prevents "Type of Article" from appearing multiple times in the HTML
             body = root.find('.//body')
             if body is not None:
-                # Get first paragraph in body
-                first_p = body.find('.//p')
-                if first_p is not None:
-                    # Check if it contains only a bold element with article type text
-                    first_p_text = ''.join(first_p.itertext()).strip().upper()
+                # Extract article type from DOCX for comparison
+                extracted_type = self._extract_article_type_from_docx()
+                
+                # Common article type patterns that should not appear as body paragraphs
+                article_type_patterns = [
+                    'SYSTEMATIC REVIEW', 'META ANALYSIS', 'RESEARCH ARTICLE', 
+                    'REVIEW ARTICLE', 'CASE REPORT', 'ORIGINAL ARTICLE',
+                    'ORIGINAL RESEARCH ARTICLE', 'CASE STUDY', 'SHORT COMMUNICATION',
+                    'EDITORIAL', 'COMMENTARY', 'LETTER TO THE EDITOR'
+                ]
+                
+                # Check first few paragraphs (up to 3) for article type markers
+                paragraphs_to_check = 3
+                paragraphs_removed = 0
+                
+                for _ in range(paragraphs_to_check):
+                    first_p = body.find('.//p')
+                    if first_p is None:
+                        break
                     
-                    # Extract article type from DOCX for comparison
-                    extracted_type = self._extract_article_type_from_docx()
+                    # Get paragraph text
+                    first_p_text = ''.join(first_p.itertext()).strip()
+                    first_p_text_upper = first_p_text.upper()
                     
-                    # If the first paragraph matches the extracted article type, remove it
-                    if extracted_type and first_p_text == extracted_type.upper():
-                        logger.info(f"Removing duplicate article type paragraph from body: '{first_p_text}'")
+                    # Skip empty paragraphs
+                    if not first_p_text:
+                        break
+                    
+                    should_remove = False
+                    
+                    # Check if it matches the extracted article type exactly
+                    if extracted_type and first_p_text_upper == extracted_type.upper():
+                        should_remove = True
+                        logger.info(f"Removing duplicate article type paragraph (exact match): '{first_p_text}'")
+                    
+                    # Check if this is ONLY an article type pattern (not part of a longer sentence)
+                    elif any(first_p_text_upper == pattern for pattern in article_type_patterns):
+                        should_remove = True
+                        logger.info(f"Removing article type paragraph (pattern match): '{first_p_text}'")
+                    
+                    # Check if paragraph contains only article type pattern and bold formatting
+                    elif any(pattern in first_p_text_upper for pattern in article_type_patterns):
+                        # Only remove if it's mostly uppercase (metadata-like)
+                        if len(first_p_text) > 0:
+                            uppercase_ratio = sum(1 for c in first_p_text if c.isupper()) / len(first_p_text)
+                            # If 80%+ uppercase and short (likely metadata), remove it
+                            if uppercase_ratio > 0.8 and len(first_p_text) < 100:
+                                should_remove = True
+                                logger.info(f"Removing uppercase article type paragraph: '{first_p_text}'")
+                    
+                    if should_remove:
                         body.remove(first_p)
-                    # Also check for common article type patterns
-                    elif first_p_text and any(pattern in first_p_text for pattern in [
-                        'SYSTEMATIC REVIEW', 'META ANALYSIS', 'RESEARCH ARTICLE', 
-                        'REVIEW ARTICLE', 'CASE REPORT', 'ORIGINAL ARTICLE'
-                    ]):
-                        # Check if this paragraph only contains bold text (likely article type marker)
-                        bold_elem = first_p.find('.//bold')
-                        if bold_elem is not None and len(list(first_p)) == 1:
-                            # Only one child (the bold element), likely article type
-                            logger.info(f"Removing article type paragraph from body: '{first_p_text}'")
-                            body.remove(first_p)
+                        paragraphs_removed += 1
+                    else:
+                        # Stop checking once we hit a non-article-type paragraph
+                        break
+                
+                if paragraphs_removed > 0:
+                    logger.info(f"Removed {paragraphs_removed} article type paragraph(s) from body")
             
             # Remove DOCTYPE declaration to avoid "DTD not found" errors during validation
             # The DOCTYPE with external URL causes xsltproc to fail when validating
