@@ -1376,8 +1376,10 @@ class HighFidelityConverter:
                 # Check if back element has any children
                 if len(back) == 0:
                     # Back element is empty, remove it
-                    root.remove(back)
-                    logger.info("Removed empty <back> element for PMC compliance")
+                    parent = back.getparent()
+                    if parent is not None:
+                        parent.remove(back)
+                        logger.info("Removed empty <back> element for PMC compliance")
                 else:
                     # Back has children - ensure they're not all comments
                     # In lxml: real XML elements have string tag, comments have callable tag function
@@ -1390,8 +1392,10 @@ class HighFidelityConverter:
                     
                     if not has_content:
                         # No real element children, only comments
-                        root.remove(back)
-                        logger.info("Removed <back> element with no element children for PMC compliance")
+                        parent = back.getparent()
+                        if parent is not None:
+                            parent.remove(back)
+                            logger.info("Removed <back> element with no element children for PMC compliance")
             
             # Write back the XML with proper formatting
             tree.write(

@@ -475,8 +475,8 @@
             const progress = data.progress || 0;
             progressBar.style.width = `${progress}%`;
             
-            // Update stage indicator based on progress/stage
-            const stage = data.stage ? data.stage.toLowerCase() : null;
+            // Update stage indicator based on stage from backend (already lowercase)
+            const stage = data.stage || null;
             if (stage) {
                 updateStage(stage);
             }

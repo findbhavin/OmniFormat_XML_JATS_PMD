@@ -110,7 +110,7 @@ def get_metrics_summary():
         if not metrics:
             return None
         
-        # Filter only successful conversions
+        # Filter only successful conversions (do this once)
         successful = [m for m in metrics if m['status'] == 'completed']
         
         if not successful:
@@ -123,7 +123,7 @@ def get_metrics_summary():
             'avg_time': sum(times) / len(times),
             'min_time': min(times),
             'max_time': max(times),
-            'recent_count': len([m for m in successful[-10:]])  # Last 10
+            'recent_count': min(10, len(successful))  # Last 10 or fewer
         }
         
         return summary
@@ -253,14 +253,14 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         conversion_progress[conversion_id]["status"] = "processing"
         conversion_progress[conversion_id]["progress"] = 5
         conversion_progress[conversion_id]["message"] = "Uploading..."
-        conversion_progress[conversion_id]["stage"] = "Uploading"
+        conversion_progress[conversion_id]["stage"] = "upload"
         
         logger.info(f"[{conversion_id}] Starting conversion pipeline...")
         
         # Stage 1: Parsing
         conversion_progress[conversion_id]["progress"] = 15
         conversion_progress[conversion_id]["message"] = "Parsing DOCX file..."
-        conversion_progress[conversion_id]["stage"] = "Parsing"
+        conversion_progress[conversion_id]["stage"] = "parse"
         
         # Run the full pipeline with progress callback
         converter = HighFidelityConverter(docx_path)
@@ -268,19 +268,19 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         # Stage 2: Transforming
         conversion_progress[conversion_id]["progress"] = 30
         conversion_progress[conversion_id]["message"] = "Transforming to JATS XML..."
-        conversion_progress[conversion_id]["stage"] = "Transforming"
+        conversion_progress[conversion_id]["stage"] = "transform"
         
         output_folder = converter.run_pipeline()
         
         # Stage 3: Validating
         conversion_progress[conversion_id]["progress"] = 70
         conversion_progress[conversion_id]["message"] = "Validating JATS compliance..."
-        conversion_progress[conversion_id]["stage"] = "Validating"
+        conversion_progress[conversion_id]["stage"] = "validate"
         
         # Stage 4: Exporting
         conversion_progress[conversion_id]["progress"] = 85
         conversion_progress[conversion_id]["message"] = "Exporting final package..."
-        conversion_progress[conversion_id]["stage"] = "Exporting"
+        conversion_progress[conversion_id]["stage"] = "export"
 
         # Package all outputs into ZIP
         base_name = os.path.splitext(safe_filename)[0]
