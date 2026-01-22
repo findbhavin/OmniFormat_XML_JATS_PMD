@@ -1571,6 +1571,164 @@ class HighFidelityConverter:
             if data_attrs_removed > 0:
                 logger.info(f"✅ Stripped {data_attrs_removed} data-* attributes for DTD/XSD compliance")
             
+            # Fix DTD Error 1: Add id attributes to tex-math elements
+            # PMC requires all tex-math elements to have unique id attributes
+            tex_math_elements = root.findall('.//tex-math')
+            if tex_math_elements:
+                for i, tex_math in enumerate(tex_math_elements, 1):
+                    if 'id' not in tex_math.attrib:
+                        tex_math_id = f'texmath{i}'
+                        tex_math.set('id', tex_math_id)
+                        logger.info(f"Added id='{tex_math_id}' to tex-math element")
+                    
+                    # Check if tex-math content is incomplete and needs wrapping
+                    tex_content = tex_math.text or ''
+                    if tex_content.strip() and not tex_content.strip().startswith('\\documentclass'):
+                        # Content exists but not a complete LaTeX document
+                        # This is acceptable - inline math doesn't need document structure
+                        pass
+                
+                logger.info(f"✅ Added IDs to {len(tex_math_elements)} tex-math element(s)")
+            
+            # Fix DTD Error 2: Add id attributes to mml:math elements
+            # PMC requires all mml:math elements to have unique id attributes
+            mml_ns = 'http://www.w3.org/1998/Math/MathML'
+            mml_math_elements = root.findall('.//{%s}math' % mml_ns)
+            if mml_math_elements:
+                for i, mml_math in enumerate(mml_math_elements, 1):
+                    if 'id' not in mml_math.attrib:
+                        mml_id = f'mml{i}'
+                        mml_math.set('id', mml_id)
+                        logger.info(f"Added id='{mml_id}' to mml:math element")
+                
+                logger.info(f"✅ Added IDs to {len(mml_math_elements)} mml:math element(s)")
+            
+            # Fix DTD Error 3: Convert named-content anchors to proper ref elements
+            # PMC reports error when xref with ref-type="bibr" points to named-content instead of ref
+            # Pattern: <xref ref-type="bibr" rid="Ref1"> pointing to <named-content id="Ref1"/>
+            # Solution: Create proper <ref> elements in <back><ref-list> and update xrefs
+            
+            # Step 1: Find all xrefs with ref-type="bibr"
+            bibr_xrefs = root.findall('.//xref[@ref-type="bibr"]')
+            named_content_refs = {}  # Maps rid -> named-content element
+            
+            for xref in bibr_xrefs:
+                rid = xref.get('rid')
+                if rid:
+                    # Find the target element
+                    target = root.find(f".//*[@id='{rid}']")
+                    if target is not None and target.tag == 'named-content':
+                        named_content_refs[rid] = target
+                        logger.info(f"Found xref pointing to named-content: rid={rid}")
+            
+            # Step 2: If we found named-content elements being used as references, convert them
+            if named_content_refs:
+                logger.info(f"Converting {len(named_content_refs)} named-content element(s) to ref elements")
+                
+                # Ensure back/ref-list exists
+                back = root.find('.//back')
+                if back is None:
+                    back = etree.Element('back')
+                    root.append(back)
+                    logger.info("Created <back> section for references")
+                
+                ref_list = back.find('.//ref-list')
+                if ref_list is None:
+                    ref_list = etree.SubElement(back, 'ref-list')
+                    logger.info("Created <ref-list> for references")
+                
+                # Process each named-content that's being used as a reference
+                for old_rid, named_content in named_content_refs.items():
+                    # Create new ref ID (lowercase, e.g., ref1 instead of Ref1)
+                    # Extract number from old_rid if it has one
+                    import re as re_module
+                    num_match = re_module.search(r'\d+', old_rid)
+                    if num_match:
+                        ref_num = num_match.group()
+                        new_rid = f'ref{ref_num}'
+                    else:
+                        # No number found, use a sequential number
+                        existing_refs = ref_list.findall('.//ref')
+                        new_rid = f'ref{len(existing_refs) + 1}'
+                    
+                    # Extract reference text from the context
+                    # The text usually follows the named-content element in the same paragraph
+                    ref_text = ""
+                    parent = named_content.getparent()
+                    
+                    if parent is not None:
+                        # Get all text content from the parent element
+                        # This captures text nodes and tail text from the named-content
+                        parent_text = ''.join(parent.itertext()).strip()
+                        
+                        # If parent is a paragraph and contains substantial text, use it
+                        if parent.tag == 'p' and parent_text and len(parent_text) > 10:
+                            ref_text = parent_text
+                        else:
+                            # Try to get text that follows the named-content
+                            following_text = named_content.tail
+                            if following_text and following_text.strip():
+                                ref_text = following_text.strip()
+                            elif parent_text:
+                                ref_text = parent_text
+                    
+                    # If we still don't have good text, use a placeholder
+                    if not ref_text or len(ref_text) < 5:
+                        ref_text = f"Reference {ref_num if num_match else 'N/A'}"
+                    
+                    logger.info(f"Extracted reference text for {old_rid}: '{ref_text[:80]}...'")
+                    
+                    # Check if ref already exists in ref-list (might have been created earlier)
+                    existing_ref = ref_list.find(f".//ref[@id='{new_rid}']")
+                    if existing_ref is not None:
+                        # Update existing ref with better text if we have it
+                        mixed_citation = existing_ref.find('.//mixed-citation')
+                        if mixed_citation is not None and len(ref_text) > 10:
+                            mixed_citation.text = ref_text
+                            logger.info(f"Updated existing ref element: id='{new_rid}' with better text")
+                    else:
+                        # Create new ref element
+                        ref_elem = etree.Element('ref')
+                        ref_elem.set('id', new_rid)
+                        
+                        # Create mixed-citation with the extracted text
+                        mixed_citation = etree.SubElement(ref_elem, 'mixed-citation')
+                        mixed_citation.text = ref_text
+                        
+                        ref_list.append(ref_elem)
+                        logger.info(f"Created ref element: id='{new_rid}'")
+                    
+                    # Update all xrefs pointing to old_rid to use new_rid
+                    for xref in bibr_xrefs:
+                        if xref.get('rid') == old_rid:
+                            xref.set('rid', new_rid)
+                            logger.info(f"Updated xref rid from '{old_rid}' to '{new_rid}'")
+                    
+                    # Remove the named-content element from the document
+                    parent = named_content.getparent()
+                    if parent is not None:
+                        # Preserve any tail text
+                        if named_content.tail:
+                            # If there's a previous sibling, append to its tail
+                            prev = named_content.getprevious()
+                            if prev is not None:
+                                prev.tail = (prev.tail or '') + named_content.tail
+                            else:
+                                # No previous sibling, append to parent text
+                                parent.text = (parent.text or '') + named_content.tail
+                        
+                        parent.remove(named_content)
+                        logger.info(f"Removed named-content element with id='{old_rid}'")
+                        
+                        # If parent is now empty, remove it too
+                        if parent.tag == 'p' and not parent.text and len(parent) == 0:
+                            grandparent = parent.getparent()
+                            if grandparent is not None:
+                                grandparent.remove(parent)
+                                logger.info(f"Removed empty parent paragraph after named-content removal")
+                
+                logger.info(f"✅ Converted {len(named_content_refs)} named-content elements to proper ref elements")
+            
             # Write back the XML with proper formatting
             tree.write(
                 self.xml_path,
