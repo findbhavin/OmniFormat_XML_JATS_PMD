@@ -40,37 +40,7 @@ pandoc --version
 # Should show version 2.11+ or higher
 ```
 
-#### 2. LibreOffice (Optional, for enhanced DOCX to PDF)
-Used for direct DOCX to PDF conversion with font preservation.
 
-**Installation:**
-```bash
-# Ubuntu/Debian
-sudo apt-get install libreoffice
-
-# macOS
-brew install --cask libreoffice
-```
-
-**Verify:**
-```bash
-libreoffice --version
-```
-
-#### 3. System Libraries for WeasyPrint
-WeasyPrint requires several system libraries for PDF generation.
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install python3-dev python3-pip python3-setuptools \
-    python3-wheel python3-cffi libcairo2 libpango-1.0-0 \
-    libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info
-```
-
-**macOS:**
-```bash
-brew install cairo pango gdk-pixbuf libffi
-```
 
 ## Installation
 
@@ -218,27 +188,10 @@ which pandoc
 export PATH=$PATH:/usr/local/bin
 ```
 
-### Issue: WeasyPrint import errors
-**Solution:** Install system dependencies:
-```bash
-# Ubuntu
-sudo apt-get install libcairo2-dev libpango1.0-dev
-
-# Then reinstall
-pip install --force-reinstall weasyprint
-```
-
 ### Issue: PMC Style Checker not working
 **Solution:** Ensure xsltproc is installed:
 ```bash
 sudo apt-get install xsltproc
-```
-
-### Issue: Font errors in PDF
-**Solution:** Install required fonts:
-```bash
-sudo apt-get install fonts-liberation fonts-dejavu
-fc-cache -fv
 ```
 
 ### Issue: Permission denied errors
@@ -290,7 +243,6 @@ git push origin feature/my-feature
 
 - **JATS Specification**: https://jats.nlm.nih.gov/
 - **PMC Tagging Guidelines**: https://www.ncbi.nlm.nih.gov/pmc/pub/tagging-guidelines/
-- **WeasyPrint Documentation**: https://weasyprint.readthedocs.io/
 - **Pandoc Manual**: https://pandoc.org/MANUAL.html
 
 ## Support

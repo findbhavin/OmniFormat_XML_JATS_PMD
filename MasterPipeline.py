@@ -3,11 +3,12 @@ import logging
 import subprocess
 import shutil
 import traceback
+import re
 from lxml import etree
 import json
-import re
 import html
 import datetime
+from docx import Document
 
 # Configure detailed logging for Google Cloud Run
 logging.basicConfig(level=logging.INFO)
@@ -30,8 +31,6 @@ class HighFidelityConverter:
         self.xml_path = os.path.join(self.output_dir, "article.xml")
         self.xml_dtd_path = os.path.join(self.output_dir, "articledtd.xml")
         self.html_path = os.path.join(self.output_dir, "article.html")
-        self.pdf_path = os.path.join(self.output_dir, "published_article.pdf")
-        self.direct_pdf_path = os.path.join(self.output_dir, "direct_from_word.pdf")
 
         # Configuration Paths - JATS 1.4 Publishing DTD
         # Official schema: https://public.nlm.nih.gov/projects/jats/publishing/1.4/
@@ -783,8 +782,6 @@ class HighFidelityConverter:
             },
             "output_files": {
                 "jats_xml": "article.xml",
-                "jats_pdf": "published_article.pdf",
-                "direct_pdf": "direct_from_word.pdf",
                 "html": "article.html",
                 "media": "media/"
             },
@@ -907,6 +904,39 @@ class HighFidelityConverter:
                 return True
         return False
 
+    def _extract_article_type_from_docx(self):
+        """
+        Extract the article type from the first paragraph of the Word document.
+        This is typically found in a text box on the first page (e.g., "SYSTEMATIC REVIEW/META ANALYSIS").
+        Returns the article type string or None if not found.
+        """
+        # Constants for article type detection
+        MAX_PARAGRAPHS_TO_CHECK = 5
+        MIN_TEXT_LENGTH = 5
+        
+        try:
+            if not os.path.exists(self.docx_path):
+                logger.warning(f"DOCX file not found: {self.docx_path}")
+                return None
+            
+            doc = Document(self.docx_path)
+            
+            # Check first few paragraphs for article type
+            # Article type is typically in the first paragraph and in UPPERCASE
+            for para in doc.paragraphs[:MAX_PARAGRAPHS_TO_CHECK]:
+                text = para.text.strip()
+                if text and text.isupper() and len(text) > MIN_TEXT_LENGTH:
+                    # Found a potential article type (uppercase text in first few paragraphs)
+                    logger.info(f"Extracted article type from DOCX: {text}")
+                    return text
+            
+            logger.warning("Could not extract article type from DOCX - no uppercase text found in first paragraphs")
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Failed to extract article type from DOCX: {e}")
+            return None
+
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
         try:
@@ -947,30 +977,41 @@ class HighFidelityConverter:
                             # This tbody has content, count it as remaining
                             remaining_tbody_count += 1
                     
-                    # If no tbody remains, we MUST add one for DTD compliance
+                    # If no tbody remains, check if thead has all the content (informational table)
+                    # For tables where thead contains all content, don't add empty tbody
+                    # Only add tbody if table genuinely needs it for DTD compliance
                     if remaining_tbody_count == 0:
-                        tbody = etree.Element('tbody')
+                        # Check if this is an informational table (all content in thead)
+                        thead_rows = thead.findall('.//tr') if thead is not None else []
                         
-                        # Add a single empty tr to make it valid
-                        tr = etree.SubElement(tbody, 'tr')
-                        td = etree.SubElement(tr, 'td')
-                        td.text = ''  # Empty cell
-                        
-                        # Find where to insert tbody (after thead and tfoot)
-                        insert_index = len(list(table))
-                        if tfoot is not None:
-                            insert_index = list(table).index(tfoot) + 1
-                        elif thead is not None:
-                            insert_index = list(table).index(thead) + 1
+                        # If thead has multiple rows with content, it's likely complete as-is
+                        # Don't add empty tbody for such tables to avoid empty rows in HTML
+                        if len(thead_rows) > 1:
+                            logger.info(f"Table has {len(thead_rows)} rows in thead - skipping empty tbody to avoid blank rows in HTML")
                         else:
-                            # Find position after colgroup/col elements
-                            for i, child in enumerate(table):
-                                if child.tag not in ['col', 'colgroup']:
-                                    insert_index = i
-                                    break
-                        
-                        table.insert(insert_index, tbody)
-                        logger.info(f"Added tbody with empty tr to table for DTD compliance")
+                            # Only add empty tbody for edge cases where truly needed
+                            tbody = etree.Element('tbody')
+                            
+                            # Add a single empty tr to make it valid
+                            tr = etree.SubElement(tbody, 'tr')
+                            td = etree.SubElement(tr, 'td')
+                            td.text = ''  # Empty cell
+                            
+                            # Find where to insert tbody (after thead and tfoot)
+                            insert_index = len(list(table))
+                            if tfoot is not None:
+                                insert_index = list(table).index(tfoot) + 1
+                            elif thead is not None:
+                                insert_index = list(table).index(thead) + 1
+                            else:
+                                # Find position after colgroup/col elements
+                                for i, child in enumerate(table):
+                                    if child.tag not in ['col', 'colgroup']:
+                                        insert_index = i
+                                        break
+                            
+                            table.insert(insert_index, tbody)
+                            logger.info(f"Added tbody with empty tr to table for DTD compliance")
                 
                 # Case 2: Table has no thead/tfoot - can have either tbody or direct tr elements
                 else:
@@ -1048,7 +1089,15 @@ class HighFidelityConverter:
                         logger.info("Adding minimal title-group to article-meta")
                         title_group = etree.Element('title-group')
                         article_title = etree.SubElement(title_group, 'article-title')
-                        article_title.text = "Article Title"
+                        
+                        # Try to extract article type from the Word document
+                        extracted_type = self._extract_article_type_from_docx()
+                        if extracted_type:
+                            article_title.text = extracted_type
+                            logger.info(f"Using extracted article type as title: {extracted_type}")
+                        else:
+                            article_title.text = "Article Title"
+                            logger.info("Using default article title (extraction failed)")
                         
                         # Insert title-group before permissions
                         perm_index = list(article_meta).index(permissions)
@@ -1365,6 +1414,70 @@ class HighFidelityConverter:
             if 'article-type' not in root.attrib:
                 root.set('article-type', 'research-article')
             
+            # Remove duplicate article type from body if it appears in the first few paragraphs
+            # This prevents "Type of Article" from appearing multiple times in the HTML
+            body = root.find('.//body')
+            if body is not None:
+                # Extract article type from DOCX for comparison
+                extracted_type = self._extract_article_type_from_docx()
+                
+                # Common article type patterns that should not appear as body paragraphs
+                article_type_patterns = [
+                    'SYSTEMATIC REVIEW', 'META ANALYSIS', 'RESEARCH ARTICLE', 
+                    'REVIEW ARTICLE', 'CASE REPORT', 'ORIGINAL ARTICLE',
+                    'ORIGINAL RESEARCH ARTICLE', 'CASE STUDY', 'SHORT COMMUNICATION',
+                    'EDITORIAL', 'COMMENTARY', 'LETTER TO THE EDITOR'
+                ]
+                
+                # Check first few paragraphs (up to 3) for article type markers
+                paragraphs_to_check = 3
+                paragraphs_removed = 0
+                
+                for _ in range(paragraphs_to_check):
+                    first_p = body.find('.//p')
+                    if first_p is None:
+                        break
+                    
+                    # Get paragraph text
+                    first_p_text = ''.join(first_p.itertext()).strip()
+                    first_p_text_upper = first_p_text.upper()
+                    
+                    # Skip empty paragraphs
+                    if not first_p_text:
+                        break
+                    
+                    should_remove = False
+                    
+                    # Check if it matches the extracted article type exactly
+                    if extracted_type and first_p_text_upper == extracted_type.upper():
+                        should_remove = True
+                        logger.info(f"Removing duplicate article type paragraph (exact match): '{first_p_text}'")
+                    
+                    # Check if this is ONLY an article type pattern (not part of a longer sentence)
+                    elif any(first_p_text_upper == pattern for pattern in article_type_patterns):
+                        should_remove = True
+                        logger.info(f"Removing article type paragraph (pattern match): '{first_p_text}'")
+                    
+                    # Check if paragraph contains only article type pattern and bold formatting
+                    elif any(pattern in first_p_text_upper for pattern in article_type_patterns):
+                        # Only remove if it's mostly uppercase (metadata-like)
+                        if first_p_text and len(first_p_text) > 0:
+                            uppercase_ratio = sum(1 for c in first_p_text if c.isupper()) / len(first_p_text)
+                            # If 80%+ uppercase and short (likely metadata), remove it
+                            if uppercase_ratio > 0.8 and len(first_p_text) < 100:
+                                should_remove = True
+                                logger.info(f"Removing uppercase article type paragraph: '{first_p_text}'")
+                    
+                    if should_remove:
+                        body.remove(first_p)
+                        paragraphs_removed += 1
+                    else:
+                        # Stop checking once we hit a non-article-type paragraph
+                        break
+                
+                if paragraphs_removed > 0:
+                    logger.info(f"Removed {paragraphs_removed} article type paragraph(s) from body")
+            
             # Remove DOCTYPE declaration to avoid "DTD not found" errors during validation
             # The DOCTYPE with external URL causes xsltproc to fail when validating
             tree.docinfo.clear()
@@ -1404,6 +1517,36 @@ class HighFidelityConverter:
                 xml_declaration=True,
                 encoding='utf-8'
             )
+            
+            # Fix Pandoc JATS-to-HTML conversion issue: Remove namespace declarations from table elements
+            # Pandoc 3.x has issues converting tables that have xmlns declarations on the table element itself
+            # This causes tables to appear empty in HTML output
+            # Note: lxml serializes inherited namespace declarations, so we use regex post-processing
+            # This is a targeted fix for a known Pandoc limitation with JATS tables
+            with open(self.xml_path, 'r', encoding='utf-8') as f:
+                xml_content = f.read()
+            
+            # Remove xmlns:mml and xmlns:xlink from <table> tags only (not from root <article>)
+            # Pattern matches: <table followed by one or both xmlns declarations
+            # This handles the most common namespace ordering from lxml serialization
+            original_content = xml_content
+            xml_content = re.sub(
+                r'(<table)(\s+xmlns:mml="[^"]*")(\s+xmlns:xlink="[^"]*")?',
+                r'\1',
+                xml_content
+            )
+            xml_content = re.sub(
+                r'(<table)(\s+xmlns:xlink="[^"]*")(\s+xmlns:mml="[^"]*")?',
+                r'\1',
+                xml_content
+            )
+            
+            # Only write back if changes were made
+            if xml_content != original_content:
+                with open(self.xml_path, 'w', encoding='utf-8') as f:
+                    f.write(xml_content)
+                logger.info("Removed namespace declarations from table elements for Pandoc compatibility")
+
 
             logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + DTD validation fixes)")
         except Exception as e:
@@ -1414,14 +1557,15 @@ class HighFidelityConverter:
 
     def _post_process_html(self):
         """
-        Post-process the HTML to fix anchor references for WeasyPrint.
+        Post-process the HTML to fix anchor references and table structures.
         Adds ID attributes to reference list items based on xref rid attributes in XML.
+        Fixes table column structures that Pandoc incorrectly converts.
         """
         try:
             if not os.path.exists(self.html_path) or not os.path.exists(self.xml_path):
                 return
             
-            # Parse the XML to get xref references
+            # Parse the XML to get xref references and table structures
             parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
             xml_tree = etree.parse(self.xml_path, parser)
             xml_root = xml_tree.getroot()
@@ -1452,6 +1596,17 @@ class HighFidelityConverter:
                         li.set('id', ref_id)
                         logger.info(f"Added id='{ref_id}' to reference list item {i}")
             
+            # Fix table structures - Pandoc incorrectly converts JATS tables
+            # Get all tables from JATS XML
+            xml_tables = xml_root.findall('.//table')
+            html_tables = html_doc.findall('.//table')
+            
+            if len(xml_tables) == len(html_tables):
+                for xml_table, html_table in zip(xml_tables, html_tables):
+                    self._fix_html_table_structure(xml_table, html_table)
+            else:
+                logger.warning(f"Table count mismatch: {len(xml_tables)} in XML vs {len(html_tables)} in HTML")
+            
             # Serialize back to HTML
             html_content = lxml_html.tostring(html_doc, encoding='unicode', method='html')
             
@@ -1459,12 +1614,154 @@ class HighFidelityConverter:
             with open(self.html_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
             
-            logger.info("✅ HTML post-processing completed (added anchor IDs for references)")
+            logger.info("✅ HTML post-processing completed (added anchor IDs for references and fixed tables)")
             
         except Exception as e:
             logger.warning(f"HTML post-processing failed: {e}")
             import traceback
             logger.warning(f"Traceback: {traceback.format_exc()}")
+    
+    def _fix_html_table_structure(self, xml_table, html_table):
+        """
+        Fix HTML table structure based on JATS XML table.
+        Pandoc sometimes incorrectly converts JATS tables, putting each cell as a separate row.
+        Pandoc 3.x also creates empty tbody elements for thead-only tables.
+        This method reconstructs the table structure from the XML.
+        """
+        try:
+            # Get rows from XML table
+            xml_rows = xml_table.findall('.//tr')
+            
+            # Check if HTML table is empty or has wrong structure
+            html_rows = html_table.findall('.//tr')
+            
+            # Case 1: HTML table is completely empty (Pandoc created empty tbody)
+            if len(html_rows) == 0 and len(xml_rows) > 0:
+                logger.info(f"Fixing empty HTML table - rebuilding from XML ({len(xml_rows)} rows)")
+                
+                # Clear existing table content
+                for child in list(html_table):
+                    html_table.remove(child)
+                
+                # Rebuild thead if present in XML
+                xml_thead = xml_table.find('.//thead')
+                if xml_thead is not None:
+                    html_thead = etree.Element('thead')
+                    self._rebuild_table_section(xml_thead, html_thead)
+                    html_table.append(html_thead)
+                
+                # Rebuild tbody if present in XML
+                xml_tbody = xml_table.find('.//tbody')
+                if xml_tbody is not None:
+                    html_tbody = etree.Element('tbody')
+                    self._rebuild_table_section(xml_tbody, html_tbody)
+                    html_table.append(html_tbody)
+                
+                return
+            
+            # Case 2: Check if HTML table has wrong column count
+            # If HTML table has only 1 column but XML has multiple, we need to fix it
+            html_first_row = html_table.find('.//tr')
+            if html_first_row is not None:
+                html_cells = html_first_row.findall('.//th') + html_first_row.findall('.//td')
+                
+                # Get XML first row column count
+                xml_first_row = xml_rows[0] if xml_rows else None
+                if xml_first_row is not None:
+                    xml_cells = xml_first_row.findall('.//th') + xml_first_row.findall('.//td')
+                    xml_col_count = len(xml_cells)
+                    html_col_count = len(html_cells)
+                    
+                    # If HTML has fewer columns than XML, we need to rebuild the table
+                    if html_col_count < xml_col_count:
+                        logger.info(f"Fixing table structure: {html_col_count} cols in HTML -> {xml_col_count} cols from XML")
+                        
+                        # Clear existing table content
+                        for child in list(html_table):
+                            html_table.remove(child)
+                        
+                        # Rebuild thead if present in XML
+                        xml_thead = xml_table.find('.//thead')
+                        if xml_thead is not None:
+                            html_thead = etree.Element('thead')
+                            self._rebuild_table_section(xml_thead, html_thead)
+                            html_table.append(html_thead)
+                        
+                        # Rebuild tbody if present in XML
+                        xml_tbody = xml_table.find('.//tbody')
+                        if xml_tbody is not None:
+                            html_tbody = etree.Element('tbody')
+                            self._rebuild_table_section(xml_tbody, html_tbody)
+                            html_table.append(html_tbody)
+                        
+        except Exception as e:
+            logger.warning(f"Failed to fix HTML table structure: {e}")
+            import traceback
+            logger.warning(f"Traceback: {traceback.format_exc()}")
+    
+    def _rebuild_table_section(self, xml_section, html_section):
+        """
+        Helper method to rebuild a table section (thead or tbody) from XML to HTML.
+        Reduces code duplication between thead and tbody processing.
+        """
+        for xml_tr in xml_section.findall('.//tr'):
+            html_tr = etree.SubElement(html_section, 'tr')
+            for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
+                cell_tag = 'th' if xml_cell.tag == 'th' else 'td'
+                html_cell = etree.SubElement(html_tr, cell_tag)
+                
+                # Copy text content and children
+                html_cell.text = xml_cell.text
+                for child in xml_cell:
+                    html_child = self._convert_xml_to_html_element(child)
+                    if html_child is not None:
+                        html_cell.append(html_child)
+                
+                # Handle tail text - optimize by storing list once
+                if xml_cell.tail:
+                    cell_children = list(html_cell)
+                    if cell_children:
+                        cell_children[-1].tail = (cell_children[-1].tail or '') + xml_cell.tail
+                    else:
+                        html_cell.text = (html_cell.text or '') + xml_cell.tail
+                
+                # Copy attributes (like colspan)
+                for attr, value in xml_cell.attrib.items():
+                    html_cell.set(attr, value)
+    
+    def _convert_xml_to_html_element(self, xml_elem):
+        """
+        Convert JATS XML element to HTML element for table content.
+        Handles common inline elements like bold, italic, underline, sup, sub, etc.
+        """
+        # Map JATS tags to HTML tags
+        tag_map = {
+            'bold': 'strong',
+            'italic': 'em',
+            'underline': 'u',
+            'sup': 'sup',
+            'sub': 'sub',
+            'xref': 'a',
+            'p': 'p',
+            'br': 'br'
+        }
+        
+        html_tag = tag_map.get(xml_elem.tag, 'span')
+        html_elem = etree.Element(html_tag)
+        html_elem.text = xml_elem.text
+        html_elem.tail = xml_elem.tail
+        
+        # Copy attributes
+        for attr, value in xml_elem.attrib.items():
+            html_elem.set(attr, value)
+        
+        # Recursively convert children
+        for child in xml_elem:
+            html_child = self._convert_xml_to_html_element(child)
+            if html_child is not None:
+                html_elem.append(html_child)
+        
+        return html_elem
 
     def _generate_articledtd_xml(self):
         """
@@ -1574,37 +1871,6 @@ class HighFidelityConverter:
             logger.error(f"Traceback: {traceback.format_exc()}")
 
 
-    def _create_fallback_pdf(self, pdf_path, message):
-        """Create a simple fallback PDF when WeasyPrint fails."""
-        try:
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            from reportlab.lib.units import inch
-            
-            c = canvas.Canvas(pdf_path, pagesize=letter)
-            c.setFont("Helvetica", 12)
-            
-            # Add title
-            c.drawString(1*inch, 10*inch, "OmniJAX Conversion Report")
-            c.setFont("Helvetica", 10)
-            
-            # Add message
-            y_position = 9*inch
-            for line in message.split('\n'):
-                c.drawString(1*inch, y_position, line)
-                y_position -= 0.25*inch
-            
-            # Add timestamp
-            c.drawString(1*inch, 0.5*inch, f"Generated: {self._get_timestamp()}")
-            
-            c.save()
-            logger.info(f"Created fallback PDF at {pdf_path}")
-        except Exception as e:
-            logger.error(f"Failed to create fallback PDF: {e}")
-            # Last resort: create empty file
-            with open(pdf_path, 'wb') as f:
-                f.write(b"%PDF-1.4\n%Fallback PDF\n")
-
     def _generate_readme(self):
         """Generate README file with conversion details."""
         readme_path = os.path.join(self.output_dir, "README.txt")
@@ -1619,12 +1885,10 @@ class HighFidelityConverter:
                 f.write("-" * 50 + "\n")
                 f.write("1. article.xml           - JATS {0} Publishing DTD XML (without DOCTYPE)\n".format(self.jats_version))
                 f.write("2. articledtd.xml        - JATS XML with DOCTYPE for PMC Style Checker\n")
-                f.write("3. published_article.pdf - PDF generated from JATS XML\n")
-                f.write("4. direct_from_word.pdf  - Direct DOCX→PDF conversion\n")
-                f.write("5. article.html          - HTML version for web viewing\n")
-                f.write("6. media/                - Extracted images and media files\n")
-                f.write("7. validation_report.json- Comprehensive validation report\n")
-                f.write("8. README.txt            - This file\n\n")
+                f.write("3. article.html          - HTML version for web viewing\n")
+                f.write("4. media/                - Extracted images and media files\n")
+                f.write("5. validation_report.json- Comprehensive validation report\n")
+                f.write("6. README.txt            - This file\n\n")
 
                 f.write("COMPLIANCE INFORMATION:\n")
                 f.write("-" * 50 + "\n")
@@ -1675,9 +1939,7 @@ class HighFidelityConverter:
                 f.write("USAGE NOTES:\n")
                 f.write("-" * 50 + "\n")
                 f.write("1. The JATS XML is validated against official schema\n")
-                f.write("2. Two PDF versions are provided:\n")
-                f.write("   - published_article.pdf: From JATS XML (semantic)\n")
-                f.write("   - direct_from_word.pdf: Direct conversion (visual)\n")
+                f.write("2. HTML version is provided for web viewing\n")
                 f.write("3. All images are extracted to media/ folder\n")
                 f.write("4. Review validation_report.json before submission\n")
                 f.write("5. Use PMC Style Checker for final validation\n")
@@ -1772,8 +2034,8 @@ class HighFidelityConverter:
         if not validation_passed:
             logger.warning("⚠️ JATS validation failed, but continuing with pipeline...")
 
-        # STEP 4: Intermediate HTML (for JATS PDF)
-        logger.info("Step 4: Generating intermediate HTML from JATS XML...")
+        # STEP 4: HTML generation from JATS XML
+        logger.info("Step 4: Generating HTML from JATS XML...")
         try:
             self._run_pandoc_command([
                 "-f", "jats",
@@ -1793,109 +2055,15 @@ class HighFidelityConverter:
             else:
                 raise FileNotFoundError(f"HTML not created at {self.html_path}")
             
-            # Post-process HTML to fix anchor references
+            # Post-process HTML to fix anchor references and table structures
             self._post_process_html()
                 
         except Exception as e:
             logger.error(f"Failed to generate HTML: {e}")
             raise
 
-        # STEP 5: Render JATS-Derived PDF
-        logger.info("Step 5: Rendering JATS-compliant PDF via WeasyPrint...")
-        try:
-            from weasyprint import HTML, CSS
-            from weasyprint.text.fonts import FontConfiguration
-            
-            # Initialize font configuration for proper font embedding
-            font_config = FontConfiguration()
-            
-            # Check if WeasyPrint can access the CSS file
-            css_path = self.css_path
-            if not os.path.exists(css_path):
-                logger.warning(f"CSS file not found at {css_path}, using default styling")
-                css_path = None
-            
-            # Generate PDF with font configuration
-            html = HTML(filename=self.html_path, base_url=self.output_dir)
-            
-            if css_path and os.path.exists(css_path):
-                css = CSS(filename=css_path)
-                html.write_pdf(target=self.pdf_path, stylesheets=[css], font_config=font_config)
-            else:
-                html.write_pdf(target=self.pdf_path, font_config=font_config)
-            
-            # Verify PDF was created
-            if os.path.exists(self.pdf_path):
-                pdf_size = os.path.getsize(self.pdf_path)
-                logger.info(f"✅ JATS PDF generated: {pdf_size:,} bytes")
-            else:
-                raise FileNotFoundError(f"PDF not created at {self.pdf_path}")
-                
-        except ImportError:
-            logger.error("❌ WeasyPrint not installed")
-            raise RuntimeError("WeasyPrint is required for PDF generation")
-        except Exception as e:
-            logger.error(f"❌ PDF generation failed: {e}")
-            # Try to create a minimal PDF as fallback
-            self._create_fallback_pdf(self.pdf_path, "JATS PDF Generation Failed")
-            logger.info("Created fallback PDF")
-
-        # STEP 6: Direct DOCX to PDF Conversion
-        logger.info("Step 6: Creating direct DOCX→PDF (preserving Word formatting)...")
-        try:
-            # Import WeasyPrint components (may be redundant with Step 5, but needed if Step 5 fails)
-            from weasyprint import HTML
-            from weasyprint.text.fonts import FontConfiguration
-            
-            # Initialize font configuration
-            font_config = FontConfiguration()
-            
-            # Create a temporary HTML file from DOCX
-            temp_html = os.path.join(self.output_dir, "direct_temp.html")
-            
-            # Enhanced Pandoc options for better format preservation
-            self._run_pandoc_command([
-                self.docx_path,
-                "-s",  # Standalone HTML
-                "-t", "html5",  # Use HTML5 for better styling support
-                "--css", self.css_path,
-                "--extract-media=" + self.output_dir,
-                "--embed-resources",  # Embed images and resources (replaces deprecated --self-contained)
-                "-o", temp_html
-            ], "DOCX to HTML (direct)")
-            
-            # Convert HTML to PDF with CSS applied
-            from weasyprint import HTML, CSS
-            html_doc = HTML(filename=temp_html, base_url=self.output_dir)
-            
-            # Apply CSS for consistent styling
-            if os.path.exists(self.css_path):
-                css_obj = CSS(filename=self.css_path)
-                html_doc.write_pdf(target=self.direct_pdf_path, stylesheets=[css_obj])
-            else:
-                html_doc.write_pdf(target=self.direct_pdf_path)
-            
-            # Clean up temp file
-            if os.path.exists(temp_html):
-                os.remove(temp_html)
-            
-            if os.path.exists(self.direct_pdf_path):
-                pdf_size = os.path.getsize(self.direct_pdf_path)
-                logger.info(f"✅ Direct PDF generated: {pdf_size:,} bytes")
-            else:
-                raise FileNotFoundError(f"Direct PDF not created")
-                
-        except Exception as e:
-            logger.error(f"❌ Direct PDF conversion failed: {e}")
-            # Create a simple placeholder PDF
-            self._create_fallback_pdf(
-                self.direct_pdf_path, 
-                "Direct PDF Generation Failed\n\nThis file is a placeholder because direct PDF conversion encountered an error.\n\nPlease use the JATS-derived PDF instead."
-            )
-            logger.info("Created placeholder for direct PDF")
-
-        # STEP 7: Create documentation and finalize
-        logger.info("Step 7: Generating documentation and finalizing package...")
+        # STEP 5: Create documentation and finalize
+        logger.info("Step 5: Generating documentation and finalizing package...")
         self._generate_readme()
         
         # Check for media files
@@ -1913,8 +2081,6 @@ class HighFidelityConverter:
         if os.path.exists(self.xml_dtd_path):
             logger.info(f"  - JATS XML with DOCTYPE: {os.path.getsize(self.xml_dtd_path):,} bytes")
         logger.info(f"  - HTML: {os.path.getsize(self.html_path):,} bytes")
-        logger.info(f"  - JATS PDF: {os.path.getsize(self.pdf_path):,} bytes")
-        logger.info(f"  - Direct PDF: {os.path.getsize(self.direct_pdf_path):,} bytes")
         logger.info(f"  - Media files: {len(media_files)}")
         logger.info("=" * 60)
 

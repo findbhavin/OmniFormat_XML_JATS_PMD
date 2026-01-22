@@ -59,7 +59,11 @@ thead th {
 }
 
 tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #f0f0f0;  /* Enhanced contrast for better readability */
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #ffffff;  /* Explicit white background for odd rows */
 }
 
 /* Ensure empty cells have proper height */

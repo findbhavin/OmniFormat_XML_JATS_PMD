@@ -157,8 +157,6 @@ class TestPipelineIntegration:
             "article.xml",
             "articledtd.xml",
             "article.html",
-            "published_article.pdf",
-            "direct_from_word.pdf",
             "validation_report.json"
         ]
         
