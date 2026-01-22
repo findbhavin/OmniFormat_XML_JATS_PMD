@@ -133,8 +133,6 @@ def mock_converter(sample_docx, temp_output_dir):
     converter.xml_path = os.path.join(temp_output_dir, "article.xml")
     converter.xml_dtd_path = os.path.join(temp_output_dir, "articledtd.xml")
     converter.html_path = os.path.join(temp_output_dir, "article.html")
-    converter.pdf_path = os.path.join(temp_output_dir, "published_article.pdf")
-    converter.direct_pdf_path = os.path.join(temp_output_dir, "direct_from_word.pdf")
     
     # Create directories
     os.makedirs(temp_output_dir, exist_ok=True)

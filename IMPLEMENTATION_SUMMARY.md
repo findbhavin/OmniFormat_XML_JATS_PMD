@@ -172,7 +172,7 @@ Background Thread:
      - Inject xsi:schemaLocation
      - Validate with XSD
      - Run PMC Style Checker
-     - Generate PDFs
+     - Generate HTML
      - Package outputs
   3. Update status (queued → processing → completed)
     ↓

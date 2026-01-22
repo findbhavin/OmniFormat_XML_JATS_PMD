@@ -3,9 +3,9 @@ import logging
 import subprocess
 import shutil
 import traceback
+import re
 from lxml import etree
 import json
-import re
 import html
 import datetime
 from docx import Document
@@ -31,8 +31,6 @@ class HighFidelityConverter:
         self.xml_path = os.path.join(self.output_dir, "article.xml")
         self.xml_dtd_path = os.path.join(self.output_dir, "articledtd.xml")
         self.html_path = os.path.join(self.output_dir, "article.html")
-        self.pdf_path = os.path.join(self.output_dir, "published_article.pdf")
-        self.direct_pdf_path = os.path.join(self.output_dir, "direct_from_word.pdf")
 
         # Configuration Paths - JATS 1.4 Publishing DTD
         # Official schema: https://public.nlm.nih.gov/projects/jats/publishing/1.4/
@@ -784,8 +782,6 @@ class HighFidelityConverter:
             },
             "output_files": {
                 "jats_xml": "article.xml",
-                "jats_pdf": "published_article.pdf",
-                "direct_pdf": "direct_from_word.pdf",
                 "html": "article.html",
                 "media": "media/"
             },
@@ -1521,6 +1517,36 @@ class HighFidelityConverter:
                 xml_declaration=True,
                 encoding='utf-8'
             )
+            
+            # Fix Pandoc JATS-to-HTML conversion issue: Remove namespace declarations from table elements
+            # Pandoc 3.x has issues converting tables that have xmlns declarations on the table element itself
+            # This causes tables to appear empty in HTML output
+            # Note: lxml serializes inherited namespace declarations, so we use regex post-processing
+            # This is a targeted fix for a known Pandoc limitation with JATS tables
+            with open(self.xml_path, 'r', encoding='utf-8') as f:
+                xml_content = f.read()
+            
+            # Remove xmlns:mml and xmlns:xlink from <table> tags only (not from root <article>)
+            # Pattern matches: <table followed by one or both xmlns declarations
+            # This handles the most common namespace ordering from lxml serialization
+            original_content = xml_content
+            xml_content = re.sub(
+                r'(<table)(\s+xmlns:mml="[^"]*")(\s+xmlns:xlink="[^"]*")?',
+                r'\1',
+                xml_content
+            )
+            xml_content = re.sub(
+                r'(<table)(\s+xmlns:xlink="[^"]*")(\s+xmlns:mml="[^"]*")?',
+                r'\1',
+                xml_content
+            )
+            
+            # Only write back if changes were made
+            if xml_content != original_content:
+                with open(self.xml_path, 'w', encoding='utf-8') as f:
+                    f.write(xml_content)
+                logger.info("Removed namespace declarations from table elements for Pandoc compatibility")
+
 
             logger.info(f"✅ XML post-processing completed (JATS {self.jats_version} + PMC compliance + DTD validation fixes)")
         except Exception as e:
@@ -1599,13 +1625,41 @@ class HighFidelityConverter:
         """
         Fix HTML table structure based on JATS XML table.
         Pandoc sometimes incorrectly converts JATS tables, putting each cell as a separate row.
+        Pandoc 3.x also creates empty tbody elements for thead-only tables.
         This method reconstructs the table structure from the XML.
         """
         try:
             # Get rows from XML table
             xml_rows = xml_table.findall('.//tr')
             
-            # Check if this table needs fixing
+            # Check if HTML table is empty or has wrong structure
+            html_rows = html_table.findall('.//tr')
+            
+            # Case 1: HTML table is completely empty (Pandoc created empty tbody)
+            if len(html_rows) == 0 and len(xml_rows) > 0:
+                logger.info(f"Fixing empty HTML table - rebuilding from XML ({len(xml_rows)} rows)")
+                
+                # Clear existing table content
+                for child in list(html_table):
+                    html_table.remove(child)
+                
+                # Rebuild thead if present in XML
+                xml_thead = xml_table.find('.//thead')
+                if xml_thead is not None:
+                    html_thead = etree.Element('thead')
+                    self._rebuild_table_section(xml_thead, html_thead)
+                    html_table.append(html_thead)
+                
+                # Rebuild tbody if present in XML
+                xml_tbody = xml_table.find('.//tbody')
+                if xml_tbody is not None:
+                    html_tbody = etree.Element('tbody')
+                    self._rebuild_table_section(xml_tbody, html_tbody)
+                    html_table.append(html_tbody)
+                
+                return
+            
+            # Case 2: Check if HTML table has wrong column count
             # If HTML table has only 1 column but XML has multiple, we need to fix it
             html_first_row = html_table.find('.//tr')
             if html_first_row is not None:
@@ -1817,37 +1871,6 @@ class HighFidelityConverter:
             logger.error(f"Traceback: {traceback.format_exc()}")
 
 
-    def _create_fallback_pdf(self, pdf_path, message):
-        """Create a simple fallback PDF when WeasyPrint fails."""
-        try:
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            from reportlab.lib.units import inch
-            
-            c = canvas.Canvas(pdf_path, pagesize=letter)
-            c.setFont("Helvetica", 12)
-            
-            # Add title
-            c.drawString(1*inch, 10*inch, "OmniJAX Conversion Report")
-            c.setFont("Helvetica", 10)
-            
-            # Add message
-            y_position = 9*inch
-            for line in message.split('\n'):
-                c.drawString(1*inch, y_position, line)
-                y_position -= 0.25*inch
-            
-            # Add timestamp
-            c.drawString(1*inch, 0.5*inch, f"Generated: {self._get_timestamp()}")
-            
-            c.save()
-            logger.info(f"Created fallback PDF at {pdf_path}")
-        except Exception as e:
-            logger.error(f"Failed to create fallback PDF: {e}")
-            # Last resort: create empty file
-            with open(pdf_path, 'wb') as f:
-                f.write(b"%PDF-1.4\n%Fallback PDF\n")
-
     def _generate_readme(self):
         """Generate README file with conversion details."""
         readme_path = os.path.join(self.output_dir, "README.txt")
@@ -1862,12 +1885,10 @@ class HighFidelityConverter:
                 f.write("-" * 50 + "\n")
                 f.write("1. article.xml           - JATS {0} Publishing DTD XML (without DOCTYPE)\n".format(self.jats_version))
                 f.write("2. articledtd.xml        - JATS XML with DOCTYPE for PMC Style Checker\n")
-                f.write("3. published_article.pdf - PDF generated from JATS XML\n")
-                f.write("4. direct_from_word.pdf  - Direct DOCX→PDF conversion\n")
-                f.write("5. article.html          - HTML version for web viewing\n")
-                f.write("6. media/                - Extracted images and media files\n")
-                f.write("7. validation_report.json- Comprehensive validation report\n")
-                f.write("8. README.txt            - This file\n\n")
+                f.write("3. article.html          - HTML version for web viewing\n")
+                f.write("4. media/                - Extracted images and media files\n")
+                f.write("5. validation_report.json- Comprehensive validation report\n")
+                f.write("6. README.txt            - This file\n\n")
 
                 f.write("COMPLIANCE INFORMATION:\n")
                 f.write("-" * 50 + "\n")
@@ -1918,9 +1939,7 @@ class HighFidelityConverter:
                 f.write("USAGE NOTES:\n")
                 f.write("-" * 50 + "\n")
                 f.write("1. The JATS XML is validated against official schema\n")
-                f.write("2. Two PDF versions are provided:\n")
-                f.write("   - published_article.pdf: From JATS XML (semantic)\n")
-                f.write("   - direct_from_word.pdf: Direct conversion (visual)\n")
+                f.write("2. HTML version is provided for web viewing\n")
                 f.write("3. All images are extracted to media/ folder\n")
                 f.write("4. Review validation_report.json before submission\n")
                 f.write("5. Use PMC Style Checker for final validation\n")
@@ -2015,8 +2034,8 @@ class HighFidelityConverter:
         if not validation_passed:
             logger.warning("⚠️ JATS validation failed, but continuing with pipeline...")
 
-        # STEP 4: Intermediate HTML (for JATS PDF)
-        logger.info("Step 4: Generating intermediate HTML from JATS XML...")
+        # STEP 4: HTML generation from JATS XML
+        logger.info("Step 4: Generating HTML from JATS XML...")
         try:
             self._run_pandoc_command([
                 "-f", "jats",
@@ -2036,109 +2055,15 @@ class HighFidelityConverter:
             else:
                 raise FileNotFoundError(f"HTML not created at {self.html_path}")
             
-            # Post-process HTML to fix anchor references
+            # Post-process HTML to fix anchor references and table structures
             self._post_process_html()
                 
         except Exception as e:
             logger.error(f"Failed to generate HTML: {e}")
             raise
 
-        # STEP 5: Render JATS-Derived PDF
-        logger.info("Step 5: Rendering JATS-compliant PDF via WeasyPrint...")
-        try:
-            from weasyprint import HTML, CSS
-            from weasyprint.text.fonts import FontConfiguration
-            
-            # Initialize font configuration for proper font embedding
-            font_config = FontConfiguration()
-            
-            # Check if WeasyPrint can access the CSS file
-            css_path = self.css_path
-            if not os.path.exists(css_path):
-                logger.warning(f"CSS file not found at {css_path}, using default styling")
-                css_path = None
-            
-            # Generate PDF with font configuration
-            html = HTML(filename=self.html_path, base_url=self.output_dir)
-            
-            if css_path and os.path.exists(css_path):
-                css = CSS(filename=css_path)
-                html.write_pdf(target=self.pdf_path, stylesheets=[css], font_config=font_config)
-            else:
-                html.write_pdf(target=self.pdf_path, font_config=font_config)
-            
-            # Verify PDF was created
-            if os.path.exists(self.pdf_path):
-                pdf_size = os.path.getsize(self.pdf_path)
-                logger.info(f"✅ JATS PDF generated: {pdf_size:,} bytes")
-            else:
-                raise FileNotFoundError(f"PDF not created at {self.pdf_path}")
-                
-        except ImportError:
-            logger.error("❌ WeasyPrint not installed")
-            raise RuntimeError("WeasyPrint is required for PDF generation")
-        except Exception as e:
-            logger.error(f"❌ PDF generation failed: {e}")
-            # Try to create a minimal PDF as fallback
-            self._create_fallback_pdf(self.pdf_path, "JATS PDF Generation Failed")
-            logger.info("Created fallback PDF")
-
-        # STEP 6: Direct DOCX to PDF Conversion
-        logger.info("Step 6: Creating direct DOCX→PDF (preserving Word formatting)...")
-        try:
-            # Import WeasyPrint components (may be redundant with Step 5, but needed if Step 5 fails)
-            from weasyprint import HTML
-            from weasyprint.text.fonts import FontConfiguration
-            
-            # Initialize font configuration
-            font_config = FontConfiguration()
-            
-            # Create a temporary HTML file from DOCX
-            temp_html = os.path.join(self.output_dir, "direct_temp.html")
-            
-            # Enhanced Pandoc options for better format preservation
-            self._run_pandoc_command([
-                self.docx_path,
-                "-s",  # Standalone HTML
-                "-t", "html5",  # Use HTML5 for better styling support
-                "--css", self.css_path,
-                "--extract-media=" + self.output_dir,
-                "--embed-resources",  # Embed images and resources (replaces deprecated --self-contained)
-                "-o", temp_html
-            ], "DOCX to HTML (direct)")
-            
-            # Convert HTML to PDF with CSS applied
-            from weasyprint import HTML, CSS
-            html_doc = HTML(filename=temp_html, base_url=self.output_dir)
-            
-            # Apply CSS for consistent styling
-            if os.path.exists(self.css_path):
-                css_obj = CSS(filename=self.css_path)
-                html_doc.write_pdf(target=self.direct_pdf_path, stylesheets=[css_obj])
-            else:
-                html_doc.write_pdf(target=self.direct_pdf_path)
-            
-            # Clean up temp file
-            if os.path.exists(temp_html):
-                os.remove(temp_html)
-            
-            if os.path.exists(self.direct_pdf_path):
-                pdf_size = os.path.getsize(self.direct_pdf_path)
-                logger.info(f"✅ Direct PDF generated: {pdf_size:,} bytes")
-            else:
-                raise FileNotFoundError(f"Direct PDF not created")
-                
-        except Exception as e:
-            logger.error(f"❌ Direct PDF conversion failed: {e}")
-            # Create a simple placeholder PDF
-            self._create_fallback_pdf(
-                self.direct_pdf_path, 
-                "Direct PDF Generation Failed\n\nThis file is a placeholder because direct PDF conversion encountered an error.\n\nPlease use the JATS-derived PDF instead."
-            )
-            logger.info("Created placeholder for direct PDF")
-
-        # STEP 7: Create documentation and finalize
-        logger.info("Step 7: Generating documentation and finalizing package...")
+        # STEP 5: Create documentation and finalize
+        logger.info("Step 5: Generating documentation and finalizing package...")
         self._generate_readme()
         
         # Check for media files
@@ -2156,8 +2081,6 @@ class HighFidelityConverter:
         if os.path.exists(self.xml_dtd_path):
             logger.info(f"  - JATS XML with DOCTYPE: {os.path.getsize(self.xml_dtd_path):,} bytes")
         logger.info(f"  - HTML: {os.path.getsize(self.html_path):,} bytes")
-        logger.info(f"  - JATS PDF: {os.path.getsize(self.pdf_path):,} bytes")
-        logger.info(f"  - Direct PDF: {os.path.getsize(self.direct_pdf_path):,} bytes")
         logger.info(f"  - Media files: {len(media_files)}")
         logger.info("=" * 60)
 

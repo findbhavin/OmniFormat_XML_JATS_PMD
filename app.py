@@ -152,7 +152,7 @@ def health():
             "jats_compliance": "1.3 OASIS",
             "features": [
                 "JATS XML Generation",
-                "Dual PDF Output",
+                "HTML Output",
                 "PMC/NLM Validation",
                 "AI Content Repair",
                 "Media Extraction"
@@ -160,8 +160,7 @@ def health():
             "dependencies": {
                 "pandoc": pandoc_version.stdout.split('\n')[0] if pandoc_version.returncode == 0 else "unavailable",
                 "python": "3.11",
-                "vertexai": "1.71.1",
-                "weasyprint": "61.2"
+                "vertexai": "1.71.1"
             },
             "environment": {
                 "upload_folder_exists": os.path.exists(UPLOAD_FOLDER),
@@ -182,7 +181,7 @@ def version():
     return jsonify({
         "name": "OmniJAX",
         "version": "1.3.0",
-        "description": "Professional JATS XML & Dual PDF Engine",
+        "description": "Professional JATS XML & HTML Engine",
         "jats_schema": "1.3 OASIS Publishing",
         "author": "OmniJAX Team",
         "license": "Proprietary"
@@ -213,7 +212,7 @@ def index():
         <body>
             <div class="container">
                 <h1>OmniJAX</h1>
-                <p>Professional JATS XML & Dual PDF Engine</p>
+                <p>Professional JATS XML & HTML Engine</p>
                 <div class="status">
                     Service temporarily unavailable. Please check back soon.
                 </div>

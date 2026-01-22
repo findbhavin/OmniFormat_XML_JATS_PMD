@@ -36,9 +36,9 @@ The system now tries each model in order and logs which one succeeds. If all fai
 1. Add `id` attributes to all `<ref>` elements (e.g., `id="ref1"`, `id="ref2"`)
 2. Update `<xref>` rid mappings based on their `alt` attribute (reference number) to match the generated ref IDs
 
-### 3. WeasyPrint Anchor Errors
+### 3. HTML Anchor Errors
 
-**Problem:** WeasyPrint reported errors like "No anchor #spnh1h55p3fp for internal URI reference" because the HTML had links to anchors that didn't exist.
+**Problem:** HTML generation had errors like "No anchor #spnh1h55p3fp for internal URI reference" because the HTML had links to anchors that didn't exist.
 
 **Solution:** Added `_post_process_html()` method that:
 1. Parses the XML to extract xref → ref ID mappings
@@ -87,11 +87,11 @@ To verify these fixes work in production:
    - No empty `<tbody>` elements should exist
    - `<article-meta>` should have `<title-group>` before `<permissions>`
 
-3. **Check WeasyPrint Logs:**
+3. **Check HTML Output:**
    - Should NOT see errors like "No anchor #XXX for internal URI reference"
    - Look for success message: "✅ HTML post-processing completed (added anchor IDs for references)"
 
-4. **Check Generated PDF:**
+4. **Check Generated HTML:**
    - Reference links should work correctly (clicking on a reference number should jump to that reference)
    - No missing anchor errors in logs
 
@@ -99,13 +99,13 @@ To verify these fixes work in production:
 
 1. **AI Repair is More Reliable:** Falls back gracefully through multiple models
 2. **XML is DTD Compliant:** Passes validation without errors
-3. **PDF Generation Works:** No more WeasyPrint anchor errors
+3. **HTML Generation Works:** No more anchor errors
 4. **Better User Experience:** Clean outputs without warnings/errors
 
 ## Next Steps
 
 If issues persist:
 1. Check the logs for specific error messages
-2. Verify all dependencies are installed (lxml, weasyprint)
+2. Verify all dependencies are installed (lxml)
 3. Ensure the DOCX input file is valid
 4. Check that pandoc is installed and working
