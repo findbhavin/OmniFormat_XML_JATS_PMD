@@ -66,11 +66,6 @@
             <th colspan="2"><bold>*Correspondence:</bold> Uma Phalswal (Email: Phalswaluma2828@gmail.com)</th>
           </tr>
         </thead>
-        <tbody>
-          <tr style="display: none;">
-            <td></td>
-          </tr>
-        </tbody>
       </table>
     </table-wrap>
     <p>
@@ -295,11 +290,6 @@
             <th>Nil</th>
           </tr>
         </thead>
-        <tbody>
-          <tr style="display: none;">
-            <td></td>
-          </tr>
-        </tbody>
       </table>
     </table-wrap>
     <p>
@@ -439,11 +429,6 @@
             <th>Low</th>
           </tr>
         </thead>
-        <tbody>
-          <tr style="display: none;">
-            <td></td>
-          </tr>
-        </tbody>
       </table>
     </table-wrap>
     <p>
@@ -598,11 +583,6 @@
             <th>Nil</th>
           </tr>
         </thead>
-        <tbody>
-          <tr style="display: none;">
-            <td></td>
-          </tr>
-        </tbody>
       </table>
     </table-wrap>
     <p>Note: Yes: 1, No: 0, Unclear:</p>

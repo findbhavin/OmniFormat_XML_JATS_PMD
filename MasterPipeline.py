@@ -1027,41 +1027,36 @@ class HighFidelityConverter:
                             # This tbody has content, count it as remaining
                             remaining_tbody_count += 1
                     
-                    # If no tbody remains, check if thead has all the content (informational table)
-                    # For tables where thead contains all content, don't add empty tbody
-                    # Only add tbody if table genuinely needs it for DTD compliance
+                    # If no tbody remains, we MUST add one for DTD compliance
+                    # DTD requires: if thead or tfoot exists, at least one tbody must exist
                     if remaining_tbody_count == 0:
-                        # Check if this is an informational table (all content in thead)
-                        thead_rows = thead.findall('.//tr') if thead is not None else []
+                        # Add tbody with a single empty row for DTD compliance
+                        # Note: This is required by DTD even if thead contains all table content
+                        tbody = etree.Element('tbody')
                         
-                        # If thead has multiple rows with content, it's likely complete as-is
-                        # Don't add empty tbody for such tables to avoid empty rows in HTML
-                        if len(thead_rows) > 1:
-                            logger.info(f"Table has {len(thead_rows)} rows in thead - skipping empty tbody to avoid blank rows in HTML")
+                        # Add a single empty tr to make it valid
+                        tr = etree.SubElement(tbody, 'tr')
+                        td = etree.SubElement(tr, 'td')
+                        td.text = ''  # Empty cell
+                        
+                        # Set style to hide this row visually (preserve appearance)
+                        tr.set('style', 'display: none;')
+                        
+                        # Find where to insert tbody (after thead and tfoot)
+                        insert_index = len(list(table))
+                        if tfoot is not None:
+                            insert_index = list(table).index(tfoot) + 1
+                        elif thead is not None:
+                            insert_index = list(table).index(thead) + 1
                         else:
-                            # Only add empty tbody for edge cases where truly needed
-                            tbody = etree.Element('tbody')
-                            
-                            # Add a single empty tr to make it valid
-                            tr = etree.SubElement(tbody, 'tr')
-                            td = etree.SubElement(tr, 'td')
-                            td.text = ''  # Empty cell
-                            
-                            # Find where to insert tbody (after thead and tfoot)
-                            insert_index = len(list(table))
-                            if tfoot is not None:
-                                insert_index = list(table).index(tfoot) + 1
-                            elif thead is not None:
-                                insert_index = list(table).index(thead) + 1
-                            else:
-                                # Find position after colgroup/col elements
-                                for i, child in enumerate(table):
-                                    if child.tag not in ['col', 'colgroup']:
-                                        insert_index = i
-                                        break
-                            
-                            table.insert(insert_index, tbody)
-                            logger.info(f"Added tbody with empty tr to table for DTD compliance")
+                            # Find position after colgroup/col elements
+                            for i, child in enumerate(table):
+                                if child.tag not in ['col', 'colgroup']:
+                                    insert_index = i
+                                    break
+                        
+                        table.insert(insert_index, tbody)
+                        logger.info(f"Added tbody with hidden empty tr for DTD compliance")
                 
                 # Case 2: Table has no thead/tfoot - can have either tbody or direct tr elements
                 else:
