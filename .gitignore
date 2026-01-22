@@ -27,3 +27,4 @@ Thumbs.db
 *~
 tempoutputs/sample*/
 *.deb
+*.bak

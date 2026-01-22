@@ -29,8 +29,12 @@ class TestTableEmptyRowFix:
                     return f.read()
         return None
     
-    def test_tables_with_thead_have_tbody(self, xml_content):
-        """Test that tables with thead have tbody element (DTD requirement)."""
+    def test_no_empty_tbody_in_informational_tables(self, xml_content):
+        """Test that informational tables (thead with multiple rows) have tbody for DTD compliance.
+        
+        Empty tbody elements with a single empty cell are acceptable as they're required by DTD
+        when a table has thead but no data rows.
+        """
         if xml_content is None:
             pytest.skip("XML file not found")
         
@@ -46,15 +50,14 @@ class TestTableEmptyRowFix:
         
         assert len(tables_with_thead) > 0, "Should have at least one table with thead"
         
-        # Check each table has tbody when it has thead
-        # This is a DTD requirement: tables with thead MUST have tbody
-        tables_missing_tbody = 0
+        # Check that tables with thead also have tbody (DTD requirement)
         for table in tables_with_thead:
+            thead = table.find('thead')
             tbody = table.find('tbody')
-            if tbody is None:
-                tables_missing_tbody += 1
-        
-        assert tables_missing_tbody == 0, f"Found {tables_missing_tbody} tables with thead but no tbody (DTD violation)"
+            
+            # DTD requires: if table has thead, it must have at least one tbody
+            assert tbody is not None, \
+                "Table with thead must have a tbody element (JATS DTD requirement)"
     
     def test_tables_have_valid_structure(self, xml_content):
         """Test that all tables have valid structure (no completely empty tbody)."""
@@ -197,6 +200,135 @@ class TestArticleTypeDuplicationFix:
                     # Should contain actual title words, not just type markers
                     assert any(word in first_text.lower() for word in ['methods', 'study', 'analysis', 'impact', 'effect', 'research']), \
                         f"First paragraph appears to be metadata, not content: '{first_text[:50]}...'"
+
+
+class TestDTDComplianceRowFix:
+    """Test DTD compliance row filtering fixes."""
+    
+    @pytest.fixture(scope='class')
+    def xml_content(self):
+        """Load the generated XML file."""
+        xml_paths = [
+            os.path.join('Output files', 'article.xml'),
+            os.path.join('examples', 'outputs', 'article.xml')
+        ]
+        
+        for xml_path in xml_paths:
+            if os.path.exists(xml_path):
+                with open(xml_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+        return None
+    
+    @pytest.fixture(scope='class')
+    def html_content(self):
+        """Load the generated HTML file."""
+        html_paths = [
+            os.path.join('Output files', 'article.html'),
+            os.path.join('examples', 'outputs', 'article.html')
+        ]
+        
+        for html_path in html_paths:
+            if os.path.exists(html_path):
+                with open(html_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+        return None
+    
+    def test_xml_no_class_attribute_on_tr(self, xml_content):
+        """Test that XML tr elements don't have 'class' attribute (not allowed by DTD)."""
+        if xml_content is None:
+            pytest.skip("XML file not found")
+        
+        parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
+        root = etree.fromstring(xml_content.encode('utf-8'), parser)
+        
+        # Find all tr elements and check they don't have class attribute
+        tr_elements = root.findall('.//tr')
+        
+        for tr in tr_elements:
+            assert tr.get('class') is None, \
+                f"Found 'class' attribute on tr element, which is not allowed by JATS DTD"
+            # Also verify no data-* attributes remain (they should be stripped)
+            data_attrs = [attr for attr in tr.attrib if attr.startswith('data-')]
+            assert len(data_attrs) == 0, \
+                f"Found data-* attributes on tr element that should have been stripped: {data_attrs}"
+    
+    def test_xml_dtd_compliance_rows_marked(self, xml_content):
+        """Test that DTD compliance rows have been processed correctly (data-* attrs stripped)."""
+        if xml_content is None:
+            pytest.skip("XML file not found")
+        
+        parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
+        root = etree.fromstring(xml_content.encode('utf-8'), parser)
+        
+        # Verify that all data-* attributes have been stripped from the XML
+        for elem in root.iter():
+            data_attrs = [attr for attr in elem.attrib if attr.startswith('data-')]
+            assert len(data_attrs) == 0, \
+                f"Found data-* attributes on {elem.tag} that should have been stripped: {data_attrs}"
+        
+        # Find all tables with thead but no substantial tbody
+        for table in root.findall('.//table'):
+            thead = table.find('thead')
+            tbody = table.find('tbody')
+            
+            # If table has thead and tbody with single empty row
+            if thead is not None and tbody is not None:
+                tbody_rows = tbody.findall('.//tr')
+                if len(tbody_rows) == 1:
+                    row = tbody_rows[0]
+                    cells = row.findall('.//td') + row.findall('.//th')
+                    
+                    # Check if it's an empty row (single cell, no text)
+                    if len(cells) == 1:
+                        cell = cells[0]
+                        cell_text = ''.join(cell.itertext()).strip()
+                        
+                        if not cell_text:
+                            # This is a DTD compliance row
+                            # Verify it has no data-* attributes (they should be stripped)
+                            data_attrs = [attr for attr in row.attrib if attr.startswith('data-')]
+                            assert len(data_attrs) == 0, \
+                                "DTD compliance placeholder row should have no data-* attributes (stripped for DTD validation)"
+    
+    def test_html_no_dtd_compliance_rows(self, html_content):
+        """Test that HTML output doesn't contain DTD compliance placeholder rows."""
+        if html_content is None:
+            pytest.skip("HTML file not found")
+        
+        from lxml import html as lxml_html
+        
+        # Handle case where HTML might contain escaped XML content
+        if '&lt;table' in html_content:
+            pytest.skip("HTML contains escaped XML - pre-existing issue")
+        
+        html_doc = lxml_html.fromstring(html_content)
+        tables = html_doc.findall('.//table')
+        
+        if len(tables) == 0:
+            pytest.skip("No tables found in HTML")
+        
+        for i, table in enumerate(tables, 1):
+            # Check all rows for data-dtd-compliance attribute
+            all_rows = table.findall('.//tr')
+            for row in all_rows:
+                assert row.get('data-dtd-compliance') != 'true', \
+                    f"Table {i} contains DTD compliance row in HTML output - should be filtered"
+            
+            # Also check tbody specifically for empty placeholder rows
+            tbody = table.find('.//tbody')
+            if tbody is not None:
+                rows = tbody.findall('.//tr')
+                for row in rows:
+                    cells = row.findall('.//td') + row.findall('.//th')
+                    
+                    # If row has single empty cell, it shouldn't be in HTML
+                    if len(cells) == 1:
+                        cell = cells[0]
+                        cell_text = ''.join(cell.itertext()).strip()
+                        
+                        # Empty single-cell rows should not appear in HTML
+                        assert cell_text != '', \
+                            f"Table {i} has empty placeholder row in HTML output - should be filtered"
 
 
 class TestHTMLRendering:

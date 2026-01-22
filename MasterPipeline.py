@@ -937,6 +937,175 @@ class HighFidelityConverter:
             logger.warning(f"Failed to extract article type from DOCX: {e}")
             return None
 
+    def _fix_tex_math_citations(self, root):
+        """
+        Fix problematic tex-math elements that contain citation superscripts instead of actual LaTeX math.
+        
+        Pandoc sometimes incorrectly converts superscript citation numbers (e.g., ⁵,⁶ or ¹⁻³) 
+        into tex-math elements with incomplete LaTeX syntax like ^{5,6}.
+        
+        This method:
+        1. Detects problematic tex-math elements with simple superscript patterns
+        2. Converts them to proper PMC-compliant xref elements
+        3. Handles various citation patterns (single, multiple, ranges)
+        4. Preserves leading/trailing punctuation
+        5. Ensures corresponding ref elements exist in ref-list
+        
+        Args:
+            root: The XML root element
+        """
+        # Find all tex-math elements
+        tex_math_elements = root.findall('.//tex-math')
+        if not tex_math_elements:
+            return
+        
+        # Pattern to detect citation-like tex-math content
+        # Matches: ^{5}, ^{5,6}, ^{1-3}, .^{5,6}, etc.
+        citation_pattern = re.compile(r'^([.,;:\s]*)?\^?\{?([\d,\-\s]+)\}?$')
+        
+        conversions_made = 0
+        
+        for tex_math in tex_math_elements:
+            # Get the tex-math content
+            tex_content = (tex_math.text or '').strip()
+            
+            # Skip if empty or already a complete LaTeX document
+            if not tex_content or tex_content.startswith('\\documentclass'):
+                continue
+            
+            # Check if this looks like a citation pattern
+            match = citation_pattern.match(tex_content)
+            if not match:
+                continue
+            
+            # Extract components
+            leading_punct = match.group(1) or ''
+            citation_text = match.group(2).strip()
+            
+            logger.info(f"Found citation-like tex-math: '{tex_content}' -> parsing '{citation_text}'")
+            
+            # Parse citation numbers
+            # Handle patterns like: "5", "5,6", "1-3", "5, 6, 7"
+            citation_numbers = []
+            
+            # Split by comma first
+            parts = citation_text.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # Range: "1-3" -> [1, 2, 3]
+                    try:
+                        start, end = part.split('-', 1)
+                        start_num = int(start.strip())
+                        end_num = int(end.strip())
+                        citation_numbers.extend(range(start_num, end_num + 1))
+                    except (ValueError, AttributeError):
+                        # If parsing fails, skip this tex-math
+                        logger.warning(f"Failed to parse range: {part}")
+                        citation_numbers = []
+                        break
+                else:
+                    # Single number
+                    try:
+                        citation_numbers.append(int(part))
+                    except (ValueError, AttributeError):
+                        # If parsing fails, skip this tex-math
+                        logger.warning(f"Failed to parse citation number: {part}")
+                        citation_numbers = []
+                        break
+            
+            # Skip if we couldn't parse valid citation numbers
+            if not citation_numbers:
+                continue
+            
+            logger.info(f"Parsed citation numbers: {citation_numbers}")
+            
+            # Get parent element to insert replacement
+            parent = tex_math.getparent()
+            if parent is None:
+                continue
+            
+            # Find the position of tex-math in parent
+            tex_math_index = list(parent).index(tex_math)
+            
+            # Preserve any tail text from tex-math
+            tail_text = tex_math.tail or ''
+            
+            # Create replacement elements
+            # Start with leading punctuation if any
+            if leading_punct:
+                if tex_math_index > 0:
+                    prev = parent[tex_math_index - 1]
+                    prev.tail = (prev.tail or '') + leading_punct
+                else:
+                    parent.text = (parent.text or '') + leading_punct
+            
+            # Create a sup element to wrap the xrefs
+            sup = etree.Element('sup')
+            
+            # Create xref elements for each citation
+            for i, ref_num in enumerate(citation_numbers):
+                # Add separator between citations
+                if i > 0:
+                    # Determine separator based on original pattern
+                    # If original had a dash (range), we keep consecutive numbers together
+                    # Otherwise, separate with comma
+                    prev_xref = sup[-1]  # Get last added element
+                    if citation_numbers[i] == citation_numbers[i-1] + 1 and '-' in citation_text:
+                        # Part of a continuous range, use dash separator
+                        prev_xref.tail = '-'
+                    else:
+                        # Multiple separate citations, use comma
+                        prev_xref.tail = ','
+                
+                xref = etree.Element('xref')
+                xref.set('ref-type', 'bibr')
+                xref.set('rid', f'ref{ref_num}')
+                xref.text = str(ref_num)
+                sup.append(xref)
+            
+            # Insert the sup element at tex-math position
+            parent.insert(tex_math_index, sup)
+            
+            # Set tail text on sup
+            sup.tail = tail_text
+            
+            # Remove the tex-math element
+            parent.remove(tex_math)
+            
+            conversions_made += 1
+            logger.info(f"Converted tex-math citation to xref elements: {citation_numbers}")
+            
+            # Ensure corresponding ref elements exist
+            back = root.find('.//back')
+            if back is None:
+                back = etree.Element('back')
+                root.append(back)
+            
+            ref_list = back.find('.//ref-list')
+            if ref_list is None:
+                ref_list = etree.SubElement(back, 'ref-list')
+            
+            # Check and create placeholder refs for each citation number
+            existing_refs = ref_list.findall('.//ref')
+            existing_ref_ids = {ref.get('id') for ref in existing_refs if ref.get('id')}
+            
+            for ref_num in citation_numbers:
+                ref_id = f'ref{ref_num}'
+                if ref_id not in existing_ref_ids:
+                    # Create placeholder ref element
+                    ref_elem = etree.Element('ref')
+                    ref_elem.set('id', ref_id)
+                    
+                    mixed_citation = etree.SubElement(ref_elem, 'mixed-citation')
+                    mixed_citation.text = f'Reference {ref_num}'
+                    
+                    ref_list.append(ref_elem)
+                    logger.info(f"Created placeholder ref element: id='{ref_id}'")
+        
+        if conversions_made > 0:
+            logger.info(f"✅ Converted {conversions_made} tex-math citation element(s) to xref elements")
+
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
         try:
@@ -947,6 +1116,35 @@ class HighFidelityConverter:
             parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
             tree = etree.parse(self.xml_path, parser)
             root = tree.getroot()
+            
+            # Fix problematic tex-math elements that contain citation superscripts
+            # This must be done early before other processing that might depend on xrefs
+            self._fix_tex_math_citations(root)
+
+            # FIX FOR PMC ERROR: Element alternatives content does not follow the DTD
+            # Problem: Pandoc outputs mixed content (text, sup, math) inside <alternatives> which is invalid.
+            # Fix: We find the valid <mml:math> element, unwrap it, and discard the invalid container/siblings.
+            for alternatives in root.findall('.//alternatives'):
+                # Search for the mml:math child (handling namespace)
+                math_child = None
+                for child in alternatives:
+                    # Check for math tag in MathML namespace (usually ends in 'math')
+                    if child.tag.endswith('math') and 'Math/MathML' in child.tag:
+                        math_child = child
+                        break
+                
+                if math_child is not None:
+                    parent = alternatives.getparent()
+                    if parent is not None:
+                        # Preserve the text following the alternatives block (if any)
+                        # We overwrite math_child.tail to discard any invalid text inside the alternatives tag
+                        if alternatives.tail:
+                            math_child.tail = alternatives.tail
+                        
+                        # Replace the invalid alternatives wrapper with the clean math element
+                        parent.replace(alternatives, math_child)
+                        logger.info("Fixed invalid alternatives: unwrapped mml:math and removed mixed content")
+
             
             # PMC Requirement: table-wrap position attribute
             # Position should be "float" or "anchor" (not "top")
@@ -960,10 +1158,63 @@ class HighFidelityConverter:
             # Fix table structure to comply with DTD: (col* | colgroup*), ((thead?, tfoot?, tbody+) | tr+)
             # The DTD requires: after col/colgroup, we must have EITHER (thead?, tfoot?, tbody+) OR (tr+)
             for table in root.findall('.//table'):
-                thead = table.find('thead')
-                tfoot = table.find('tfoot')
-                tbody_elements = table.findall('tbody')
-                tr_elements = [child for child in table if child.tag == 'tr']
+                # FIRST: Reorder table children to match DTD requirement
+                # DTD order: col/colgroup MUST come before thead/tfoot/tbody/tr
+                col_elements = []
+                colgroup_elements = []
+                thead_element = None
+                tfoot_element = None
+                tbody_elements_list = []
+                tr_elements_list = []
+                other_elements = []
+                
+                # Collect and categorize all children
+                for child in list(table):
+                    if child.tag == 'col':
+                        col_elements.append(child)
+                    elif child.tag == 'colgroup':
+                        colgroup_elements.append(child)
+                    elif child.tag == 'thead':
+                        thead_element = child
+                    elif child.tag == 'tfoot':
+                        tfoot_element = child
+                    elif child.tag == 'tbody':
+                        tbody_elements_list.append(child)
+                    elif child.tag == 'tr':
+                        tr_elements_list.append(child)
+                    else:
+                        other_elements.append(child)
+                
+                # Clear the table
+                for child in list(table):
+                    table.remove(child)
+                
+                # Rebuild in correct DTD order: col/colgroup, then thead/tfoot/tbody/tr
+                for col in col_elements:
+                    table.append(col)
+                for colgroup in colgroup_elements:
+                    table.append(colgroup)
+                if thead_element is not None:
+                    table.append(thead_element)
+                if tfoot_element is not None:
+                    table.append(tfoot_element)
+                for tbody in tbody_elements_list:
+                    table.append(tbody)
+                for tr in tr_elements_list:
+                    table.append(tr)
+                for other in other_elements:
+                    table.append(other)
+                
+                logger.info(f"Reordered table elements to DTD-compliant order: {len(col_elements)} col, {len(colgroup_elements)} colgroup, thead={'yes' if thead_element else 'no'}, {len(tbody_elements_list)} tbody")
+                
+                
+				
+				
+				# NOW process with updated references
+                thead = thead_element
+                tfoot = tfoot_element
+                tbody_elements = tbody_elements_list
+                tr_elements = tr_elements_list
                 
                 # Case 1: Table has thead or tfoot - MUST have at least one tbody (even if empty)
                 if thead is not None or tfoot is not None:
@@ -978,33 +1229,21 @@ class HighFidelityConverter:
                             remaining_tbody_count += 1
                     
                     # If no tbody remains, we MUST add one for DTD compliance
-                    # DTD requires: tables with thead/tfoot MUST have at least one tbody element
+                    # DTD requires: if thead or tfoot exists, at least one tbody must exist
                     if remaining_tbody_count == 0:
+                        # Add tbody with a single empty row for DTD compliance
+                        # Note: This is required by DTD even if thead contains all table content
                         tbody = etree.Element('tbody')
                         
                         # Add a single empty tr to make it valid
-                        # Note: This creates a minimal empty row, which is required by DTD
-                        # Determine number of columns from colgroup or thead
-                        num_cols = 1
-                        colgroup = table.find('colgroup')
-                        if colgroup is not None:
-                            cols = colgroup.findall('col')
-                            num_cols = len(cols) if cols else 1
-                        elif thead is not None:
-                            # Count columns from first thead row
-                            first_row = thead.find('.//tr')
-                            if first_row is not None:
-                                cells = first_row.findall('th') + first_row.findall('td')
-                                num_cols = len(cells) if cells else 1
-                        
                         tr = etree.SubElement(tbody, 'tr')
                         td = etree.SubElement(tr, 'td')
+                        # Use None for empty content (more explicit than empty string)
+                        td.text = None
                         
-                        # If table has multiple columns, use colspan to span all columns
-                        if num_cols > 1:
-                            td.set('colspan', str(num_cols))
-                        
-                        td.text = ''  # Empty cell
+                        # Add data attribute to mark DTD compliance rows (ignored by DTD validation)
+                        # This allows filtering these rows from HTML output
+                        tr.set('data-dtd-compliance', 'true')
                         
                         # Find where to insert tbody (after thead and tfoot)
                         insert_index = len(list(table))
@@ -1020,7 +1259,7 @@ class HighFidelityConverter:
                                     break
                         
                         table.insert(insert_index, tbody)
-                        logger.info(f"Added tbody with empty tr to table for DTD compliance")
+                        logger.info(f"Added tbody with hidden empty tr for DTD compliance")
                 
                 # Case 2: Table has no thead/tfoot - can have either tbody or direct tr elements
                 else:
@@ -1519,6 +1758,177 @@ class HighFidelityConverter:
                             parent.remove(back)
                             logger.info("Removed <back> element with no element children for PMC compliance")
             
+            # Strip all data-* attributes that are not DTD-compliant
+            # These attributes (data-compliance, data-dtd-compliance, etc.) are used for internal
+            # processing and HTML/PDF rendering but must be removed before DTD/XSD validation
+            data_attrs_removed = 0
+            for elem in root.iter():
+                attrs_to_remove = [attr for attr in elem.attrib if attr.startswith('data-')]
+                for attr in attrs_to_remove:
+                    del elem.attrib[attr]
+                    data_attrs_removed += 1
+                    logger.debug(f"Removed non-DTD attribute '{attr}' from element '{elem.tag}'")
+            
+            if data_attrs_removed > 0:
+                logger.info(f"✅ Stripped {data_attrs_removed} data-* attributes for DTD/XSD compliance")
+            
+            # Fix DTD Error 1: Add id attributes to tex-math elements
+            # PMC requires all tex-math elements to have unique id attributes
+            tex_math_elements = root.findall('.//tex-math')
+            if tex_math_elements:
+                for i, tex_math in enumerate(tex_math_elements, 1):
+                    if 'id' not in tex_math.attrib:
+                        tex_math_id = f'texmath{i}'
+                        tex_math.set('id', tex_math_id)
+                        logger.info(f"Added id='{tex_math_id}' to tex-math element")
+                    
+                    # Check if tex-math content is incomplete and needs wrapping
+                    tex_content = tex_math.text or ''
+                    if tex_content.strip() and not tex_content.strip().startswith('\\documentclass'):
+                        # Content exists but not a complete LaTeX document
+                        # This is acceptable - inline math doesn't need document structure
+                        pass
+                
+                logger.info(f"✅ Added IDs to {len(tex_math_elements)} tex-math element(s)")
+            
+            # Fix DTD Error 2: Add id attributes to mml:math elements
+            # PMC requires all mml:math elements to have unique id attributes
+            mml_ns = 'http://www.w3.org/1998/Math/MathML'
+            mml_math_elements = root.findall('.//{%s}math' % mml_ns)
+            if mml_math_elements:
+                for i, mml_math in enumerate(mml_math_elements, 1):
+                    if 'id' not in mml_math.attrib:
+                        mml_id = f'mml{i}'
+                        mml_math.set('id', mml_id)
+                        logger.info(f"Added id='{mml_id}' to mml:math element")
+                
+                logger.info(f"✅ Added IDs to {len(mml_math_elements)} mml:math element(s)")
+            
+            # Fix DTD Error 3: Convert named-content anchors to proper ref elements
+            # PMC reports error when xref with ref-type="bibr" points to named-content instead of ref
+            # Pattern: <xref ref-type="bibr" rid="Ref1"> pointing to <named-content id="Ref1"/>
+            # Solution: Create proper <ref> elements in <back><ref-list> and update xrefs
+            
+            # Step 1: Find all xrefs with ref-type="bibr"
+            bibr_xrefs = root.findall('.//xref[@ref-type="bibr"]')
+            named_content_refs = {}  # Maps rid -> named-content element
+            
+            for xref in bibr_xrefs:
+                rid = xref.get('rid')
+                if rid:
+                    # Find the target element
+                    target = root.find(f".//*[@id='{rid}']")
+                    if target is not None and target.tag == 'named-content':
+                        named_content_refs[rid] = target
+                        logger.info(f"Found xref pointing to named-content: rid={rid}")
+            
+            # Step 2: If we found named-content elements being used as references, convert them
+            if named_content_refs:
+                logger.info(f"Converting {len(named_content_refs)} named-content element(s) to ref elements")
+                
+                # Ensure back/ref-list exists
+                back = root.find('.//back')
+                if back is None:
+                    back = etree.Element('back')
+                    root.append(back)
+                    logger.info("Created <back> section for references")
+                
+                ref_list = back.find('.//ref-list')
+                if ref_list is None:
+                    ref_list = etree.SubElement(back, 'ref-list')
+                    logger.info("Created <ref-list> for references")
+                
+                # Process each named-content that's being used as a reference
+                for old_rid, named_content in named_content_refs.items():
+                    # Create new ref ID (lowercase, e.g., ref1 instead of Ref1)
+                    # Extract number from old_rid if it has one
+                    num_match = re.search(r'\d+', old_rid)
+                    if num_match:
+                        ref_num = num_match.group()
+                        new_rid = f'ref{ref_num}'
+                    else:
+                        # No number found, use a sequential number
+                        existing_refs = ref_list.findall('.//ref')
+                        new_rid = f'ref{len(existing_refs) + 1}'
+                    
+                    # Extract reference text from the context
+                    # The text usually follows the named-content element in the same paragraph
+                    ref_text = ""
+                    parent = named_content.getparent()
+                    
+                    if parent is not None:
+                        # Get all text content from the parent element
+                        # This captures text nodes and tail text from the named-content
+                        parent_text = ''.join(parent.itertext()).strip()
+                        
+                        # If parent is a paragraph and contains substantial text, use it
+                        if parent.tag == 'p' and parent_text and len(parent_text) > 10:
+                            ref_text = parent_text
+                        else:
+                            # Try to get text that follows the named-content
+                            following_text = named_content.tail
+                            if following_text and following_text.strip():
+                                ref_text = following_text.strip()
+                            elif parent_text:
+                                ref_text = parent_text
+                    
+                    # If we still don't have good text, use a placeholder
+                    if not ref_text or len(ref_text) < 5:
+                        ref_text = f"Reference {ref_num if num_match else 'N/A'}"
+                    
+                    logger.info(f"Extracted reference text for {old_rid}: '{ref_text[:80]}...'")
+                    
+                    # Check if ref already exists in ref-list (might have been created earlier)
+                    existing_ref = ref_list.find(f".//ref[@id='{new_rid}']")
+                    if existing_ref is not None:
+                        # Update existing ref with better text if we have it
+                        mixed_citation = existing_ref.find('.//mixed-citation')
+                        if mixed_citation is not None and len(ref_text) > 10:
+                            mixed_citation.text = ref_text
+                            logger.info(f"Updated existing ref element: id='{new_rid}' with better text")
+                    else:
+                        # Create new ref element
+                        ref_elem = etree.Element('ref')
+                        ref_elem.set('id', new_rid)
+                        
+                        # Create mixed-citation with the extracted text
+                        mixed_citation = etree.SubElement(ref_elem, 'mixed-citation')
+                        mixed_citation.text = ref_text
+                        
+                        ref_list.append(ref_elem)
+                        logger.info(f"Created ref element: id='{new_rid}'")
+                    
+                    # Update all xrefs pointing to old_rid to use new_rid
+                    for xref in bibr_xrefs:
+                        if xref.get('rid') == old_rid:
+                            xref.set('rid', new_rid)
+                            logger.info(f"Updated xref rid from '{old_rid}' to '{new_rid}'")
+                    
+                    # Remove the named-content element from the document
+                    parent = named_content.getparent()
+                    if parent is not None:
+                        # Preserve any tail text
+                        if named_content.tail:
+                            # If there's a previous sibling, append to its tail
+                            prev = named_content.getprevious()
+                            if prev is not None:
+                                prev.tail = (prev.tail or '') + named_content.tail
+                            else:
+                                # No previous sibling, append to parent text
+                                parent.text = (parent.text or '') + named_content.tail
+                        
+                        parent.remove(named_content)
+                        logger.info(f"Removed named-content element with id='{old_rid}'")
+                        
+                        # If parent is now empty, remove it too
+                        if parent.tag == 'p' and not parent.text and len(parent) == 0:
+                            grandparent = parent.getparent()
+                            if grandparent is not None:
+                                grandparent.remove(parent)
+                                logger.info(f"Removed empty parent paragraph after named-content removal")
+                
+                logger.info(f"✅ Converted {len(named_content_refs)} named-content elements to proper ref elements")
+            
             # Write back the XML with proper formatting
             tree.write(
                 self.xml_path,
@@ -1652,14 +2062,33 @@ class HighFidelityConverter:
                 for child in list(html_table):
                     html_table.remove(child)
                 
-                # Rebuild thead if present in XML
+                # Rebuild in DTD-compliant order: col/colgroup, then thead, then tbody
+                # First: col and colgroup elements
+                for xml_col in xml_table.findall('./col'):
+                    html_col = etree.Element('col')
+                    for attr, value in xml_col.attrib.items():
+                        html_col.set(attr, value)
+                    html_table.append(html_col)
+                
+                for xml_colgroup in xml_table.findall('./colgroup'):
+                    html_colgroup = etree.Element('colgroup')
+                    for attr, value in xml_colgroup.attrib.items():
+                        html_colgroup.set(attr, value)
+                    # Copy col elements within colgroup
+                    for xml_col in xml_colgroup.findall('./col'):
+                        html_col = etree.SubElement(html_colgroup, 'col')
+                        for attr, value in xml_col.attrib.items():
+                            html_col.set(attr, value)
+                    html_table.append(html_colgroup)
+                
+                # Second: thead if present in XML
                 xml_thead = xml_table.find('.//thead')
                 if xml_thead is not None:
                     html_thead = etree.Element('thead')
                     self._rebuild_table_section(xml_thead, html_thead)
                     html_table.append(html_thead)
                 
-                # Rebuild tbody if present in XML
+                # Third: tbody if present in XML
                 xml_tbody = xml_table.find('.//tbody')
                 if xml_tbody is not None:
                     html_tbody = etree.Element('tbody')
@@ -1689,14 +2118,33 @@ class HighFidelityConverter:
                         for child in list(html_table):
                             html_table.remove(child)
                         
-                        # Rebuild thead if present in XML
+                        # Rebuild in DTD-compliant order: col/colgroup, then thead, then tbody
+                        # First: col and colgroup elements
+                        for xml_col in xml_table.findall('./col'):
+                            html_col = etree.Element('col')
+                            for attr, value in xml_col.attrib.items():
+                                html_col.set(attr, value)
+                            html_table.append(html_col)
+                        
+                        for xml_colgroup in xml_table.findall('./colgroup'):
+                            html_colgroup = etree.Element('colgroup')
+                            for attr, value in xml_colgroup.attrib.items():
+                                html_colgroup.set(attr, value)
+                            # Copy col elements within colgroup
+                            for xml_col in xml_colgroup.findall('./col'):
+                                html_col = etree.SubElement(html_colgroup, 'col')
+                                for attr, value in xml_col.attrib.items():
+                                    html_col.set(attr, value)
+                            html_table.append(html_colgroup)
+                        
+                        # Second: thead if present in XML
                         xml_thead = xml_table.find('.//thead')
                         if xml_thead is not None:
                             html_thead = etree.Element('thead')
                             self._rebuild_table_section(xml_thead, html_thead)
                             html_table.append(html_thead)
                         
-                        # Rebuild tbody if present in XML
+                        # Third: tbody if present in XML
                         xml_tbody = xml_table.find('.//tbody')
                         if xml_tbody is not None:
                             html_tbody = etree.Element('tbody')
@@ -1712,8 +2160,24 @@ class HighFidelityConverter:
         """
         Helper method to rebuild a table section (thead or tbody) from XML to HTML.
         Reduces code duplication between thead and tbody processing.
+        Filters out DTD compliance placeholder rows from HTML output.
         """
         for xml_tr in xml_section.findall('.//tr'):
+            # Skip DTD compliance placeholder rows - they should not appear in HTML
+            if xml_tr.get('data-dtd-compliance') == 'true':
+                continue
+            
+            # Also skip empty placeholder rows (single empty cell with no content)
+            cells = xml_tr.findall('.//td') + xml_tr.findall('.//th')
+            if len(cells) == 1:
+                # Check if this is an empty cell (no text, no children)
+                cell = cells[0]
+                has_text = cell.text and cell.text.strip()
+                has_children = len(list(cell)) > 0
+                if not has_text and not has_children:
+                    # This is likely a DTD compliance row - skip it
+                    continue
+            
             html_tr = etree.SubElement(html_section, 'tr')
             for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
                 cell_tag = 'th' if xml_cell.tag == 'th' else 'td'

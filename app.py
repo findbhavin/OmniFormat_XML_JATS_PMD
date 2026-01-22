@@ -5,12 +5,17 @@ import traceback
 import subprocess
 import threading
 import time
+import json
 from datetime import datetime
 from flask import Flask, request, render_template, send_file, jsonify, abort, url_for
 from werkzeug.utils import secure_filename
 from MasterPipeline import HighFidelityConverter
+from gcs_utils import GCSHandler
 
 app = Flask(__name__)
+
+# Initialize GCS handler
+gcs_handler = GCSHandler()
 
 # In-memory conversion progress tracking (single-process only)
 # For production: use Redis or a task queue
@@ -301,6 +306,9 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         
         logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
         
+        # Upload output ZIP to GCS
+        gcs_handler.upload_file(zip_file_path, f"outputs/{zip_filename}.zip")
+        
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds()
         
@@ -315,6 +323,18 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         
         # Save performance metrics to file
         save_performance_metric(conversion_id, original_filename, processing_time, zip_size_mb, "completed")
+        
+        # Save metrics to GCS
+        metrics_data = {
+            "conversion_id": conversion_id,
+            "filename": original_filename,
+            "processing_time_seconds": processing_time,
+            "output_size_mb": zip_size_mb,
+            "input_size_mb": conversion_progress[conversion_id].get("file_size_mb", 0),
+            "status": "completed",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        gcs_handler.save_metrics(conversion_id, metrics_data)
         
         logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
 
@@ -332,6 +352,19 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         # Save failure metric
         processing_time = (datetime.now() - start_time).total_seconds()
         save_performance_metric(conversion_id, original_filename, processing_time, 0, "failed")
+        
+        # Save failure metrics to GCS
+        metrics_data = {
+            "conversion_id": conversion_id,
+            "filename": original_filename,
+            "processing_time_seconds": processing_time,
+            "output_size_mb": 0,
+            "input_size_mb": conversion_progress[conversion_id].get("file_size_mb", 0),
+            "status": "failed",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        gcs_handler.save_metrics(conversion_id, metrics_data)
 
     finally:
         # Clean up uploaded DOCX
@@ -402,6 +435,9 @@ def convert():
             }), 400
 
         logger.info(f"[{conversion_id}] File saved: {file.filename} ({file_size_mb:.2f} MB)")
+
+        # Upload input DOCX to GCS
+        gcs_handler.upload_file(docx_path, f"inputs/{safe_filename}")
 
         # Initialize progress tracking
         conversion_progress[conversion_id] = {
@@ -506,6 +542,101 @@ def download_result(conversion_id):
     return response
 
 
+@app.route('/conversion/<conversion_id>', methods=['GET'])
+def get_conversion_details(conversion_id):
+    """
+    Get detailed conversion information including GCS paths and metrics.
+    
+    This endpoint provides comprehensive details about a conversion for debugging:
+    - Original filename
+    - Input file location (GCS path)
+    - Output file location (GCS path)
+    - Processing time
+    - Status
+    - Timestamp
+    
+    Usage:
+        GET /conversion/20260120_152731_42a34914
+    """
+    # First check in-memory progress tracking
+    in_memory_data = conversion_progress.get(conversion_id)
+    
+    # Initialize response with conversion ID
+    response_data = {
+        "conversion_id": conversion_id,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    
+    # Add in-memory data if available
+    if in_memory_data:
+        response_data["status"] = in_memory_data.get("status")
+        response_data["filename"] = in_memory_data.get("filename")
+        response_data["processing_time"] = in_memory_data.get("processing_time")
+        response_data["file_size_mb"] = in_memory_data.get("file_size_mb")
+        response_data["start_time"] = in_memory_data.get("timestamp")
+    
+    # Try to fetch metrics from GCS if GCS is enabled
+    try:
+        metrics_blob_name = f"metrics/{conversion_id}_metrics.json"
+        if gcs_handler.enabled:
+            blob = gcs_handler.bucket.blob(metrics_blob_name)
+            if blob.exists():
+                metrics_json = blob.download_as_text()
+                metrics = json.loads(metrics_json)
+                
+                # Merge metrics with response data (metrics take precedence)
+                response_data["status"] = metrics.get("status", response_data.get("status"))
+                response_data["filename"] = metrics.get("filename", response_data.get("filename"))
+                response_data["processing_time"] = metrics.get("processing_time_seconds", response_data.get("processing_time"))
+                response_data["input_size_mb"] = metrics.get("input_size_mb")
+                response_data["output_size_mb"] = metrics.get("output_size_mb")
+                response_data["metrics_timestamp"] = metrics.get("timestamp")
+                
+                if "error" in metrics:
+                    response_data["error"] = metrics["error"]
+                
+                logger.info(f"Fetched metrics from GCS for {conversion_id}")
+    except Exception as e:
+        logger.warning(f"Could not fetch metrics from GCS: {e}")
+    
+    # Determine GCS paths for input and output files
+    if gcs_handler.enabled:
+        bucket_name = gcs_handler.bucket_name
+        
+        # Find input file
+        try:
+            input_prefix = f"inputs/{conversion_id}_"
+            input_blobs = list(gcs_handler.bucket.list_blobs(prefix=input_prefix, max_results=1))
+            if input_blobs:
+                response_data["input_file_gcs_path"] = f"gs://{bucket_name}/{input_blobs[0].name}"
+                response_data["input_file_size_mb"] = input_blobs[0].size / (1024 * 1024) if input_blobs[0].size else 0
+        except Exception as e:
+            logger.warning(f"Could not fetch input file info: {e}")
+        
+        # Find output file
+        try:
+            output_prefix = f"outputs/OmniJAX_{conversion_id}_"
+            output_blobs = list(gcs_handler.bucket.list_blobs(prefix=output_prefix, max_results=1))
+            if output_blobs:
+                response_data["output_file_gcs_path"] = f"gs://{bucket_name}/{output_blobs[0].name}"
+                response_data["output_file_size_mb"] = output_blobs[0].size / (1024 * 1024) if output_blobs[0].size else 0
+        except Exception as e:
+            logger.warning(f"Could not fetch output file info: {e}")
+    else:
+        response_data["gcs_note"] = "GCS not enabled. Limited information available."
+    
+    # Check if we found any data
+    if not in_memory_data and not response_data.get("status"):
+        return jsonify({
+            "error": "Conversion ID not found",
+            "conversion_id": conversion_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "note": "This conversion may have expired from memory. Check GCS metrics if available."
+        }), 404
+    
+    return jsonify(response_data), 200
+
+
 def cleanup_file(file_path, conversion_id, file_type):
     """Clean up a single file with error handling."""
     try:
@@ -542,7 +673,15 @@ def not_found(error):
     return jsonify({
         "error": "Not found",
         "message": "The requested endpoint does not exist",
-        "available_endpoints": ["/", "/health", "/version", "/convert", "/status/<conversion_id>", "/download/<conversion_id>"],
+        "available_endpoints": [
+            "/", 
+            "/health", 
+            "/version", 
+            "/convert", 
+            "/status/<conversion_id>", 
+            "/download/<conversion_id>",
+            "/conversion/<conversion_id>"
+        ],
         "timestamp": datetime.utcnow().isoformat()
     }), 404
 
