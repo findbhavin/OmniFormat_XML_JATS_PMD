@@ -1120,6 +1120,31 @@ class HighFidelityConverter:
             # Fix problematic tex-math elements that contain citation superscripts
             # This must be done early before other processing that might depend on xrefs
             self._fix_tex_math_citations(root)
+
+            # FIX FOR PMC ERROR: Element alternatives content does not follow the DTD
+            # Problem: Pandoc outputs mixed content (text, sup, math) inside <alternatives> which is invalid.
+            # Fix: We find the valid <mml:math> element, unwrap it, and discard the invalid container/siblings.
+            for alternatives in root.findall('.//alternatives'):
+                # Search for the mml:math child (handling namespace)
+                math_child = None
+                for child in alternatives:
+                    # Check for math tag in MathML namespace (usually ends in 'math')
+                    if child.tag.endswith('math') and 'Math/MathML' in child.tag:
+                        math_child = child
+                        break
+                
+                if math_child is not None:
+                    parent = alternatives.getparent()
+                    if parent is not None:
+                        # Preserve the text following the alternatives block (if any)
+                        # We overwrite math_child.tail to discard any invalid text inside the alternatives tag
+                        if alternatives.tail:
+                            math_child.tail = alternatives.tail
+                        
+                        # Replace the invalid alternatives wrapper with the clean math element
+                        parent.replace(alternatives, math_child)
+                        logger.info("Fixed invalid alternatives: unwrapped mml:math and removed mixed content")
+
             
             # PMC Requirement: table-wrap position attribute
             # Position should be "float" or "anchor" (not "top")
@@ -1182,7 +1207,10 @@ class HighFidelityConverter:
                 
                 logger.info(f"Reordered table elements to DTD-compliant order: {len(col_elements)} col, {len(colgroup_elements)} colgroup, thead={'yes' if thead_element else 'no'}, {len(tbody_elements_list)} tbody")
                 
-                # NOW process with updated references
+                
+				
+				
+				# NOW process with updated references
                 thead = thead_element
                 tfoot = tfoot_element
                 tbody_elements = tbody_elements_list
