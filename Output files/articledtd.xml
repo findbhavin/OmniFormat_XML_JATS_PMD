@@ -83,8 +83,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="dtd-compliance-row">
-            <td></td>
+          <tr>
+            <td colspan="2"/>
           </tr>
         </tbody>
       </table>
@@ -312,8 +312,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="dtd-compliance-row">
-            <td></td>
+          <tr>
+            <td colspan="13"/>
           </tr>
         </tbody>
       </table>
@@ -456,8 +456,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="dtd-compliance-row">
-            <td></td>
+          <tr>
+            <td colspan="12"/>
           </tr>
         </tbody>
       </table>
@@ -615,8 +615,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="dtd-compliance-row">
-            <td></td>
+          <tr>
+            <td colspan="11"/>
           </tr>
         </tbody>
       </table>
