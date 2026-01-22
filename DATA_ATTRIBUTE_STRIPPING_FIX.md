@@ -173,6 +173,7 @@ INFO:MasterPipeline:✅ Stripped 4 data-* attributes for DTD/XSD compliance
 
 ## Related Documentation
 
-- AI prompt mentions data-compliance will be stripped (line 178 in MasterPipeline.py)
+- AI prompt mentions data-compliance will be stripped (line 178 in MasterPipeline.py refers to the AI prompt comment explaining that data-compliance attributes are for PDF rendering only and will be stripped during final validation)
+- Data attribute stripping implementation is in MasterPipeline.py lines 1559-1573
 - JATS DTD requirements: https://jats.nlm.nih.gov/publishing/
 - PMC Style Checker documentation: https://www.ncbi.nlm.nih.gov/pmc/tools/stylechecker/

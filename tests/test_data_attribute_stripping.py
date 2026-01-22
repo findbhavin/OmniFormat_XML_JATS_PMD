@@ -50,7 +50,7 @@ class TestDataAttributeStripping:
         
         try:
             # Create converter instance with a dummy docx path
-            converter = HighFidelityConverter('/tmp/dummy.docx')
+            converter = HighFidelityConverter(os.path.join(tempfile.gettempdir(), 'dummy.docx'))
             converter.xml_path = xml_path
             
             # Run post-processing
@@ -102,7 +102,7 @@ class TestDataAttributeStripping:
         
         try:
             # Create converter instance with a dummy docx path
-            converter = HighFidelityConverter('/tmp/dummy.docx')
+            converter = HighFidelityConverter(os.path.join(tempfile.gettempdir(), 'dummy.docx'))
             converter.xml_path = xml_path
             
             # Run post-processing
@@ -154,7 +154,7 @@ class TestDataAttributeStripping:
         
         try:
             # Create converter instance with a dummy docx path
-            converter = HighFidelityConverter('/tmp/dummy.docx')
+            converter = HighFidelityConverter(os.path.join(tempfile.gettempdir(), 'dummy.docx'))
             converter.xml_path = xml_path
             
             # Run post-processing
@@ -211,7 +211,7 @@ class TestDataAttributeStripping:
         
         try:
             # Create converter instance with a dummy docx path
-            converter = HighFidelityConverter('/tmp/dummy.docx')
+            converter = HighFidelityConverter(os.path.join(tempfile.gettempdir(), 'dummy.docx'))
             converter.xml_path = xml_path
             
             # Run post-processing

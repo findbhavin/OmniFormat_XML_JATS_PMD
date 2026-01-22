@@ -79,8 +79,7 @@ td:empty::after, th:empty::after {
 }
 
 /* Hide DTD compliance rows (added for table structure validation) */
-tr.dtd-compliance-row,
-tr[data-dtd-compliance="true"] {
+tr.dtd-compliance-row {
     display: none;
     visibility: hidden;
 }
