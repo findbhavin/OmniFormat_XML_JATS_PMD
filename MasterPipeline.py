@@ -1037,10 +1037,11 @@ class HighFidelityConverter:
                         # Add a single empty tr to make it valid
                         tr = etree.SubElement(tbody, 'tr')
                         td = etree.SubElement(tr, 'td')
-                        td.text = ''  # Empty cell
+                        # Use None for empty content (more explicit than empty string)
+                        td.text = None
                         
-                        # Set style to hide this row visually (preserve appearance)
-                        tr.set('style', 'display: none;')
+                        # Add CSS class for hidden rows (better than inline styles)
+                        tr.set('class', 'dtd-compliance-row')
                         
                         # Find where to insert tbody (after thead and tfoot)
                         insert_index = len(list(table))

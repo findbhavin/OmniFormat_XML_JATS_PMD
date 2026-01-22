@@ -67,7 +67,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr style="display: none;">
+          <tr class="dtd-compliance-row">
             <td></td>
           </tr>
         </tbody>
@@ -296,7 +296,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr style="display: none;">
+          <tr class="dtd-compliance-row">
             <td></td>
           </tr>
         </tbody>
@@ -440,7 +440,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr style="display: none;">
+          <tr class="dtd-compliance-row">
             <td></td>
           </tr>
         </tbody>
@@ -599,7 +599,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr style="display: none;">
+          <tr class="dtd-compliance-row">
             <td></td>
           </tr>
         </tbody>
