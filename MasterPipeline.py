@@ -960,10 +960,60 @@ class HighFidelityConverter:
             # Fix table structure to comply with DTD: (col* | colgroup*), ((thead?, tfoot?, tbody+) | tr+)
             # The DTD requires: after col/colgroup, we must have EITHER (thead?, tfoot?, tbody+) OR (tr+)
             for table in root.findall('.//table'):
-                thead = table.find('thead')
-                tfoot = table.find('tfoot')
-                tbody_elements = table.findall('tbody')
-                tr_elements = [child for child in table if child.tag == 'tr']
+                # FIRST: Reorder table children to match DTD requirement
+                # DTD order: col/colgroup MUST come before thead/tfoot/tbody/tr
+                col_elements = []
+                colgroup_elements = []
+                thead_element = None
+                tfoot_element = None
+                tbody_elements_list = []
+                tr_elements_list = []
+                other_elements = []
+                
+                # Collect and categorize all children
+                for child in list(table):
+                    if child.tag == 'col':
+                        col_elements.append(child)
+                    elif child.tag == 'colgroup':
+                        colgroup_elements.append(child)
+                    elif child.tag == 'thead':
+                        thead_element = child
+                    elif child.tag == 'tfoot':
+                        tfoot_element = child
+                    elif child.tag == 'tbody':
+                        tbody_elements_list.append(child)
+                    elif child.tag == 'tr':
+                        tr_elements_list.append(child)
+                    else:
+                        other_elements.append(child)
+                
+                # Clear the table
+                for child in list(table):
+                    table.remove(child)
+                
+                # Rebuild in correct DTD order: col/colgroup, then thead/tfoot/tbody/tr
+                for col in col_elements:
+                    table.append(col)
+                for colgroup in colgroup_elements:
+                    table.append(colgroup)
+                if thead_element is not None:
+                    table.append(thead_element)
+                if tfoot_element is not None:
+                    table.append(tfoot_element)
+                for tbody in tbody_elements_list:
+                    table.append(tbody)
+                for tr in tr_elements_list:
+                    table.append(tr)
+                for other in other_elements:
+                    table.append(other)
+                
+                logger.info(f"Reordered table elements to DTD-compliant order: {len(col_elements)} col, {len(colgroup_elements)} colgroup, thead={'yes' if thead_element else 'no'}, {len(tbody_elements_list)} tbody")
+                
+                # NOW process with updated references
+                thead = thead_element
+                tfoot = tfoot_element
+                tbody_elements = tbody_elements_list
+                tr_elements = tr_elements_list
                 
                 # Case 1: Table has thead or tfoot - MUST have at least one tbody (even if empty)
                 if thead is not None or tfoot is not None:
@@ -1643,14 +1693,33 @@ class HighFidelityConverter:
                 for child in list(html_table):
                     html_table.remove(child)
                 
-                # Rebuild thead if present in XML
+                # Rebuild in DTD-compliant order: col/colgroup, then thead, then tbody
+                # First: col and colgroup elements
+                for xml_col in xml_table.findall('./col'):
+                    html_col = etree.Element('col')
+                    for attr, value in xml_col.attrib.items():
+                        html_col.set(attr, value)
+                    html_table.append(html_col)
+                
+                for xml_colgroup in xml_table.findall('./colgroup'):
+                    html_colgroup = etree.Element('colgroup')
+                    for attr, value in xml_colgroup.attrib.items():
+                        html_colgroup.set(attr, value)
+                    # Copy col elements within colgroup
+                    for xml_col in xml_colgroup.findall('./col'):
+                        html_col = etree.SubElement(html_colgroup, 'col')
+                        for attr, value in xml_col.attrib.items():
+                            html_col.set(attr, value)
+                    html_table.append(html_colgroup)
+                
+                # Second: thead if present in XML
                 xml_thead = xml_table.find('.//thead')
                 if xml_thead is not None:
                     html_thead = etree.Element('thead')
                     self._rebuild_table_section(xml_thead, html_thead)
                     html_table.append(html_thead)
                 
-                # Rebuild tbody if present in XML
+                # Third: tbody if present in XML
                 xml_tbody = xml_table.find('.//tbody')
                 if xml_tbody is not None:
                     html_tbody = etree.Element('tbody')
@@ -1680,14 +1749,33 @@ class HighFidelityConverter:
                         for child in list(html_table):
                             html_table.remove(child)
                         
-                        # Rebuild thead if present in XML
+                        # Rebuild in DTD-compliant order: col/colgroup, then thead, then tbody
+                        # First: col and colgroup elements
+                        for xml_col in xml_table.findall('./col'):
+                            html_col = etree.Element('col')
+                            for attr, value in xml_col.attrib.items():
+                                html_col.set(attr, value)
+                            html_table.append(html_col)
+                        
+                        for xml_colgroup in xml_table.findall('./colgroup'):
+                            html_colgroup = etree.Element('colgroup')
+                            for attr, value in xml_colgroup.attrib.items():
+                                html_colgroup.set(attr, value)
+                            # Copy col elements within colgroup
+                            for xml_col in xml_colgroup.findall('./col'):
+                                html_col = etree.SubElement(html_colgroup, 'col')
+                                for attr, value in xml_col.attrib.items():
+                                    html_col.set(attr, value)
+                            html_table.append(html_colgroup)
+                        
+                        # Second: thead if present in XML
                         xml_thead = xml_table.find('.//thead')
                         if xml_thead is not None:
                             html_thead = etree.Element('thead')
                             self._rebuild_table_section(xml_thead, html_thead)
                             html_table.append(html_thead)
                         
-                        # Rebuild tbody if present in XML
+                        # Third: tbody if present in XML
                         xml_tbody = xml_table.find('.//tbody')
                         if xml_tbody is not None:
                             html_tbody = etree.Element('tbody')
