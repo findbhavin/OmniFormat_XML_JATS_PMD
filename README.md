@@ -459,9 +459,9 @@ When you convert a document, OmniJAX generates a `validation_report.json` file. 
    - Review results
 4. **Fix any errors** in your original Word document and re-convert
 5. **Submit to PMC** using their online system
-6. **Include both**:
+6. **Include**:
    - `articledtd.xml` (the XML file)
-   - `published_article.pdf` (for preview)
+   - Media files from the `media/` folder if applicable
 
 ### General Journal Submission
 
@@ -1160,6 +1160,17 @@ python tools/add_doctype.py input/article.xml --output output/articledtd.xml --v
 - **PMC Tagging Guidelines**: https://pmc.ncbi.nlm.nih.gov/tagging-guidelines/article/style/
 - **PMC Style Checker**: https://pmc.ncbi.nlm.nih.gov/tools/stylechecker/
 - **NLM PMC**: https://pmc.ncbi.nlm.nih.gov/
+
+## Roadmap
+
+This project is actively maintained and improved. Recent updates include:
+
+- **Documentation Enhancement**: Removed legacy PDF generation references to better reflect current capabilities
+- **Validation Reports**: Added comprehensive validation report files to output packages for better transparency
+- **UI Improvements**: Enhanced table formatting with zebra striping for improved readability
+- **User Experience**: Streamlined documentation to focus on current features
+
+Future enhancements may include additional output formats, enhanced validation capabilities, and improved AI-powered content repair features.
 
 ## License
 
