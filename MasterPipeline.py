@@ -937,6 +937,175 @@ class HighFidelityConverter:
             logger.warning(f"Failed to extract article type from DOCX: {e}")
             return None
 
+    def _fix_tex_math_citations(self, root):
+        """
+        Fix problematic tex-math elements that contain citation superscripts instead of actual LaTeX math.
+        
+        Pandoc sometimes incorrectly converts superscript citation numbers (e.g., ⁵,⁶ or ¹⁻³) 
+        into tex-math elements with incomplete LaTeX syntax like ^{5,6}.
+        
+        This method:
+        1. Detects problematic tex-math elements with simple superscript patterns
+        2. Converts them to proper PMC-compliant xref elements
+        3. Handles various citation patterns (single, multiple, ranges)
+        4. Preserves leading/trailing punctuation
+        5. Ensures corresponding ref elements exist in ref-list
+        
+        Args:
+            root: The XML root element
+        """
+        # Find all tex-math elements
+        tex_math_elements = root.findall('.//tex-math')
+        if not tex_math_elements:
+            return
+        
+        # Pattern to detect citation-like tex-math content
+        # Matches: ^{5}, ^{5,6}, ^{1-3}, .^{5,6}, etc.
+        citation_pattern = re.compile(r'^([.,;:\s]*)?\^?\{?([\d,\-\s]+)\}?$')
+        
+        conversions_made = 0
+        
+        for tex_math in tex_math_elements:
+            # Get the tex-math content
+            tex_content = (tex_math.text or '').strip()
+            
+            # Skip if empty or already a complete LaTeX document
+            if not tex_content or tex_content.startswith('\\documentclass'):
+                continue
+            
+            # Check if this looks like a citation pattern
+            match = citation_pattern.match(tex_content)
+            if not match:
+                continue
+            
+            # Extract components
+            leading_punct = match.group(1) or ''
+            citation_text = match.group(2).strip()
+            
+            logger.info(f"Found citation-like tex-math: '{tex_content}' -> parsing '{citation_text}'")
+            
+            # Parse citation numbers
+            # Handle patterns like: "5", "5,6", "1-3", "5, 6, 7"
+            citation_numbers = []
+            
+            # Split by comma first
+            parts = citation_text.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # Range: "1-3" -> [1, 2, 3]
+                    try:
+                        start, end = part.split('-', 1)
+                        start_num = int(start.strip())
+                        end_num = int(end.strip())
+                        citation_numbers.extend(range(start_num, end_num + 1))
+                    except (ValueError, AttributeError):
+                        # If parsing fails, skip this tex-math
+                        logger.warning(f"Failed to parse range: {part}")
+                        citation_numbers = []
+                        break
+                else:
+                    # Single number
+                    try:
+                        citation_numbers.append(int(part))
+                    except (ValueError, AttributeError):
+                        # If parsing fails, skip this tex-math
+                        logger.warning(f"Failed to parse citation number: {part}")
+                        citation_numbers = []
+                        break
+            
+            # Skip if we couldn't parse valid citation numbers
+            if not citation_numbers:
+                continue
+            
+            logger.info(f"Parsed citation numbers: {citation_numbers}")
+            
+            # Get parent element to insert replacement
+            parent = tex_math.getparent()
+            if parent is None:
+                continue
+            
+            # Find the position of tex-math in parent
+            tex_math_index = list(parent).index(tex_math)
+            
+            # Preserve any tail text from tex-math
+            tail_text = tex_math.tail or ''
+            
+            # Create replacement elements
+            # Start with leading punctuation if any
+            if leading_punct:
+                if tex_math_index > 0:
+                    prev = parent[tex_math_index - 1]
+                    prev.tail = (prev.tail or '') + leading_punct
+                else:
+                    parent.text = (parent.text or '') + leading_punct
+            
+            # Create a sup element to wrap the xrefs
+            sup = etree.Element('sup')
+            
+            # Create xref elements for each citation
+            for i, ref_num in enumerate(citation_numbers):
+                # Add separator between citations
+                if i > 0:
+                    # Determine separator based on original pattern
+                    # If original had a dash (range), we keep consecutive numbers together
+                    # Otherwise, separate with comma
+                    prev_xref = sup[-1]  # Get last added element
+                    if citation_numbers[i] == citation_numbers[i-1] + 1 and '-' in citation_text:
+                        # Part of a continuous range, use dash separator
+                        prev_xref.tail = '-'
+                    else:
+                        # Multiple separate citations, use comma
+                        prev_xref.tail = ','
+                
+                xref = etree.Element('xref')
+                xref.set('ref-type', 'bibr')
+                xref.set('rid', f'ref{ref_num}')
+                xref.text = str(ref_num)
+                sup.append(xref)
+            
+            # Insert the sup element at tex-math position
+            parent.insert(tex_math_index, sup)
+            
+            # Set tail text on sup
+            sup.tail = tail_text
+            
+            # Remove the tex-math element
+            parent.remove(tex_math)
+            
+            conversions_made += 1
+            logger.info(f"Converted tex-math citation to xref elements: {citation_numbers}")
+            
+            # Ensure corresponding ref elements exist
+            back = root.find('.//back')
+            if back is None:
+                back = etree.Element('back')
+                root.append(back)
+            
+            ref_list = back.find('.//ref-list')
+            if ref_list is None:
+                ref_list = etree.SubElement(back, 'ref-list')
+            
+            # Check and create placeholder refs for each citation number
+            existing_refs = ref_list.findall('.//ref')
+            existing_ref_ids = {ref.get('id') for ref in existing_refs if ref.get('id')}
+            
+            for ref_num in citation_numbers:
+                ref_id = f'ref{ref_num}'
+                if ref_id not in existing_ref_ids:
+                    # Create placeholder ref element
+                    ref_elem = etree.Element('ref')
+                    ref_elem.set('id', ref_id)
+                    
+                    mixed_citation = etree.SubElement(ref_elem, 'mixed-citation')
+                    mixed_citation.text = f'Reference {ref_num}'
+                    
+                    ref_list.append(ref_elem)
+                    logger.info(f"Created placeholder ref element: id='{ref_id}'")
+        
+        if conversions_made > 0:
+            logger.info(f"✅ Converted {conversions_made} tex-math citation element(s) to xref elements")
+
     def _post_process_xml(self):
         """Post-process the XML to fix common JATS issues and ensure PMC compliance."""
         try:
@@ -947,6 +1116,10 @@ class HighFidelityConverter:
             parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
             tree = etree.parse(self.xml_path, parser)
             root = tree.getroot()
+            
+            # Fix problematic tex-math elements that contain citation superscripts
+            # This must be done early before other processing that might depend on xrefs
+            self._fix_tex_math_citations(root)
             
             # PMC Requirement: table-wrap position attribute
             # Position should be "float" or "anchor" (not "top")
