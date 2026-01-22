@@ -24,19 +24,12 @@ class GCSHandler:
         Initialize the GCS handler.
         
         Reads the GCS_BUCKET_NAME environment variable. If not set,
-        the handler will operate in fallback mode (local-only).
+        defaults to 'omnijaxstorage'.
         """
-        self.bucket_name = os.environ.get('GCS_BUCKET_NAME')
+        self.bucket_name = os.environ.get('GCS_BUCKET_NAME', 'omnijaxstorage')
         self.client = None
         self.bucket = None
         self.enabled = False
-        
-        if not self.bucket_name:
-            logger.warning(
-                "GCS_BUCKET_NAME environment variable not set. "
-                "GCS operations will be skipped (local-only mode)."
-            )
-            return
         
         try:
             from google.cloud import storage

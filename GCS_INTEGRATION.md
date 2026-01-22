@@ -12,16 +12,18 @@ This implementation adds Google Cloud Storage (GCS) support to OmniJAX for persi
 
 ## Configuration
 
-Set the `GCS_BUCKET_NAME` environment variable to enable GCS integration:
+The GCS integration is **enabled by default** using the bucket name `omnijaxstorage`.
+
+To use a different bucket, set the `GCS_BUCKET_NAME` environment variable:
 
 ```bash
-export GCS_BUCKET_NAME="your-bucket-name"
+export GCS_BUCKET_NAME="your-custom-bucket-name"
 ```
 
-If not set, the application will:
-- Log a warning message
-- Continue operating in local-only mode
-- Skip all GCS operations
+The application will:
+- Use `omnijaxstorage` as the default bucket if `GCS_BUCKET_NAME` is not set
+- Fall back to local-only mode only if GCS credentials are not available
+- Continue operating normally even if GCS operations fail
 
 ## Authentication
 
@@ -79,15 +81,14 @@ Run the GCS utility tests:
 pytest tests/test_gcs_utils.py -v
 ```
 
-Test with GCS enabled:
+Test with default GCS bucket (omnijaxstorage):
 ```bash
-export GCS_BUCKET_NAME="test-bucket"
 python app.py
 ```
 
-Test without GCS (fallback mode):
+Test with custom bucket:
 ```bash
-unset GCS_BUCKET_NAME
+export GCS_BUCKET_NAME="custom-bucket"
 python app.py
 ```
 
@@ -130,13 +131,14 @@ Potential improvements for future versions:
 
 ## Troubleshooting
 
-### Warning: "GCS_BUCKET_NAME environment variable not set"
-- **Cause**: GCS_BUCKET_NAME is not configured
-- **Solution**: Set the environment variable or ignore if GCS is not needed
+### Info: "GCS enabled with bucket: omnijaxstorage"
+- **Cause**: GCS is successfully initialized with the default bucket
+- **Action**: No action needed, GCS is working correctly
 
 ### Error: "Your default credentials were not found"
 - **Cause**: GCS credentials not configured
 - **Solution**: Run `gcloud auth application-default login` or configure service account
+- **Impact**: Application continues in local-only mode
 
 ### Error: "Failed to upload {file} to GCS"
 - **Cause**: Insufficient permissions or network issues

@@ -14,13 +14,12 @@ class TestGCSHandler:
     """Test suite for GCSHandler class."""
     
     def test_init_without_bucket_name(self):
-        """Test initialization when GCS_BUCKET_NAME is not set."""
+        """Test initialization when GCS_BUCKET_NAME is not set - uses default bucket."""
         with patch.dict(os.environ, {}, clear=True):
             handler = GCSHandler()
-            assert handler.bucket_name is None
-            assert handler.client is None
-            assert handler.bucket is None
-            assert handler.enabled is False
+            assert handler.bucket_name == 'omnijaxstorage'
+            # enabled will be False if credentials aren't available
+            assert handler.client is None or handler.enabled is False
     
     def test_init_with_bucket_name(self):
         """Test initialization when GCS_BUCKET_NAME is set."""
