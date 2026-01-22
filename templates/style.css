@@ -71,6 +71,12 @@ td:empty::after, th:empty::after {
     content: '\00a0';  /* Non-breaking space ensures proper cell height */
 }
 
+/* Hide DTD compliance rows (added for table structure validation) */
+tr.dtd-compliance-row {
+    display: none;
+    visibility: hidden;
+}
+
 /* Hover effect for screen viewing only with improved contrast */
 @media screen {
     tbody tr:hover {
