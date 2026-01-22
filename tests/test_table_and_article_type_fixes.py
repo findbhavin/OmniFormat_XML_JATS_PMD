@@ -218,7 +218,12 @@ class TestHTMLRendering:
         return None
     
     def test_html_tables_no_empty_rows_at_end(self, html_content):
-        """Test that HTML tables follow DTD requirements (may have tbody for compliance)."""
+        """Test that HTML tables have tbody elements when they have thead (JATS DTD requirement).
+        
+        The JATS DTD requires that tables with thead elements MUST also have at least one
+        tbody element: ((col* | colgroup*), ((thead?, tfoot?, tbody+) | tr+))
+        This test verifies that this requirement is met in the generated HTML.
+        """
         if html_content is None:
             pytest.skip("HTML file not found")
         

@@ -984,8 +984,26 @@ class HighFidelityConverter:
                         
                         # Add a single empty tr to make it valid
                         # Note: This creates a minimal empty row, which is required by DTD
+                        # Determine number of columns from colgroup or thead
+                        num_cols = 1
+                        colgroup = table.find('colgroup')
+                        if colgroup is not None:
+                            cols = colgroup.findall('col')
+                            num_cols = len(cols) if cols else 1
+                        elif thead is not None:
+                            # Count columns from first thead row
+                            first_row = thead.find('.//tr')
+                            if first_row is not None:
+                                cells = first_row.findall('th') + first_row.findall('td')
+                                num_cols = len(cells) if cells else 1
+                        
                         tr = etree.SubElement(tbody, 'tr')
                         td = etree.SubElement(tr, 'td')
+                        
+                        # If table has multiple columns, use colspan to span all columns
+                        if num_cols > 1:
+                            td.set('colspan', str(num_cols))
+                        
                         td.text = ''  # Empty cell
                         
                         # Find where to insert tbody (after thead and tfoot)
