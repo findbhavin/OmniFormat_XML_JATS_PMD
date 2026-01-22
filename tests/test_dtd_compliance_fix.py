@@ -14,10 +14,10 @@ import os
 
 
 class TestDTDComplianceMarking:
-    """Test that DTD compliance rows are properly marked."""
+    """Test that DTD compliance rows are properly marked and then stripped."""
     
     def test_post_process_xml_adds_data_attribute(self):
-        """Test that _post_process_xml adds data-dtd-compliance attribute."""
+        """Test that _post_process_xml adds tbody for DTD compliance and strips data-* attributes."""
         # Create a minimal XML with a table that has thead but no tbody
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN" "JATS-journalpublishing1-3.dtd">
@@ -67,10 +67,11 @@ class TestDTDComplianceMarking:
             # Check the tr in tbody
             tbody_rows = tbody.findall('.//tr')
             if len(tbody_rows) > 0:
-                # Should have data-dtd-compliance attribute
+                # Verify that data-* attributes have been stripped
                 tr = tbody_rows[0]
-                assert tr.get('data-dtd-compliance') == 'true', \
-                    "DTD compliance row should have data-dtd-compliance='true'"
+                data_attrs = [attr for attr in tr.attrib if attr.startswith('data-')]
+                assert len(data_attrs) == 0, \
+                    f"DTD compliance row should have all data-* attributes stripped, found: {data_attrs}"
                 
                 # Should NOT have class attribute
                 assert tr.get('class') is None, \

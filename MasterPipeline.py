@@ -1557,6 +1557,20 @@ class HighFidelityConverter:
                             parent.remove(back)
                             logger.info("Removed <back> element with no element children for PMC compliance")
             
+            # Strip all data-* attributes that are not DTD-compliant
+            # These attributes (data-compliance, data-dtd-compliance, etc.) are used for internal
+            # processing and HTML/PDF rendering but must be removed before DTD/XSD validation
+            data_attrs_removed = 0
+            for elem in root.iter():
+                attrs_to_remove = [attr for attr in elem.attrib if attr.startswith('data-')]
+                for attr in attrs_to_remove:
+                    del elem.attrib[attr]
+                    data_attrs_removed += 1
+                    logger.debug(f"Removed non-DTD attribute '{attr}' from element '{elem.tag}'")
+            
+            if data_attrs_removed > 0:
+                logger.info(f"✅ Stripped {data_attrs_removed} data-* attributes for DTD/XSD compliance")
+            
             # Write back the XML with proper formatting
             tree.write(
                 self.xml_path,

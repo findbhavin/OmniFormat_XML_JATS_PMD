@@ -50,6 +50,7 @@ th, td {
     word-wrap: break-word;  /* Handle long content */
 }
 
+/* Keep header rows distinct */
 thead th {
     background-color: #e8f0f7;
     font-weight: bold;
@@ -58,12 +59,18 @@ thead th {
     font-size: 10pt;  /* Consistent header font size */
 }
 
-tbody tr:nth-child(even) {
-    background-color: #f0f0f0;  /* Enhanced contrast for better readability */
+/* Ensure all thead rows have the same background */
+thead tr {
+    background-color: #e8f0f7;
 }
 
-tbody tr:nth-child(odd) {
-    background-color: #ffffff;  /* Explicit white background for odd rows */
+/* Alternating row colors for better readability - using pure CSS */
+table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: #ffffff;
 }
 
 /* Ensure empty cells have proper height */
@@ -77,10 +84,10 @@ tr.dtd-compliance-row {
     visibility: hidden;
 }
 
-/* Hover effect for screen viewing only with improved contrast */
+/* Hover effect for interactivity - screen viewing only */
 @media screen {
-    tbody tr:hover {
-        background-color: #e3f2fd;  /* Improved contrast from #f0f7ff */
+    table tbody tr:hover {
+        background-color: #e6f3ff;
     }
 }
 
