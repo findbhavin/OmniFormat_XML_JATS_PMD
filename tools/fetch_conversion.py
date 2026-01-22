@@ -75,7 +75,7 @@ class ConversionFetcher:
             "input_file": None,
             "output_file": None,
             "metrics": None,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
         
         if not self.gcs_enabled:
@@ -232,9 +232,26 @@ class ConversionFetcher:
             metrics = info["metrics"]
             print(f"  Status:           {metrics.get('status', 'N/A')}")
             print(f"  Filename:         {metrics.get('filename', 'N/A')}")
-            print(f"  Processing Time:  {metrics.get('processing_time_seconds', 'N/A'):.2f}s")
-            print(f"  Input Size:       {metrics.get('input_size_mb', 'N/A'):.2f} MB")
-            print(f"  Output Size:      {metrics.get('output_size_mb', 'N/A'):.2f} MB")
+            
+            # Handle numeric fields with proper formatting
+            proc_time = metrics.get('processing_time_seconds')
+            if proc_time is not None and isinstance(proc_time, (int, float)):
+                print(f"  Processing Time:  {proc_time:.2f}s")
+            else:
+                print(f"  Processing Time:  {proc_time or 'N/A'}")
+            
+            input_size = metrics.get('input_size_mb')
+            if input_size is not None and isinstance(input_size, (int, float)):
+                print(f"  Input Size:       {input_size:.2f} MB")
+            else:
+                print(f"  Input Size:       {input_size or 'N/A'}")
+            
+            output_size = metrics.get('output_size_mb')
+            if output_size is not None and isinstance(output_size, (int, float)):
+                print(f"  Output Size:      {output_size:.2f} MB")
+            else:
+                print(f"  Output Size:      {output_size or 'N/A'}")
+            
             print(f"  Timestamp:        {metrics.get('timestamp', 'N/A')}")
             if metrics.get('error'):
                 print(f"  ⚠ Error:          {metrics['error']}")

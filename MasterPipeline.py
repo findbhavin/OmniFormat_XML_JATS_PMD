@@ -1641,8 +1641,7 @@ class HighFidelityConverter:
                 for old_rid, named_content in named_content_refs.items():
                     # Create new ref ID (lowercase, e.g., ref1 instead of Ref1)
                     # Extract number from old_rid if it has one
-                    import re as re_module
-                    num_match = re_module.search(r'\d+', old_rid)
+                    num_match = re.search(r'\d+', old_rid)
                     if num_match:
                         ref_num = num_match.group()
                         new_rid = f'ref{ref_num}'
