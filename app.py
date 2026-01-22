@@ -9,8 +9,12 @@ from datetime import datetime
 from flask import Flask, request, render_template, send_file, jsonify, abort, url_for
 from werkzeug.utils import secure_filename
 from MasterPipeline import HighFidelityConverter
+from gcs_utils import GCSHandler
 
 app = Flask(__name__)
+
+# Initialize GCS handler
+gcs_handler = GCSHandler()
 
 # In-memory conversion progress tracking (single-process only)
 # For production: use Redis or a task queue
@@ -301,6 +305,9 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         
         logger.info(f"[{conversion_id}] Package created: {zip_file_path} ({zip_size_mb:.2f} MB)")
         
+        # Upload output ZIP to GCS
+        gcs_handler.upload_file(zip_file_path, f"outputs/{zip_filename}.zip")
+        
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds()
         
@@ -315,6 +322,18 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         
         # Save performance metrics to file
         save_performance_metric(conversion_id, original_filename, processing_time, zip_size_mb, "completed")
+        
+        # Save metrics to GCS
+        metrics_data = {
+            "conversion_id": conversion_id,
+            "filename": original_filename,
+            "processing_time_seconds": processing_time,
+            "output_size_mb": zip_size_mb,
+            "input_size_mb": conversion_progress[conversion_id].get("file_size_mb", 0),
+            "status": "completed",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        gcs_handler.save_metrics(conversion_id, metrics_data)
         
         logger.info(f"[{conversion_id}] Conversion completed in {processing_time:.2f} seconds")
 
@@ -332,6 +351,19 @@ def run_conversion_background(conversion_id, docx_path, safe_filename, original_
         # Save failure metric
         processing_time = (datetime.now() - start_time).total_seconds()
         save_performance_metric(conversion_id, original_filename, processing_time, 0, "failed")
+        
+        # Save failure metrics to GCS
+        metrics_data = {
+            "conversion_id": conversion_id,
+            "filename": original_filename,
+            "processing_time_seconds": processing_time,
+            "output_size_mb": 0,
+            "input_size_mb": conversion_progress[conversion_id].get("file_size_mb", 0),
+            "status": "failed",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        gcs_handler.save_metrics(conversion_id, metrics_data)
 
     finally:
         # Clean up uploaded DOCX
@@ -402,6 +434,9 @@ def convert():
             }), 400
 
         logger.info(f"[{conversion_id}] File saved: {file.filename} ({file_size_mb:.2f} MB)")
+
+        # Upload input DOCX to GCS
+        gcs_handler.upload_file(docx_path, f"inputs/{safe_filename}")
 
         # Initialize progress tracking
         conversion_progress[conversion_id] = {
