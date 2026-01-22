@@ -1040,8 +1040,9 @@ class HighFidelityConverter:
                         # Use None for empty content (more explicit than empty string)
                         td.text = None
                         
-                        # Add CSS class for hidden rows (better than inline styles)
-                        tr.set('class', 'dtd-compliance-row')
+                        # Add data attribute to mark DTD compliance rows (ignored by DTD validation)
+                        # This allows filtering these rows from HTML output
+                        tr.set('data-dtd-compliance', 'true')
                         
                         # Find where to insert tbody (after thead and tfoot)
                         insert_index = len(list(table))
@@ -1787,8 +1788,24 @@ class HighFidelityConverter:
         """
         Helper method to rebuild a table section (thead or tbody) from XML to HTML.
         Reduces code duplication between thead and tbody processing.
+        Filters out DTD compliance placeholder rows from HTML output.
         """
         for xml_tr in xml_section.findall('.//tr'):
+            # Skip DTD compliance placeholder rows - they should not appear in HTML
+            if xml_tr.get('data-dtd-compliance') == 'true':
+                continue
+            
+            # Also skip empty placeholder rows (single empty cell with no content)
+            cells = xml_tr.findall('.//td') + xml_tr.findall('.//th')
+            if len(cells) == 1:
+                # Check if this is an empty cell (no text, no children)
+                cell = cells[0]
+                has_text = cell.text and cell.text.strip()
+                has_children = len(list(cell)) > 0
+                if not has_text and not has_children:
+                    # This is likely a DTD compliance row - skip it
+                    continue
+            
             html_tr = etree.SubElement(html_section, 'tr')
             for xml_cell in xml_tr.findall('.//th') + xml_tr.findall('.//td'):
                 cell_tag = 'th' if xml_cell.tag == 'th' else 'td'
