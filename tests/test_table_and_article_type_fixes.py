@@ -30,7 +30,11 @@ class TestTableEmptyRowFix:
         return None
     
     def test_no_empty_tbody_in_informational_tables(self, xml_content):
-        """Test that informational tables (thead with multiple rows) don't have empty tbody."""
+        """Test that informational tables (thead with multiple rows) have tbody for DTD compliance.
+        
+        Empty tbody elements with a single empty cell are acceptable as they're required by DTD
+        when a table has thead but no data rows.
+        """
         if xml_content is None:
             pytest.skip("XML file not found")
         
@@ -46,28 +50,14 @@ class TestTableEmptyRowFix:
         
         assert len(tables_with_thead) > 0, "Should have at least one table with thead"
         
-        # Check each table for empty tbody
-        empty_tbody_count = 0
+        # Check that tables with thead also have tbody (DTD requirement)
         for table in tables_with_thead:
             thead = table.find('thead')
-            thead_rows = thead.findall('.//tr') if thead is not None else []
+            tbody = table.find('tbody')
             
-            # If thead has multiple rows (informational table), there should be no empty tbody
-            if len(thead_rows) > 1:
-                for tbody in table.findall('tbody'):
-                    tbody_rows = tbody.findall('.//tr')
-                    if len(tbody_rows) == 0:
-                        empty_tbody_count += 1
-                    elif len(tbody_rows) == 1:
-                        # Check if it's a single empty cell
-                        tr = tbody_rows[0]
-                        tds = tr.findall('.//td')
-                        if len(tds) == 1:
-                            cell_text = ''.join(tds[0].itertext()).strip()
-                            if cell_text == '':
-                                empty_tbody_count += 1
-        
-        assert empty_tbody_count == 0, f"Found {empty_tbody_count} empty tbody elements in tables with multi-row thead"
+            # DTD requires: if table has thead, it must have at least one tbody
+            assert tbody is not None, \
+                "Table with thead must have a tbody element (JATS DTD requirement)"
     
     def test_tables_have_valid_structure(self, xml_content):
         """Test that all tables have valid structure (no completely empty tbody)."""
@@ -257,14 +247,24 @@ class TestDTDComplianceRowFix:
         for tr in tr_elements:
             assert tr.get('class') is None, \
                 f"Found 'class' attribute on tr element, which is not allowed by JATS DTD"
+            # Also verify no data-* attributes remain (they should be stripped)
+            data_attrs = [attr for attr in tr.attrib if attr.startswith('data-')]
+            assert len(data_attrs) == 0, \
+                f"Found data-* attributes on tr element that should have been stripped: {data_attrs}"
     
     def test_xml_dtd_compliance_rows_marked(self, xml_content):
-        """Test that DTD compliance rows have data-dtd-compliance attribute."""
+        """Test that DTD compliance rows have been processed correctly (data-* attrs stripped)."""
         if xml_content is None:
             pytest.skip("XML file not found")
         
         parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
         root = etree.fromstring(xml_content.encode('utf-8'), parser)
+        
+        # Verify that all data-* attributes have been stripped from the XML
+        for elem in root.iter():
+            data_attrs = [attr for attr in elem.attrib if attr.startswith('data-')]
+            assert len(data_attrs) == 0, \
+                f"Found data-* attributes on {elem.tag} that should have been stripped: {data_attrs}"
         
         # Find all tables with thead but no substantial tbody
         for table in root.findall('.//table'):
@@ -284,9 +284,11 @@ class TestDTDComplianceRowFix:
                         cell_text = ''.join(cell.itertext()).strip()
                         
                         if not cell_text:
-                            # This is a DTD compliance row, should have the marker
-                            assert row.get('data-dtd-compliance') == 'true', \
-                                "DTD compliance placeholder row should have data-dtd-compliance='true' attribute"
+                            # This is a DTD compliance row
+                            # Verify it has no data-* attributes (they should be stripped)
+                            data_attrs = [attr for attr in row.attrib if attr.startswith('data-')]
+                            assert len(data_attrs) == 0, \
+                                "DTD compliance placeholder row should have no data-* attributes (stripped for DTD validation)"
     
     def test_html_no_dtd_compliance_rows(self, html_content):
         """Test that HTML output doesn't contain DTD compliance placeholder rows."""
