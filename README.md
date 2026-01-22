@@ -284,6 +284,129 @@ Response:
 curl -O http://localhost:8080/download/20260120_103000_abcd1234
 ```
 
+#### Get Conversion Details (New!)
+Get comprehensive conversion information including file paths and metrics:
+```bash
+curl http://localhost:8080/conversion/20260120_103000_abcd1234
+```
+
+Response:
+```json
+{
+  "conversion_id": "20260120_152731_42a34914",
+  "status": "completed",
+  "filename": "article.docx",
+  "processing_time": 45.23,
+  "input_size_mb": 2.5,
+  "output_size_mb": 3.1,
+  "input_file_gcs_path": "gs://omnijaxstorage/inputs/20260120_152731_42a34914_article.docx",
+  "output_file_gcs_path": "gs://omnijaxstorage/outputs/OmniJAX_20260120_152731_42a34914_article.zip",
+  "timestamp": "2026-01-20T15:28:16.123456Z"
+}
+```
+
+### Conversion ID Format & Debugging
+
+Every conversion is assigned a unique **Conversion ID** for tracking and debugging purposes.
+
+#### Conversion ID Format
+```
+YYYYMMDD_HHMMSS_<8-char-hex>
+```
+
+**Components:**
+- `YYYYMMDD`: Date (e.g., 20260120 for January 20, 2026)
+- `HHMMSS`: Time in 24-hour format (e.g., 152731 for 3:27:31 PM)
+- `<8-char-hex>`: Random 8-character hexadecimal string for uniqueness
+
+**Example:** `20260120_152731_42a34914`
+
+#### Using the Conversion ID Lookup Tool
+
+When debugging a conversion issue, you can retrieve all information about a conversion using its ID:
+
+**Method 1: Using the API endpoint**
+```bash
+# Get conversion details
+curl http://localhost:8080/conversion/20260120_152731_42a34914
+
+# Or with pretty formatting
+curl http://localhost:8080/conversion/20260120_152731_42a34914 | jq
+```
+
+**Method 2: Using the fetch_conversion.py script**
+
+The `fetch_conversion.py` script provides a convenient way to fetch conversion information and download files from Google Cloud Storage (GCS).
+
+```bash
+# Get conversion information
+python tools/fetch_conversion.py 20260120_152731_42a34914
+
+# Download files locally for inspection
+python tools/fetch_conversion.py 20260120_152731_42a34914 --download
+
+# Download to a specific directory
+python tools/fetch_conversion.py 20260120_152731_42a34914 --download --output-dir /tmp/debug
+
+# Output as JSON for scripting
+python tools/fetch_conversion.py 20260120_152731_42a34914 --json
+```
+
+**Sample Output:**
+```
+======================================================================
+CONVERSION ID: 20260120_152731_42a34914
+======================================================================
+
+📥 INPUT FILE:
+  Path:         gs://omnijaxstorage/inputs/20260120_152731_42a34914_article.docx
+  Size:         2.50 MB
+  Created:      2026-01-20T15:27:31.123456Z
+  Content Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+📤 OUTPUT FILE:
+  Path:         gs://omnijaxstorage/outputs/OmniJAX_20260120_152731_42a34914_article.zip
+  Size:         3.10 MB
+  Created:      2026-01-20T15:28:16.123456Z
+  Content Type: application/zip
+
+📊 CONVERSION METRICS:
+  Status:           completed
+  Filename:         article.docx
+  Processing Time:  45.23s
+  Input Size:       2.50 MB
+  Output Size:      3.10 MB
+  Timestamp:        2026-01-20T15:28:16.123456Z
+
+======================================================================
+```
+
+#### Common Debugging Use Cases
+
+**Scenario 1: Conversion failed and you need to inspect the input file**
+```bash
+# Download the input file that caused the failure
+python tools/fetch_conversion.py <conversion_id> --download
+```
+
+**Scenario 2: Need to verify output for a specific conversion**
+```bash
+# Download both input and output files
+python tools/fetch_conversion.py <conversion_id> --download --output-dir ./debug_conv_123
+```
+
+**Scenario 3: Checking conversion status programmatically**
+```bash
+# Get JSON output for scripting
+python tools/fetch_conversion.py <conversion_id> --json > conversion_info.json
+```
+
+**Scenario 4: Finding conversion details from logs**
+```bash
+# If you have the conversion ID from logs, get full details
+curl http://localhost:8080/conversion/<conversion_id>
+```
+
 ### For Programmers: Using the Python Library
 
 ```python
