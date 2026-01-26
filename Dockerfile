@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install system dependencies including pandoc AND wget
+# Install system dependencies including pandoc AND wgets
 RUN apt-get update && apt-get install -y \
     pandoc \
     wget \
