@@ -21,7 +21,7 @@ caption {
     border-bottom: 1px solid #ccc;
     display: table-caption;
     font-family: var(--primary-font);
-    font-size: 11pt;
+    font-size: 13pt;  /* Increased from 11pt by ~20% for better readability */
 }
 
 /* Table styling for JATS compliance - Enhanced Professional Appearance */
@@ -31,7 +31,7 @@ table {
     margin-top: 15pt;
     margin-bottom: 20pt;
     page-break-inside: avoid;
-    font-size: 10pt;  /* Slightly smaller font for tables to fit more content */
+    font-size: 12pt;  /* Increased from 10pt by ~20% for better readability */
 }
 
 /* Add subtle shadow for screen viewing only */
@@ -56,7 +56,7 @@ thead th {
     font-weight: bold;
     border-bottom: 2px solid #4a90d9;
     color: #1a1a1a;
-    font-size: 10pt;  /* Consistent header font size */
+    font-size: 12pt;  /* Increased from 10pt by ~20% for better readability */
 }
 
 /* Ensure all thead rows have the same background */
@@ -125,7 +125,7 @@ math[mode="display"] {
 
 body {
     font-family: var(--primary-font);
-    font-size: 11pt;
+    font-size: 13pt;  /* Increased from 11pt by ~20% for better readability */
     line-height: 1.6;
     margin: 0.75in 0.5in;  /* Further reduced left/right margins (0.5in) for better space utilization */
     color: #000;
@@ -224,7 +224,7 @@ fig {
 
 fig caption {
     margin-top: 8pt;
-    font-size: 10pt;
+    font-size: 12pt;  /* Increased from 10pt by ~20% for better readability */
     font-style: italic;
     text-align: center;
     caption-side: bottom;
@@ -262,12 +262,12 @@ fig caption {
 }
 
 .contrib {
-    font-size: 11pt;
+    font-size: 13pt;  /* Increased from 11pt by ~20% for better readability */
     margin: 5pt 0;
 }
 
 .aff {
-    font-size: 10pt;
+    font-size: 12pt;  /* Increased from 10pt by ~20% for better readability */
     color: #666;
     margin: 5pt 0;
     font-style: italic;
